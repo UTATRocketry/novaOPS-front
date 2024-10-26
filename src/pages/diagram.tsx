@@ -14,10 +14,15 @@ import Link from "next/link";
 
 //api imports 
 import { getRandomNumber } from "./api/basicData";
+import { fetchTestMessage } from "./api/backend";
+import { fetchTestWS } from "./api/backend";
 
 
 
 const PIDDiagram = () => {
+
+  const [actuators, setActuators] = useState([]);
+  const [sensors, setSensors] = useState([]);
   
 
   //valves
@@ -74,6 +79,31 @@ const PIDDiagram = () => {
 
   useEffect( () => {
     
+    // api fetching functions
+    const fetchMessage = async () => {
+      var result = await fetchTestMessage();
+      console.log(result)
+    }
+
+    const fetchWSData = async () => {
+      var result = await fetchTestWS();
+      var result_data_list = result['data'];
+      var actuators = result_data_list['actuators'];
+      var sensors = result_data_list['sensors'];
+      console.log("Actuators: ", actuators);
+      console.log("Sensors: ", sensors);
+      
+      
+
+      
+    
+    }
+
+    fetchWSData();
+
+
+    
+
     const setRandom = () => {
       setBVFTValue(getRandomNumber())
       setRFTPValue(getRandomNumber())
