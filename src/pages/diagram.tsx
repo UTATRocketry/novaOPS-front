@@ -19,11 +19,10 @@ import { fetchTestWS } from "./api/backend";
 
 
 
-const PIDDiagram = () => {
 
-  const [actuators, setActuators] = useState([]);
-  const [sensors, setSensors] = useState([]);
-  
+const PIDDiagram = () => {
+  const [trigger, setTrigger] = useState(0);
+  const [sensorTrigger, setSensorTrigger] = useState(0);
 
   //valves
   const [bvft, setBVFT] = useState(false);
@@ -56,26 +55,45 @@ const PIDDiagram = () => {
   // pressure gauges and tc's 
 
   //fuel side
-  const [pgng, setPGNG] = useState(0);
-  const [pftpg, setPFTPG] = useState(0);
-  const [pft, setPFT] = useState(0);
-  const [mft, setMFT] = useState(0);
-  const [tfm, setTFM] = useState(0);
-  const [pfm, setPFM] = useState(0);
+  const [pgng, setPGNG] = useState({name: 'pgng', type:'pressure gauge', value: 0});
+  const [pftpg, setPFTPG] = useState({name: 'pftpg', type:'pressure gauge', value: 0});
+  const [pft, setPFT] = useState({name: 'pft', type:'pressure gauge', value: 0});
+  const [mft, setMFT] = useState({name: 'mft', type:'pressure gauge', value: 0});
+  const [tfm, setTFM] = useState({name: 'tfm', type:'pressure gauge', value: 0});
+  const [pfm, setPFM] = useState({name: 'pfm', type:'pressure gauge', value: 0});
 
   //ox side
-  const [potphg, setPOTPHG] = useState(0);
-  const [potplg, setPOTPLG] = useState(0);
-  const [pott, setPOTT] = useState(0);
-  const [mot, setMOT] = useState(0);
-  const [tot, setTOT] = useState(0);
-  const [potb, setPOTB] = useState(0);
-  const [pcc, setPCC] = useState(0); 
+  const [potphg, setPOTPHG] = useState({name: 'potphg', type:'pressure gauge', value: 0});
+  const [potplg, setPOTPLG] = useState({name: 'potplg', type:'pressure gauge', value: 0});
+  const [pott, setPOTT] = useState({name: 'pott', type:'pressure gauge', value: 0});
+  const [mot, setMOT] = useState({name: 'mot', type:'load cell', value: 0});
+  const [tot, setTOT] = useState({name: 'tot', type:'load cell', value: 0});
+  const [potb, setPOTB] = useState({name: 'potb', type:'pressure gauge', value: 0});
+  const [pcc, setPCC] = useState({name: 'pcc', type:'pressure gauge', value: 0}); 
 
 
   const [eventArray, seteventArray] = useState([])
   const [isOpen, onOpen] = useState(false)
   const btnRef = useRef()
+
+
+  const parseSensors = (sensors: [string: any]) => { 
+    
+    for (let i = 0; i < sensors.length; i++) {
+      
+      const sensor = sensors[i];
+      console.log("Sensor: ", sensor)
+      if (sensor['name'] == 'MOT') {
+        const new_dict = {name: sensor['name'], type: sensor['type'], value: sensor['value']}
+        setMOT(new_dict);  
+      } else if (sensor['name'] == 'PGSO') {
+        // ignore this 
+      } else if (sensor['name'] == 'TGSO-G') {
+        // ignore this
+      }
+
+    }
+  }
 
   useEffect( () => {
     
@@ -86,24 +104,26 @@ const PIDDiagram = () => {
     }
 
     const fetchWSData = async () => {
+      
       var result = await fetchTestWS();
       var result_data_list = result['data'];
       var actuators = result_data_list['actuators'];
       var sensors = result_data_list['sensors'];
       console.log("Actuators: ", actuators);
       console.log("Sensors: ", sensors);
+
+      //return actuators, sensors;
+      parseSensors(sensors);
+
+      
+      
+    
       
       
 
       
     
     }
-
-    fetchWSData();
-
-
-    
-
     const setRandom = () => {
       setBVFTValue(getRandomNumber())
       setRFTPValue(getRandomNumber())
@@ -132,11 +152,16 @@ const PIDDiagram = () => {
       setPCC(getRandomNumber())
       
     }
+    const delay = 1000; // Delay to actually read the values in real time
+    const timeoutId = setTimeout(() => {
+      setRandom();
+      fetchWSData();
+      setTrigger(prev => prev + 1); // Update the trigger state to re-run useEffect
+    }, delay);
 
-    const delay = 500; //delay to actually read the values in real time
-    const timeoutId = setTimeout(setRandom, delay);
+    
 
-  })
+  }, [trigger])
 
 
   function addRFTP(e: any) {
@@ -292,11 +317,11 @@ const PIDDiagram = () => {
 
                 <image x="102" y="265" width="60" height="60" href="images/pg.png" />
                 <text x="115" y="325" fontSize='10px'>PGN-G</text>
-                <text x="117" y="335" fontSize='10px'>{pgng} psi</text>
+                <text x="117" y="335" fontSize='10px'>{pgng['value']} psi</text>
                 <image x="100" y="215" width="60" height="60" href="images/vertical.png" />
                 <image x="197" y="265" width="60" height="60" href="images/pg.png" />
                 <text x="207" y="325" fontSize='10px'>PFTP-G</text>
-                <text x="210" y="335" fontSize='10px'>{pftpg} psi</text>
+                <text x="210" y="335" fontSize='10px'>{pftpg['value']} psi</text>
                 <image x="195" y="215" width="60" height="60" href="images/vertical.png" />
                 <image x="325" y="215" width="60" height="60" href="images/vertical.png" />
                 <image x="331" y="346" width="60" height="60" href="images/sv.png" onClick={(e) => addSVFT(e)}/>
@@ -307,7 +332,7 @@ const PIDDiagram = () => {
                 <image x="325" y="295" width="60" height="60" href="images/verticalThree.png" />
                 <image x="367" y="265" scale="0.7" width="60" height="60" href="images/pt.png" />
                 <text x="385" y="327" fontSize='10px'>PFT</text>
-                <text x="385" y="337" fontSize='10px'>{pft} psi</text>
+                <text x="385" y="337" fontSize='10px'>{pft['value']} psi</text>
                 <image x="365" y="215" width="60" height="60" href="images/vertical.png" />
                 <image x="412" y="266" width="60" height="60" href="images/rv.png" onClick={(e) => addRVFT(e)}/>
                 {rvft == true ? <text x="465" y="296" fontSize='10px'>RVFT (Open)</text>: <text x="465" y="296" fontSize='10px'>RVFT (Closed)</text>}
@@ -319,15 +344,15 @@ const PIDDiagram = () => {
                 <image x="465" y="75" width="60" height="60" href="images/verticalTwo.png" />
                 <image x="536" y="79" width="60" height="60" href="images/LC.png" />
                 <text x="550" y="75" fontSize='12px'>MFT</text>
-                <text x="550" y="60" fontSize='12px'>{mft} mV/V</text>
+                <text x="550" y="60" fontSize='12px'>{mft['value']} mV/V</text>
                 <image x="533" y="126" width="60" height="60" href="images/verticalThree.png" />
                 <image x="1010" y="105" width="60" height="60" href="images/pt.png" />
                 <text x="1027" y="109" fontSize='10px'>PFM</text>
-                <text x="1027" y="95" fontSize='10px'>{pfm} psi</text>
+                <text x="1027" y="95" fontSize='10px'>{pfm['value']} psi</text>
                 <image x="1010" y="155" width="60" height="60" href="images/verticalTwo.png" />
                 <image x="952" y="109" width="60" height="60" href="images/tc.png" />
                 <text x="966" y="109" fontSize='10px'>TFM</text>
-                <text x="966" y="95" fontSize='10px'>{tfm} V</text>
+                <text x="966" y="95" fontSize='10px'>{tfm['value']} V</text>
                 <image x="950" y="155" width="60" height="60" href="images/verticalTwo.png" />
                 <image x="997" y="288" width="100" height="100" scale='2' href="images/cc.png" />
                 <image x="1070" y="285" width="60" height="60" href="images/horizontalFour.png" />
@@ -365,11 +390,11 @@ const PIDDiagram = () => {
                 
                 <image x="102" y="497" width="60" height="60" href="images/pg.png" />
                 <text x="110" y="560" fontSize='10px'>POTPH-G</text>
-                <text x="112" y="570" fontSize='10px'>{potphg} psi</text>
+                <text x="112" y="570" fontSize='10px'>{potphg['value']} psi</text>
                 <image x="100" y="450" width="60" height="60" href="images/vertical.png" />
                 <image x="197" y="497" width="60" height="60" href="images/pg.png" />
                 <text x="204" y="560" fontSize='10px'>POTPL-G</text>
-                <text x="210" y="570" fontSize='10px'>{potplg} psi</text>
+                <text x="210" y="570" fontSize='10px'>{potplg['value']} psi</text>
                 <image x="195" y="450" width="60" height="60" href="images/vertical.png" />
                 <image x="440" y="335" width="60" height="60" href="images/svunshaded.png" onClick={(e) => addSVOTD(e)}/>
                 <text x="448" y="335" fontSize='10px'>Dump</text>
@@ -392,20 +417,20 @@ const PIDDiagram = () => {
                 <image x="482" y="390" width="60" height="60" href="images/vertical.png" />
                 <image x="488" y="500" width="60" height="60" href="images/pt.png" />
                 <text x="502" y="566" fontSize='10px'>POTT</text>
-                <text x="504" y="576" fontSize='10px'>{pott} psi</text>
+                <text x="504" y="576" fontSize='10px'>{pott['value']} psi</text>
                 <image x="485" y="450" width="60" height="60" href="images/vertical.png" />
                 <image x="618" y="506" width="60" height="60" href="images/LC.png" onClick={() => console.log("hello")}/>
                 <text x="636" y="566" fontSize='10px'>MOT</text>
-                <text x="636" y="576" fontSize='10px'>{mot} mV/V</text>
+                <text x="636" y="576" fontSize='10px'>{mot['value']} mV/V</text>
                 <image x="566" y="505" width="60" height="60" href="images/horizontalFour.png" />
                 <image x="537" y="475" width="60" height="60" href="images/verticalThree.png" />
                 <image x="667" y="343" width="60" height="60" href="images/tc.png" />
                 <text x="685" y="349" fontSize='10px'>TOT</text>
-                <text x="685" y="339" fontSize='10px'>{tot} V</text>
+                <text x="685" y="339" fontSize='10px'>{tot['value']} V</text>
                 <image x="665" y="389" width="60" height="60" href="images/verticalFour.png" />
                 <image x="740" y="339" width="60" height="60" href="images/pt.png" />
                 <text x="755" y="339" fontSize='10px'>POTB</text>
-                <text x="755" y="327" fontSize='10px'>{potb} psi</text>
+                <text x="755" y="327" fontSize='10px'>{potb['value']} psi</text>
                 <image x="740" y="389" width="60" height="60" href="images/verticalFour.png" />
                 <image x="917" y="339" width="60" height="60" href="images/verticalFour.png" />
                 <image x="917" y="279" width="60" height="60" href="images/verticalFour.png" />
@@ -413,7 +438,7 @@ const PIDDiagram = () => {
                 <image x="917" y="280" width="60" height="60" href="images/verticalFour.png" />
                 <image x="1102" y="364" width="60" height="60" href="images/pt.png" />
                 <text x="1123" y="424" fontSize='10px'>PCC</text>
-                <text x="1123" y="434" fontSize='10px'>{pcc} psi</text>
+                <text x="1123" y="434" fontSize='10px'>{pcc['value']} psi</text>
                 <image x="1100" y="314" width="60" height="60" href="images/verticalThree.png" />
                 
 
