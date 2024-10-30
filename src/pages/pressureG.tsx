@@ -1,14 +1,15 @@
-import { LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip } from 'recharts';
+import { Line, CartesianGrid, XAxis, YAxis, Tooltip } from 'recharts';
 import {useState, useEffect} from 'react'
 
 import { fetchTestWS } from "./api/backend";
+import { LineChart } from './chart';
 
 // api imports
 import { getRandomNumber } from "./api/basicData";
 
 export default function PressureGraph() {
     
-    const [data, setData] = useState([{name: 1, uv: 40, pv: 20, qv: 20}, {name: 2, uv: 20, pv: 10, qv: 0}, {name: 3, uv: 10, pv: 20, qv: 20}])
+    const [data, setData] = useState([['time', 'pv', 'uv', 'qv'], [0, 0, 0, 1], [1, 0.5, 1, 0]]);
 
     const [bvftValueArray, setBVFTValue] = useState([]);
 
@@ -72,29 +73,52 @@ export default function PressureGraph() {
     useEffect(() => {
 
         const fetchWSData = async () => {
-      
-            var result = await fetchTestWS();
+            var result = {};
+            try {
+              result = await fetchTestWS();
+            } catch (error) {
+              console.error("Error fetching data from WebSocket:", error);
+              return;
+            }
             var result_data_list = result['data'];
-            var actuators = result_data_list['actuators'];
-            var sensors = result_data_list['sensors'];
-            console.log("Actuators: ", actuators);
-            console.log("Sensors: ", sensors);
+            if (result_data_list !== undefined) {
+              var actuators = result_data_list.get('actuators');
+              var sensors = result_data_list.get('sensors');
+              console.log("Actuators: ", actuators);
+              console.log("Sensors: ", sensors);
+              parseSensors(sensors);
+            }
+
+            var randomValue1 = getRandomNumber();
+            var randomValue2 = getRandomNumber();
+            var randomValue3 = getRandomNumber();
       
             //return actuators, sensors;
-            parseSensors(sensors);
- 
+            const length = data.length > 0 ? data[data.length - 1][0] : 0;
+            const new_data = [length + 1, randomValue1, randomValue2, randomValue3];
+            setData(prevArray => {
+              if(prevArray.length > 10){
+                  // remove index 1, and re-add legend
+                  prevArray.shift();
+                  prevArray[0] = ['time', 'pv', 'uv', 'qv'];
+              }
+              return [...prevArray, new_data]
+          })
+            console.log("Data: ", data);
           }
 
         const delay = 1000; //delay to actually read the values in real time
-        const timeoutId = setTimeout(fetchWSData, delay);
-    })
+        const intervalId = setInterval(fetchWSData, delay);
+
+        return () => clearInterval(intervalId);
+    }, [data])
 
 
 
     return (
         <div>
             
-            <LineChart width={500} height={300} data={data} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
+            {/* <LineChart width={500} height={300} data={data} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
                 <Line type="monotone" dataKey="uv" stroke="#1684d8" />
                 <Line type="monotone" dataKey="pv" stroke="orange" />
                 <Line type="monotone" dataKey="qv" stroke="red" />
@@ -102,7 +126,8 @@ export default function PressureGraph() {
                 <XAxis dataKey="name" />
                 <YAxis />
                 <Tooltip />
-            </LineChart>
+            </LineChart> */}
+            <LineChart title="Pressure in PGN-G, PFTP-G, PFT" data={data} />
         </div>
     )
 }
