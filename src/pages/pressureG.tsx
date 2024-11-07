@@ -1,15 +1,37 @@
 import { Line, CartesianGrid, XAxis, YAxis, Tooltip } from 'recharts';
 import {useState, useEffect} from 'react'
 
-import { fetchTestWS } from "./api/backend";
+import { fetchRandomData, fetchTestWS, Data, Actuator, Sensor } from "./api/backend";
 import { LineChart } from './chart';
 
-// api imports
-import { getRandomNumber } from "./api/basicData";
+interface DataPoint {
+    time: number;
+    value: number;
+}
+
+const arraysToData = (...arrays: { name: string, data: DataPoint[] }[]): any[][] => {
+  const timeSet = new Set<number>();
+  arrays.forEach(arr => arr.data.forEach(dp => timeSet.add(dp.time)));
+  const times = Array.from(timeSet).sort((a, b) => a - b);
+
+  const result: any[][] = [['time', ...arrays.map(arr => arr.name)]];
+
+  for (const time of times) {
+    const row: any[] = [time];
+    for (const array of arrays) {
+      const dataPoint = array.data.find(dp => dp.time === time);
+      row.push(dataPoint ? dataPoint.value : null);
+    }
+    result.push(row);
+  }
+  console.log('result');
+  console.log(result);
+  return result;
+};
 
 export default function PressureGraph() {
     
-    const [data, setData] = useState([['time', 'pv', 'uv', 'qv'], [0, 0, 0, 1], [1, 0.5, 1, 0]]);
+    // const [data, setData] = useState([['time', 'pv', 'uv', 'qv'], [0, 0, 0, 1], [1, 0.5, 1, 0]]);
 
     const [bvftValueArray, setBVFTValue] = useState([]);
 
@@ -36,8 +58,8 @@ export default function PressureGraph() {
 
     const [movValueArray, setMOVValue] = useState([]);
 
-    const [pgngArray, setPGNG] = useState([]);
-    const [pftpgArray, setPFTPG] = useState([]);
+    const [pgngArray, setPGNG] = useState<DataPoint[]>([]);
+    const [pftpgArray, setPFTPG] = useState<DataPoint[]>([]);
     const [pftArray, setPFT] = useState([]);
     const [mftArray, setMFT] = useState([]);
     const [tfmArray, setTFM] = useState([]);
@@ -47,87 +69,80 @@ export default function PressureGraph() {
     const [potphg, setPOTPHG] = useState([]);
     const [potplg, setPOTPLG] = useState([]);
     const [pott, setPOTT] = useState([]);
-    const [mot, setMOT] = useState([]);
+    const [mot, setMOT] = useState<DataPoint[]>([]);
     const [tot, setTOT] = useState([]);
     const [potb, setPOTB] = useState([]);
     const [pcc, setPCC] = useState([]); 
 
-    const parseSensors = (sensors: [string: any]) => { 
+    const parseSensors = (sensors: Sensor[]) => { 
     
         for (let i = 0; i < sensors.length; i++) {
+          const now = Math.round(Date.now() / 1000);
+          console.log(now);
           
           const sensor = sensors[i];
-          console.log("Sensor: ", sensor)
+          // console.log("Sensor: ", sensor)
           if (sensor['name'] == 'MOT') {
-            const mot_value = sensor['value'];
-            setMOT(prevMOT => [...prevMOT, mot_value]);
+            const mot_value: DataPoint = {time: now, value: sensor['value']};
+            setMOT(prevArray => {
+              if(prevArray.length > 10){
+                  prevArray.shift();
+              }
+              return [...prevArray, mot_value]
+            })
           } else if (sensor['name'] == 'PGSO') {
-            // ignore this 
+            const pgso_value: DataPoint = {time: now, value: sensor['value']};
+            setPGNG(prevArray => {
+              if(prevArray.length > 10){
+                  prevArray.shift();
+              }
+              return [...prevArray, pgso_value]
+            })
           } else if (sensor['name'] == 'TGSO-G') {
-            // ignore this
+            const tgso_g_value: DataPoint = {time: now, value: sensor['value']};
+            setPFTPG(prevArray => {
+              if(prevArray.length > 10){
+                  prevArray.shift();
+              }
+              return [...prevArray, tgso_g_value]
+            })
           }
-    
         }
+        console.log(mot, pgngArray);
       }
 
     useEffect(() => {
 
         const fetchWSData = async () => {
-            var result = {};
+            var result: Data;
             try {
-              result = await fetchTestWS();
+              result = await fetchRandomData();
             } catch (error) {
               console.error("Error fetching data from WebSocket:", error);
               return;
             }
             var result_data_list = result['data'];
             if (result_data_list !== undefined) {
-              var actuators = result_data_list.get('actuators');
-              var sensors = result_data_list.get('sensors');
-              console.log("Actuators: ", actuators);
-              console.log("Sensors: ", sensors);
+              var actuators = result_data_list['actuators'];
+              var sensors = result_data_list['sensors'];
+              // console.log("Actuators: ", actuators);
+              // console.log("Sensors: ", sensors);
               parseSensors(sensors);
             }
-
-            var randomValue1 = getRandomNumber();
-            var randomValue2 = getRandomNumber();
-            var randomValue3 = getRandomNumber();
-      
-            //return actuators, sensors;
-            const length = data.length > 0 ? data[data.length - 1][0] : 0;
-            const new_data = [length + 1, randomValue1, randomValue2, randomValue3];
-            setData(prevArray => {
-              if(prevArray.length > 10){
-                  // remove index 1, and re-add legend
-                  prevArray.shift();
-                  prevArray[0] = ['time', 'pv', 'uv', 'qv'];
-              }
-              return [...prevArray, new_data]
-          })
-            console.log("Data: ", data);
           }
 
         const delay = 1000; //delay to actually read the values in real time
         const intervalId = setInterval(fetchWSData, delay);
 
         return () => clearInterval(intervalId);
-    }, [data])
+    }, []);
 
 
 
     return (
-        <div>
-            
-            {/* <LineChart width={500} height={300} data={data} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
-                <Line type="monotone" dataKey="uv" stroke="#1684d8" />
-                <Line type="monotone" dataKey="pv" stroke="orange" />
-                <Line type="monotone" dataKey="qv" stroke="red" />
-                <CartesianGrid stroke="#ccc" strokeDasharray="5 5" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
-            </LineChart> */}
-            <LineChart title="Pressure in PGN-G, PFTP-G, PFT" data={data} />
+        <div className={'graphs__container'}>
+            <LineChart title="Graph #1" data={arraysToData({name: 'data1', data: mot}, {name: 'data2', data: pgngArray})} />
+            <LineChart title="Graph #2" data={arraysToData({name: 'data3', data: pftpgArray})} />
         </div>
     )
 }
