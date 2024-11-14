@@ -40,3 +40,8 @@ a {
     color-scheme: dark;
   }
 }
+
+.graphs__container {
+  display: flex;
+  flex-wrap: wrap;
+}

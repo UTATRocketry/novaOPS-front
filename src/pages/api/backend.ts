@@ -1,6 +1,24 @@
 import axios from 'axios'
+import { getRandomNumber } from './basicData';
+import { get } from 'http';
 
 
+export interface Sensor {
+    name: string;
+    value: number;
+}
+
+export interface Actuator {
+    name: string;
+    value: number;
+}
+
+export interface Data {
+    data: {
+        sensors: Sensor[];
+        actuators: Actuator[];
+    }
+}
 
 export const fetchTestMessage = async () => {
      
@@ -43,5 +61,19 @@ export const fetchTestWS = async () => {
     } catch (err) {
         console.log("Message not Fetched")
         return {};
+    }
+}
+
+
+export const fetchRandomData = async (): Promise<Data> => {
+    return {
+        data: {
+            sensors: [
+                { name: 'MOT', value: getRandomNumber() },
+                { name: 'PGSO', value: getRandomNumber() },
+                { name: 'TGSO-G', value: getRandomNumber() },
+            ],
+            actuators: []
+        }
     }
 }

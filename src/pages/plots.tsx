@@ -11,7 +11,6 @@ import Link from "next/link";
 
 export default function Plots() {
 
-
     return (
         <div>
             <Tabs align='end'>
@@ -38,16 +37,16 @@ export default function Plots() {
 
             <Box marginTop='10px'>
           <Flex justifyContent='space-between' padding='10px'>
-            <Box>
+            {/* <Box>
               <Text fontSize='28px' as='b'>Mass-Flow </Text>
               <FlowVelocityGraph />
             </Box>
             <Box>
               <Text fontSize='28px' as='b'>Pressure in PGN-G, PFTP-G, PFT</Text>
               <PressureGraph />
-            </Box>
+            </Box> */}
             <Box>
-              <Text fontSize='28px' as='b'>Mass flow in RFTP, BVFTP, PFT, RVFT, SVFTV</Text>
+              {/* <Text fontSize='28px' as='b'>Mass flow in RFTP, BVFTP, PFT, RVFT, SVFTV</Text> */}
               <PressureGraph />
             </Box>
           </Flex>
@@ -56,7 +55,7 @@ export default function Plots() {
             </Center>
           </Box>
 
-          <Box marginTop='10px'>
+          {/* <Box marginTop='10px'>
             <Flex justifyContent='space-between' padding='10px'>
                 <Box>
                 <Text fontSize='28px' as='b'> Mass-Flow of BVFTB-M, MFV</Text>
@@ -69,7 +68,7 @@ export default function Plots() {
                 </Box>
                 
             </Flex>
-          </Box>
+          </Box> */}
           <Divider mt='10' />
           <Box as='footer' py='10' textAlign='center'>
             <Text>© 2024 UTAT Rocketry</Text>
