@@ -30,6 +30,10 @@ const arraysToData = (...arrays: { name: string, data: DataPoint[] }[]): any[][]
 };
 
 export default function PressureGraph() {
+
+  const [sensorArray, setSensorArray] = useState([]); // used explicitly for plotting
+  const [actuatorArray, setActuatorArray] = useState([]); // used explicitly for plotting
+
     
     // const [data, setData] = useState([['time', 'pv', 'uv', 'qv'], [0, 0, 0, 1], [1, 0.5, 1, 0]]);
 
@@ -110,7 +114,14 @@ export default function PressureGraph() {
         }
         console.log(mot, pgngArray);
       }
-
+    
+    const formatArrayfromBackend = (sensors: [], actuators: []) => { // for keeping values for plotting
+      const new_sensor_array = sensors.concat(sensorArray); 
+      const new_actuator_array = actuators.concat(actuatorArray); 
+      setSensorArray(new_sensor_array);
+      setActuatorArray(new_actuator_array);
+    }
+    
     useEffect(() => {
 
         const fetchWSData = async () => {
@@ -127,7 +138,8 @@ export default function PressureGraph() {
               var sensors = result_data_list['sensors'];
               // console.log("Actuators: ", actuators);
               // console.log("Sensors: ", sensors);
-              parseSensors(sensors);
+              formatArrayfromBackend(sensors, actuators);
+              //parseSensors(sensors);
             }
           }
 

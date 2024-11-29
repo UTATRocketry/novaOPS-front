@@ -1,5 +1,5 @@
 // chakra and component imports
-import { useState, useEffect, useRef} from "react";
+import { useState, useEffect, useRef, useCallback, useMemo, act} from "react";
 import {
   Drawer,
   DrawerBody,
@@ -16,13 +16,21 @@ import Link from "next/link";
 import { getRandomNumber } from "./api/basicData";
 import { fetchTestMessage } from "./api/backend";
 import { fetchTestWS } from "./api/backend";
+import { text } from "stream/consumers";
+
+
+
+
+
 
 
 
 
 const PIDDiagram = () => {
   const [trigger, setTrigger] = useState(0);
-  const [sensorTrigger, setSensorTrigger] = useState(0);
+  const [actuatorDictBuffer, setActuatorDictBuffer] = useState<ArrayBuffer | undefined>(undefined);
+  const [sensorDictBuffer, setSensorDictBuffer] = useState<ArrayBuffer | undefined>(undefined);
+ 
 
   //valves
   const [bvft, setBVFT] = useState(false);
@@ -77,23 +85,56 @@ const PIDDiagram = () => {
   const btnRef = useRef()
 
 
-  const parseSensors = (sensors: [string: any]) => { 
-    
-    for (let i = 0; i < sensors.length; i++) {
-      
-      const sensor = sensors[i];
-      console.log("Sensor: ", sensor)
-      if (sensor['name'] == 'MOT') {
-        const new_dict = {name: sensor['name'], type: sensor['type'], value: sensor['value']}
-        setMOT(new_dict);  
-      } else if (sensor['name'] == 'PGSO') {
-        // ignore this 
-      } else if (sensor['name'] == 'TGSO-G') {
-        // ignore this
+  const formatActuatorArrayForDisplay = useCallback((actuators: any[]) => {
+    return actuators.reduce((acc, actuator) => {
+      if (actuator) {
+        acc[actuator.name] = actuator.status;
+      }
+      return acc;
+    }, {} as { [key: string]: any });
+  }, []);
+
+  const convertActuatorsToBuffer = useCallback((actuators: any[]): ArrayBuffer => {
+    const jsonString = JSON.stringify(actuators);
+    const encoder = new TextEncoder();
+    return encoder.encode(jsonString).buffer;
+  }, []);
+
+  const formatSensorArrayForDisplay = (sensors: []) => {
+    const new_dict: [string: [any]] = {}
+    for (let i =0; i <= sensors.length; i++) {
+      if (sensors[i] == undefined) {
+        continue;
+      } else {
+        const current_dict = sensors[i];
+        new_dict[current_dict['name']] = current_dict['value']; // we are only storing because that's all we care about for display
       }
 
     }
+
+    return new_dict
   }
+
+  const convertSensorsToBuffer = useCallback((sensors: any[]): ArrayBuffer => {
+    const jsonString = JSON.stringify(sensors);
+    const encoder = new TextEncoder();
+    return encoder.encode(jsonString).buffer;
+  }, []);
+
+  const decodeActuatorBuffer = useCallback((buffer: ArrayBuffer | undefined) => {
+    if (!buffer) return {};
+    const decoder = new TextDecoder();
+    return JSON.parse(decoder.decode(buffer));
+  }, []);
+
+  const decodeSensorBuffer = useCallback((buffer: ArrayBuffer | undefined) => {
+    if (!buffer) return {};
+    const decoder = new TextDecoder();
+    return JSON.parse(decoder.decode(buffer));
+  }, []);
+
+  const actuatorDict = decodeActuatorBuffer(actuatorDictBuffer);
+  const sensorDict = decodeSensorBuffer(sensorDictBuffer);
 
   useEffect( () => {
     
@@ -111,50 +152,24 @@ const PIDDiagram = () => {
       var sensors = result_data_list['sensors'];
       console.log("Actuators: ", actuators);
       console.log("Sensors: ", sensors);
-
+      
       //return actuators, sensors;
-      parseSensors(sensors);
+      //parseSensors(sensors);
+      
+      const actuator_dict_display = formatActuatorArrayForDisplay(actuators);
+      const actuator_dict_buffer = convertActuatorsToBuffer(actuator_dict_display);
+      console.log("Actuator Buffer: ", actuator_dict_buffer);
+      setActuatorDictBuffer(actuator_dict_buffer);
 
-      
-      
-    
-      
-      
-
-      
-    
-    }
-    const setRandom = () => {
-      setBVFTValue(getRandomNumber())
-      setRFTPValue(getRandomNumber())
-      setRVFTValue(getRandomNumber())
-      setBVFTBValue(getRandomNumber())
-      setMFVValue(getRandomNumber())
-      setSVFTValue(getRandomNumber())
-      setBVOTValue(getRandomNumber())
-      setROTPValue(getRandomNumber())
-      setRVOTValue(getRandomNumber())
-      setSVOTVValue(getRandomNumber())
-      setSVOTDValue(getRandomNumber())
-      setMOVValue(getRandomNumber())
-      setPGNG(getRandomNumber())
-      setPFTPG(getRandomNumber())
-      setPFT(getRandomNumber())
-      setMFT(getRandomNumber())
-      setTFM(getRandomNumber())
-      setPFM(getRandomNumber())
-      setPOTPHG(getRandomNumber())
-      setPOTPLG(getRandomNumber())
-      setPOTT(getRandomNumber())
-      setMOT(getRandomNumber())
-      setTOT(getRandomNumber())
-      setPOTB(getRandomNumber())
-      setPCC(getRandomNumber())
+      const sensor_dict_display = formatSensorArrayForDisplay(sensors);
+      const sensor_dict_buffer = convertSensorsToBuffer(sensor_dict_display);
+      console.log("Sensor Buffer: ", sensor_dict_buffer);
+      setSensorDictBuffer(sensor_dict_buffer);
       
     }
-    const delay = 1000; // Delay to actually read the values in real time
+    
+    const delay = 2500; // Delay to actually read the values in real time
     const timeoutId = setTimeout(() => {
-      setRandom();
       fetchWSData();
       setTrigger(prev => prev + 1); // Update the trigger state to re-run useEffect
     }, delay);
@@ -164,116 +179,8 @@ const PIDDiagram = () => {
   }, [trigger])
 
 
-  function addRFTP(e: any) {
-    const currentTime = new Date().toLocaleString(); // Get the current time
-    setRFTP(!rftp);
-    seteventArray(prevArray => [
-      ...prevArray,
-      { event: "RFTP", value: rftp, time: currentTime }
-    ]);
-  }
-
-  function addRVFT(e: any) {
-    const currentTime = new Date().toLocaleString(); // Get the current time
-    setRVFT(!rvft);
-    seteventArray(prevArray => [
-      ...prevArray,
-      { event: "RVFT", value: rvft, time: currentTime }
-    ]);
-  }
-
-  function addBVFT(e: any) {
-    const currentTime = new Date().toLocaleString(); // Get the current time
-    setBVFT(!bvft);
-    seteventArray(prevArray => [
-      ...prevArray,
-      { event: "BVFT", value: bvft, time: currentTime }
-    ]);
-  }
-
-  function addBVFTB(e: any) {
-    const currentTime = new Date().toLocaleString(); // Get the current time
-    setBVFTB(!bvftb);
-    seteventArray(prevArray => [
-      ...prevArray,
-      { event: "BVFTB", value: bvftb, time: currentTime }
-    ]);
-  }
-
-  function addMFV(e: any) {
-    const currentTime = new Date().toLocaleString(); // Get the current time
-    setMFV(!mfv);
-    seteventArray(prevArray => [
-      ...prevArray,
-      { event: "MFV", value: mfv, time: currentTime }
-    ]);
-  }
-
-  function addSVFT(e: any) {
-    const currentTime = new Date().toLocaleString(); // Get the current time
-    setSVFT(!svft);
-    seteventArray(prevArray => [
-      ...prevArray,
-      { event: "SVFTV", value: bvft, time: currentTime }
-    ]);
-  }
-
-  function addROTP(e: any) {
-    const currentTime = new Date().toLocaleString(); // Get the current time
-    setROTP(!rotp);
-    seteventArray(prevArray => [
-      ...prevArray,
-      { event: "ROTP", value: rotp, time: currentTime }
-    ]);
-  }
-
-  function addRVOT(e: any) {
-    const currentTime = new Date().toLocaleString(); // Get the current time
-    setRVOT(!rvot);
-    seteventArray(prevArray => [
-      ...prevArray,
-      { event: "RVOT", value: rvot, time: currentTime }
-    ]);
-  }
-
-  function addBVOT(e: any) {
-    const currentTime = new Date().toLocaleString(); // Get the current time
-    setBVOT(!bvot);
-    seteventArray(prevArray => [
-      ...prevArray,
-      { event: "BVOT", value: bvot, time: currentTime }
-    ]);
-  }
-
-  function addSVOTV(e: any) {
-    const currentTime = new Date().toLocaleString(); // Get the current time
-    setSVOTV(!svotv);
-    seteventArray(prevArray => [
-      ...prevArray,
-      { event: "SVOTV", value: svotv, time: currentTime }
-    ]);
-  }
-
-  function addSVOTD(e: any) {
-    const currentTime = new Date().toLocaleString(); // Get the current time
-    setSVOTD(!svotd);
-    seteventArray(prevArray => [
-      ...prevArray,
-      { event: "SVOTD", value: svotd, time: currentTime }
-    ]);
-  }
-
-  function addMOV(e: any) {
-    const currentTime = new Date().toLocaleString(); // Get the current time
-    setMOV(!mov);
-    seteventArray(prevArray => [
-      ...prevArray,
-      { event: "MOV", value: mov, time: currentTime }
-    ]);
-  }
-
-    return (
-      <div className="w-full h-full p-4">
+    return ( // need to replace values with values in buffer
+      <div style={{ backgroundColor: 'white', width: '100%', height: '100%' }}>
         <Tabs align='end'>
           <TabList>
             <Tab>Liquid</Tab>
@@ -283,7 +190,7 @@ const PIDDiagram = () => {
 
           <TabPanels>
             <TabPanel>
-              <svg viewBox="0 0 1200 1000" className="w-full h-full" >
+              <svg viewBox="0 0 1200 1000" className="w-full h-full" > 
                 <image x="50" y="180" width="60" height="60" href="images/gptOne.png" />
                 <image x="150" y="180" width="60" height="60" href="images/rf.png" onClick={(e) => addRFTP(e)} />
                 {rftp == true ? <text x="146" y="180" fontSize='10px' >RFTP (Open)</text>: <text x="146" y="180" fontSize='10px' >RFTP (Closed)</text>}
@@ -293,10 +200,10 @@ const PIDDiagram = () => {
                 {bvft == true ? <text x="252" y="175" fontSize='10px' >BVFTP (Open) </text>: <text x="252" y="175" fontSize='10px' >BVFTP (Closed) </text>}
                 <text x="268" y="235" fontSize='10px' >{bvftValue} kg/s </text>
                 <image x="200" y="185" width="60" height="60" href="images/horizontal.png" />
-                <image x="307" y="185" width="60" height="60" href="images/horizontal.png" />
-                <image x="366" y="185" width="60" height="60" href="images/horizontal.png" />
-                <image x="420" y="185" width="60" height="60" href="images/horizontal.png" />
-                <image x="533" y="185" width="60" height="60" href="images/ft.png" />
+                <image x="280" y="185" width="60" height="60" href="images/horizontal.png" />
+                <image x="360" y="185" width="60" height="60" href="images/horizontal.png" />
+                <image x="400" y="185" width="60" height="60" href="images/horizontalFour.png" />
+                <image x="530" y="185" width="60" height="60" href="images/ft.png" />
                 <image x="479" y="185" width="60" height="60" href="images/horizontalTwo.png" />
                 <image x="640" y="185" width="60" height="60" href="images/bvf.png" onClick={(e) => addBVFTB(e)}/>
                 {bvftb == true ? <text x="624" y="189" fontSize='10px'>BVFTB-M (Open)</text>: <text x="624" y="189" fontSize='10px'>BVFTB-M (Closed)</text>}
@@ -314,7 +221,7 @@ const PIDDiagram = () => {
                 <image x="1020" y="185" width="60" height="60" href="images/horizontalTwo.png" />
                 
 
-
+                
                 <image x="102" y="265" width="60" height="60" href="images/pg.png" />
                 <text x="115" y="325" fontSize='10px'>PGN-G</text>
                 <text x="117" y="335" fontSize='10px'>{pgng['value']} psi</text>
