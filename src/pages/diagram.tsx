@@ -133,8 +133,7 @@ const PIDDiagram = () => {
     return JSON.parse(decoder.decode(buffer));
   }, []);
 
-  const actuatorDict = decodeActuatorBuffer(actuatorDictBuffer);
-  const sensorDict = decodeSensorBuffer(sensorDictBuffer);
+
 
   useEffect( () => {
     
@@ -176,8 +175,11 @@ const PIDDiagram = () => {
 
     
 
-  }, [trigger])
-
+  }, [trigger, sensorDictBuffer, actuatorDictBuffer]);
+  const actuatorDict = decodeActuatorBuffer(actuatorDictBuffer);
+  const sensorDict = decodeSensorBuffer(sensorDictBuffer);
+  console.log("Sensor Dictionary after Decoding: ", sensorDict);
+  console.log("Actuatot Dictionary after Decoding: ", actuatorDict);
 
     return ( // need to replace values with values in buffer
       <div style={{ backgroundColor: 'white', width: '100%', height: '100%' }}>
@@ -197,7 +199,7 @@ const PIDDiagram = () => {
                 <text x="164" y="240" fontSize='10px' >{rftpValue} kg/s</text>
                 <image x="100" y="185" width="60" height="60" href="images/horizontal.png" />
                 <image x="255" y="175" width="60" height="60" href="images/bv.png" onClick={(e) => addBVFT(e)} />
-                {bvft == true ? <text x="252" y="175" fontSize='10px' >BVFTP (Open) </text>: <text x="252" y="175" fontSize='10px' >BVFTP (Closed) </text>}
+                <text x="252" y="175" fontSize='10px' >BVFTP ({actuatorDict['BVFTP']}) </text>
                 <text x="268" y="235" fontSize='10px' >{bvftValue} kg/s </text>
                 <image x="200" y="185" width="60" height="60" href="images/horizontal.png" />
                 <image x="280" y="185" width="60" height="60" href="images/horizontal.png" />
@@ -210,7 +212,7 @@ const PIDDiagram = () => {
                 <text x="654" y="239" fontSize='10px'>{bvftbValue} kg/s</text>
                 <image x="582" y="185" width="60" height="60" href="images/horizontalTwo.png" />
                 <image x="750" y="175" width="60" height="60" href="images/bv.png" onClick={(e) => addMFV(e)}/>
-                {mfv == true ? <text x="748" y="179" fontSize='10px'>MFV (Open)</text>: <text x="748" y="179" fontSize='10px'>MFV (Closed)</text>}
+                <text x="748" y="179" fontSize='10px'>MFV ({actuatorDict['MFV']})</text>
                 <text x="768" y="239" fontSize='10px'>{mfvValue} kg/s</text>
                 <image x="695" y="185" width="60" height="60" href="images/horizontalTwo.png" />
                 <image x="855" y="185" width="60" height="60" href="images/venturi.png" />
@@ -233,13 +235,13 @@ const PIDDiagram = () => {
                 <image x="325" y="215" width="60" height="60" href="images/vertical.png" />
                 <image x="331" y="346" width="60" height="60" href="images/sv.png" onClick={(e) => addSVFT(e)}/>
                 <text x="310" y="375" fontSize='10px'>SVFTV</text>
-                {svft == true ? <text x="308" y="385" fontSize='10px'>(Open) </text>: <text x="308" y="385" fontSize='10px'>(Closed)</text>}
+                <text x="308" y="385" fontSize='10px'>({actuatorDict['SVFTV']}) </text>
                 <text x="307" y="397" fontSize='10px'>{svftValue} kg/s</text>
                 <text x="340" y="287" fontSize='12px'>vent</text>
                 <image x="325" y="295" width="60" height="60" href="images/verticalThree.png" />
                 <image x="367" y="265" scale="0.7" width="60" height="60" href="images/pt.png" />
                 <text x="385" y="327" fontSize='10px'>PFT</text>
-                <text x="385" y="337" fontSize='10px'>{pft['value']} psi</text>
+                <text x="385" y="337" fontSize='10px'>{sensorDict['PFT']} psi</text>
                 <image x="365" y="215" width="60" height="60" href="images/vertical.png" />
                 <image x="412" y="266" width="60" height="60" href="images/rv.png" onClick={(e) => addRVFT(e)}/>
                 {rvft == true ? <text x="465" y="296" fontSize='10px'>RVFT (Open)</text>: <text x="465" y="296" fontSize='10px'>RVFT (Closed)</text>}
@@ -251,15 +253,15 @@ const PIDDiagram = () => {
                 <image x="465" y="75" width="60" height="60" href="images/verticalTwo.png" />
                 <image x="536" y="79" width="60" height="60" href="images/LC.png" />
                 <text x="550" y="75" fontSize='12px'>MFT</text>
-                <text x="550" y="60" fontSize='12px'>{mft['value']} mV/V</text>
+                <text x="550" y="60" fontSize='12px'>{sensorDict['MFT']} mV/V</text>
                 <image x="533" y="126" width="60" height="60" href="images/verticalThree.png" />
                 <image x="1010" y="105" width="60" height="60" href="images/pt.png" />
                 <text x="1027" y="109" fontSize='10px'>PFM</text>
-                <text x="1027" y="95" fontSize='10px'>{pfm['value']} psi</text>
+                <text x="1027" y="95" fontSize='10px'>{sensorDict['PFM']} psi</text>
                 <image x="1010" y="155" width="60" height="60" href="images/verticalTwo.png" />
                 <image x="952" y="109" width="60" height="60" href="images/tc.png" />
                 <text x="966" y="109" fontSize='10px'>TFM</text>
-                <text x="966" y="95" fontSize='10px'>{tfm['value']} V</text>
+                <text x="966" y="95" fontSize='10px'>{sensorDict['TFM']} V</text>
                 <image x="950" y="155" width="60" height="60" href="images/verticalTwo.png" />
                 <image x="997" y="288" width="100" height="100" scale='2' href="images/cc.png" />
                 <image x="1070" y="285" width="60" height="60" href="images/horizontalFour.png" />
@@ -275,8 +277,8 @@ const PIDDiagram = () => {
                 <text x="165" y="475" fontSize='10px' >{rotpValue} kg/s</text>
                 <image x="100" y="420" width="60" height="60" href="images/horizontal.png" />
                 <image x="255" y="410" width="60" height="60" href="images/bv.png" onClick={(e) => addBVOT(e)}/>
-                {bvot == true ? <text x="250" y="477" fontSize='10px' >BVOTP (Open) </text>: <text x="250" y="477" fontSize='10px' >BVOTP (Closed) </text>}
-                <text x="270" y="495" fontSize='10px' >{bvotValue} kg/s</text>
+                <text x="250" y="477" fontSize='10px' >BVOTP ({actuatorDict['BVOTP']}) </text>
+                <text x="270" y="495" fontSize='10px' >{sensorDict['BVOTP']} kg/s</text>
                 <image x="200" y="420" width="60" height="60" href="images/horizontal.png" />
                 <image x="307" y="420" width="60" height="60" href="images/horizontal.png" />
                 <image x="366" y="420" width="60" height="60" href="images/horizontal.png" />
@@ -306,13 +308,13 @@ const PIDDiagram = () => {
                 <image x="440" y="335" width="60" height="60" href="images/svunshaded.png" onClick={(e) => addSVOTD(e)}/>
                 <text x="448" y="335" fontSize='10px'>Dump</text>
                 <text x="420" y="365" fontSize='10px'>SVOTD</text>
-                {svotd == true ? <text x="407" y="377" fontSize='10px'>(Open)</text>: <text x="407" y="377" fontSize='10px'>(Closed)</text>}
+                <text x="407" y="377" fontSize='10px'>{actuatorDict['SVOTD']}</text>
                 <text x="407" y="389" fontSize='10px'>{svotdValue} kg/s</text>
                 <image x="440" y="450" width="60" height="60" href="images/vertical.png" />
                 <text x="460" y="520" fontSize='10px'>vent</text>
                 <image x="435" y="390" width="60" height="60" href="images/vertical.png" />
                 <image x="350" y="480" width="60" height="60" href="images/svrotated.png" onClick={(e) => addSVOTV(e)}/>
-                {svotv == true ? <text x="342" y="540" fontSize='10px'>SVOTV (Open)</text>: <text x="342" y="540" fontSize='10px'>SVOTV (Closed)</text>}
+                <text x="342" y="540" fontSize='10px'>SVOTV ({actuatorDict['SVOTV']})</text>
                 <text x="362" y="550" fontSize='10px'>{svotvValue} kg/s</text>
                 <image x="400" y="487" width="60" height="60" href="images/horizontalFour.png" />
                 
@@ -324,20 +326,20 @@ const PIDDiagram = () => {
                 <image x="482" y="390" width="60" height="60" href="images/vertical.png" />
                 <image x="488" y="500" width="60" height="60" href="images/pt.png" />
                 <text x="502" y="566" fontSize='10px'>POTT</text>
-                <text x="504" y="576" fontSize='10px'>{pott['value']} psi</text>
+                <text x="504" y="576" fontSize='10px'>{sensorDict['POTT']} psi</text>
                 <image x="485" y="450" width="60" height="60" href="images/vertical.png" />
                 <image x="618" y="506" width="60" height="60" href="images/LC.png" onClick={() => console.log("hello")}/>
                 <text x="636" y="566" fontSize='10px'>MOT</text>
-                <text x="636" y="576" fontSize='10px'>{mot['value']} mV/V</text>
+                <text x="636" y="576" fontSize='10px'>{sensorDict['MOT']} mV/V</text>
                 <image x="566" y="505" width="60" height="60" href="images/horizontalFour.png" />
                 <image x="537" y="475" width="60" height="60" href="images/verticalThree.png" />
                 <image x="667" y="343" width="60" height="60" href="images/tc.png" />
                 <text x="685" y="349" fontSize='10px'>TOT</text>
-                <text x="685" y="339" fontSize='10px'>{tot['value']} V</text>
+                <text x="685" y="339" fontSize='10px'>{sensorDict['TOT']} V</text>
                 <image x="665" y="389" width="60" height="60" href="images/verticalFour.png" />
                 <image x="740" y="339" width="60" height="60" href="images/pt.png" />
                 <text x="755" y="339" fontSize='10px'>POTB</text>
-                <text x="755" y="327" fontSize='10px'>{potb['value']} psi</text>
+                <text x="755" y="327" fontSize='10px'>{sensorDict['POTB']} psi</text>
                 <image x="740" y="389" width="60" height="60" href="images/verticalFour.png" />
                 <image x="917" y="339" width="60" height="60" href="images/verticalFour.png" />
                 <image x="917" y="279" width="60" height="60" href="images/verticalFour.png" />
@@ -345,7 +347,7 @@ const PIDDiagram = () => {
                 <image x="917" y="280" width="60" height="60" href="images/verticalFour.png" />
                 <image x="1102" y="364" width="60" height="60" href="images/pt.png" />
                 <text x="1123" y="424" fontSize='10px'>PCC</text>
-                <text x="1123" y="434" fontSize='10px'>{pcc['value']} psi</text>
+                <text x="1123" y="434" fontSize='10px'>{sensorDict['PCC']} psi</text>
                 <image x="1100" y="314" width="60" height="60" href="images/verticalThree.png" />
                 
 
