@@ -15,6 +15,7 @@ import Link from "next/link";
 //api imports 
 import { getRandomNumber } from "./api/basicData";
 import { fetchTestMessage } from "./api/backend";
+import { sendDataCommand } from "./api/backend";
 import { fetchTestWS } from "./api/backend";
 import { text } from "stream/consumers";
 
@@ -83,6 +84,32 @@ const PIDDiagram = () => {
   const [eventArray, seteventArray] = useState([])
   const [isOpen, onOpen] = useState(false)
   const btnRef = useRef()
+
+
+  const addMFV = async (e) => {
+    console.log("changing MFV status")
+    if (actuatorDict['MFV'] == 'off') {
+      const updatedActuatorDict = {...actuatorDict, 'MFV': 'on'};
+      const updatedActuatorBuffer = convertActuatorsToBuffer(updatedActuatorDict);
+      setActuatorDictBuffer(updatedActuatorBuffer);
+      seteventArray([...eventArray, {name: 'MFV', value: 'on'}]);
+      await sendStatusData(updatedActuatorDict);
+      
+    } else {
+      const updatedActuatorDict = {...actuatorDict, 'MFV': 'off'};
+      const updatedActuatorBuffer = convertActuatorsToBuffer(updatedActuatorDict);
+      setActuatorDictBuffer(updatedActuatorBuffer);
+      seteventArray([...eventArray, {name: 'MFV', value: 'off'}]);
+      await sendStatusData(updatedActuatorDict);
+    }
+
+  }
+
+  const sendStatusData = async (actuatorDict) => {
+    const result = await sendDataCommand(actuatorDict);
+    console.log(result);
+
+  }
 
 
   const formatActuatorArrayForDisplay = useCallback((actuators: any[]) => {
@@ -396,7 +423,7 @@ const PIDDiagram = () => {
               <Flex key={index} justifyContent='space-between'>
                 <div>
                   <div>
-                    <Text>{event.event}: {event.value.toString()}</Text>
+                    <Text>{event.name}: {event.value.toString()}</Text>
                   </div>
                   
                 </div>

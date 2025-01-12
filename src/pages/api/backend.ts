@@ -50,18 +50,37 @@ export const fetchTestMessage = async () => {
 export const fetchTestWS = async () => {
     var result;
     try {
-        const response = await axios.get(`http://localhost:8000/ws_front`, { 
+        const response = await axios.get(`http://localhost:8000/front`, { 
             method: 'GET',
             headers: {
                 "Content-Type": "application/json"
             }
         })
         result = await response;
-        return result;
+        return result['data'];
     } catch (err) {
         console.log("Message not Fetched")
         return {};
     }
+}
+
+export const sendDataCommand = async (data) => {
+    
+    try {
+        const response = await axios.post(`http://localhost:8000/command`, data, {
+            method:'POST',
+            headers: {
+                "Content-Type": "application/json"
+            },
+        })
+        const result = await response;
+        console.log("Status was updated")
+        return result;
+    } catch (err) {
+        console.log("Status was not updated")
+        return {};
+    }
+    
 }
 
 
