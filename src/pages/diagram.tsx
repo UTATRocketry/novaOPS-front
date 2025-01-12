@@ -86,6 +86,8 @@ const PIDDiagram = () => {
   const btnRef = useRef()
 
 
+// need to change this in the future. Ideally, one function that can update all actuators
+
   const addMFV = async (e) => {
     console.log("changing MFV status")
     if (actuatorDict['MFV'] == 'off') {
@@ -104,6 +106,182 @@ const PIDDiagram = () => {
     }
 
   }
+
+  const addRFTP = async (e) => {
+    console.log("changing RFTP status")
+    if (actuatorDict['RFTP'] == 'off') {
+      const updatedActuatorDict = {...actuatorDict, 'RFTP': 'on'};
+      const updatedActuatorBuffer = convertActuatorsToBuffer(updatedActuatorDict);
+      setActuatorDictBuffer(updatedActuatorBuffer);
+      seteventArray([...eventArray, {name: 'RFTP', value: 'on'}]);
+      await sendStatusData(updatedActuatorDict);
+      
+    } else {
+      const updatedActuatorDict = {...actuatorDict, 'RFTP': 'off'};
+      const updatedActuatorBuffer = convertActuatorsToBuffer(updatedActuatorDict);
+      setActuatorDictBuffer(updatedActuatorBuffer);
+      seteventArray([...eventArray, {name: 'RFTP', value: 'off'}]);
+      await sendStatusData(updatedActuatorDict);
+    }
+
+  }
+  
+  const addBVFTP = async (e) => {
+    console.log("changing BVFTP status")
+    if (actuatorDict['BVFTP'] == 'off') {
+      const updatedActuatorDict = {...actuatorDict, 'BVFTP': 'on'};
+      const updatedActuatorBuffer = convertActuatorsToBuffer(updatedActuatorDict);
+      setActuatorDictBuffer(updatedActuatorBuffer);
+      seteventArray([...eventArray, {name: 'BVFTP', value: 'on'}]);
+      await sendStatusData(updatedActuatorDict);
+      
+    } else {
+      const updatedActuatorDict = {...actuatorDict, 'RFTP': 'off'};
+      const updatedActuatorBuffer = convertActuatorsToBuffer(updatedActuatorDict);
+      setActuatorDictBuffer(updatedActuatorBuffer);
+      seteventArray([...eventArray, {name: 'BVFTP', value: 'off'}]);
+      await sendStatusData(updatedActuatorDict);
+    }
+
+  }
+
+  const addBVFTB = async (e) => {
+    console.log("changing BVFTB status")
+    if (actuatorDict['BVFTB'] == 'off') {
+      const updatedActuatorDict = {...actuatorDict, 'BVFTB': 'on'};
+      const updatedActuatorBuffer = convertActuatorsToBuffer(updatedActuatorDict);
+      setActuatorDictBuffer(updatedActuatorBuffer);
+      seteventArray([...eventArray, {name: 'BVFTB', value: 'on'}]);
+      await sendStatusData(updatedActuatorDict);
+      
+    } else {
+      const updatedActuatorDict = {...actuatorDict, 'RFTB': 'off'};
+      const updatedActuatorBuffer = convertActuatorsToBuffer(updatedActuatorDict);
+      setActuatorDictBuffer(updatedActuatorBuffer);
+      seteventArray([...eventArray, {name: 'BVFTB', value: 'off'}]);
+      await sendStatusData(updatedActuatorDict);
+    }
+
+  }
+
+  const addROTP = async (e) => {
+    console.log("changing ROTP status")
+    if (actuatorDict['ROTP'] == 'off') {
+      const updatedActuatorDict = {...actuatorDict, 'ROTP': 'on'};
+      const updatedActuatorBuffer = convertActuatorsToBuffer(updatedActuatorDict);
+      setActuatorDictBuffer(updatedActuatorBuffer);
+      seteventArray([...eventArray, {name: 'ROTP', value: 'on'}]);
+      await sendStatusData(updatedActuatorDict);
+      
+    } else {
+      const updatedActuatorDict = {...actuatorDict, 'ROTP': 'off'};
+      const updatedActuatorBuffer = convertActuatorsToBuffer(updatedActuatorDict);
+      setActuatorDictBuffer(updatedActuatorBuffer);
+      seteventArray([...eventArray, {name: 'ROTP', value: 'off'}]);
+      await sendStatusData(updatedActuatorDict);
+    }
+
+  }
+
+  const addBVOTP = async (e) => {
+    console.log("changing BVOTP status")
+    if (actuatorDict['BVOTP'] == 'off') {
+      const updatedActuatorDict = {...actuatorDict, 'BVOTP': 'on'};
+      const updatedActuatorBuffer = convertActuatorsToBuffer(updatedActuatorDict);
+      setActuatorDictBuffer(updatedActuatorBuffer);
+      seteventArray([...eventArray, {name: 'BVOTP', value: 'on'}]);
+      await sendStatusData(updatedActuatorDict);
+      
+    } else {
+      const updatedActuatorDict = {...actuatorDict, 'BVOTP': 'off'};
+      const updatedActuatorBuffer = convertActuatorsToBuffer(updatedActuatorDict);
+      setActuatorDictBuffer(updatedActuatorBuffer);
+      seteventArray([...eventArray, {name: 'BVOTP', value: 'off'}]);
+      await sendStatusData(updatedActuatorDict);
+    }
+
+  }
+
+  const addSVOTV = async (e) => {
+    console.log("changing SVOTV status")
+    if (actuatorDict['SVOTV'] == 'off') {
+      const updatedActuatorDict = {...actuatorDict, 'SVOTV': 'on'};
+      const updatedActuatorBuffer = convertActuatorsToBuffer(updatedActuatorDict);
+      setActuatorDictBuffer(updatedActuatorBuffer);
+      seteventArray([...eventArray, {name: 'SVOTV', value: 'on'}]);
+      await sendStatusData(updatedActuatorDict);
+      
+    } else {
+      const updatedActuatorDict = {...actuatorDict, 'SVOTV': 'off'};
+      const updatedActuatorBuffer = convertActuatorsToBuffer(updatedActuatorDict);
+      setActuatorDictBuffer(updatedActuatorBuffer);
+      seteventArray([...eventArray, {name: 'SVOTV', value: 'off'}]);
+      await sendStatusData(updatedActuatorDict);
+    }
+
+  }
+
+  const addRVOT = async (e) => {
+    console.log("changing RVOT status")
+    if (actuatorDict['RVOT'] == 'off') {
+      const updatedActuatorDict = {...actuatorDict, 'RVOT': 'on'};
+      const updatedActuatorBuffer = convertActuatorsToBuffer(updatedActuatorDict);
+      setActuatorDictBuffer(updatedActuatorBuffer);
+      seteventArray([...eventArray, {name: 'RVOT', value: 'on'}]);
+      await sendStatusData(updatedActuatorDict);
+      
+    } else {
+      const updatedActuatorDict = {...actuatorDict, 'RVOT': 'off'};
+      const updatedActuatorBuffer = convertActuatorsToBuffer(updatedActuatorDict);
+      setActuatorDictBuffer(updatedActuatorBuffer);
+      seteventArray([...eventArray, {name: 'RVOT', value: 'off'}]);
+      await sendStatusData(updatedActuatorDict);
+    }
+
+  }
+
+  const addMOV = async (e) => {
+    console.log("changing MOV status")
+    if (actuatorDict['MOV'] == 'off') {
+      const updatedActuatorDict = {...actuatorDict, 'MOV': 'on'};
+      const updatedActuatorBuffer = convertActuatorsToBuffer(updatedActuatorDict);
+      setActuatorDictBuffer(updatedActuatorBuffer);
+      seteventArray([...eventArray, {name: 'MOV', value: 'on'}]);
+      await sendStatusData(updatedActuatorDict);
+      
+    } else {
+      const updatedActuatorDict = {...actuatorDict, 'MOV': 'off'};
+      const updatedActuatorBuffer = convertActuatorsToBuffer(updatedActuatorDict);
+      setActuatorDictBuffer(updatedActuatorBuffer);
+      seteventArray([...eventArray, {name: 'MOV', value: 'off'}]);
+      await sendStatusData(updatedActuatorDict);
+    }
+
+  }
+
+
+  const addRVFT = async (e) => {
+    console.log("changing RVFT status")
+    if (actuatorDict['RVFT'] == 'off') {
+      const updatedActuatorDict = {...actuatorDict, 'RVFT': 'on'};
+      const updatedActuatorBuffer = convertActuatorsToBuffer(updatedActuatorDict);
+      setActuatorDictBuffer(updatedActuatorBuffer);
+      seteventArray([...eventArray, {name: 'RVFT', value: 'on'}]);
+      await sendStatusData(updatedActuatorDict);
+      
+    } else {
+      const updatedActuatorDict = {...actuatorDict, 'RVFT': 'off'};
+      const updatedActuatorBuffer = convertActuatorsToBuffer(updatedActuatorDict);
+      setActuatorDictBuffer(updatedActuatorBuffer);
+      seteventArray([...eventArray, {name: 'RVFT', value: 'off'}]);
+      await sendStatusData(updatedActuatorDict);
+    }
+
+  }
+
+
+
+
 
   const sendStatusData = async (actuatorDict) => {
     const result = await sendDataCommand(actuatorDict);
@@ -222,10 +400,10 @@ const PIDDiagram = () => {
               <svg viewBox="0 0 1200 1000" className="w-full h-full" > 
                 <image x="50" y="180" width="60" height="60" href="images/gptOne.png" />
                 <image x="150" y="180" width="60" height="60" href="images/rf.png" onClick={(e) => addRFTP(e)} />
-                {rftp == true ? <text x="146" y="180" fontSize='10px' >RFTP (Open)</text>: <text x="146" y="180" fontSize='10px' >RFTP (Closed)</text>}
+                {rftp == true ? <text x="146" y="180" fontSize='10px' >RFTP (on)</text>: <text x="146" y="180" fontSize='10px' >RFTP (off)</text>}
                 <text x="164" y="240" fontSize='10px' >{rftpValue} kg/s</text>
                 <image x="100" y="185" width="60" height="60" href="images/horizontalFour.png" />
-                <image x="255" y="175" width="60" height="60" href="images/bv.png" onClick={(e) => addBVFT(e)} />
+                <image x="255" y="175" width="60" height="60" href="images/bv.png" onClick={(e) => addBVFTP(e)} />
                 <text x="252" y="175" fontSize='10px' >BVFTP ({actuatorDict['BVFTP']}) </text>
                 <text x="268" y="235" fontSize='10px' >{bvftValue} kg/s </text>
                 <image x="200" y="185" width="60" height="60" href="images/horizontalFour.png" />
@@ -235,7 +413,7 @@ const PIDDiagram = () => {
                 <image x="530" y="185" width="60" height="60" href="images/ft.png" />
                 <image x="479" y="185" width="60" height="60" href="images/horizontalFour.png" />
                 <image x="640" y="185" width="60" height="60" href="images/bvf.png" onClick={(e) => addBVFTB(e)}/>
-                {bvftb == true ? <text x="624" y="189" fontSize='10px'>BVFTB-M (Open)</text>: <text x="624" y="189" fontSize='10px'>BVFTB-M (Closed)</text>}
+                {bvftb == true ? <text x="624" y="189" fontSize='10px'>BVFTB-M (on)</text>: <text x="624" y="189" fontSize='10px'>BVFTB-M (off)</text>}
                 <text x="654" y="239" fontSize='10px'>{bvftbValue} kg/s</text>
                 <image x="582" y="185" width="60" height="60" href="images/horizontalFour.png" />
                 <image x="750" y="175" width="60" height="60" href="images/bv.png" onClick={(e) => addMFV(e)}/>
@@ -271,7 +449,7 @@ const PIDDiagram = () => {
                 <text x="385" y="337" fontSize='10px'>{sensorDict['PFT']} psi</text>
                 <image x="365" y="215" width="60" height="60" href="images/verticalThree.png" />
                 <image x="412" y="266" width="60" height="60" href="images/rv.png" onClick={(e) => addRVFT(e)}/>
-                {rvft == true ? <text x="465" y="296" fontSize='10px'>RVFT (Open)</text>: <text x="465" y="296" fontSize='10px'>RVFT (Closed)</text>}
+                {rvft == true ? <text x="465" y="296" fontSize='10px'>RVFT (on)</text>: <text x="465" y="296" fontSize='10px'>RVFT (off)</text>}
                 <text x="465" y="306" fontSize='10px'>{rvftValue} kg/s</text>
                 <image x="405" y="215" width="60" height="60" href="images/verticalThree.png" />
                 <image x="465" y="155" width="60" height="60" href="images/verticalThree.png" />
@@ -300,10 +478,10 @@ const PIDDiagram = () => {
 
                 <image x="50" y="420" width="60" height="60" href="images/gtTwo.png" />
                 <image x="150" y="415" width="60" height="60" href="images/rf.png" onClick={(e) => addROTP(e)}/>
-                {rotp == true ? <text x="150" y="415" fontSize='10px' >ROTP (Open)</text>: <text x="150" y="415" fontSize='10px' >ROTP (Closed)</text>}
+                {rotp == true ? <text x="150" y="415" fontSize='10px' >ROTP (on)</text>: <text x="150" y="415" fontSize='10px' >ROTP (off)</text>}
                 <text x="165" y="475" fontSize='10px' >{rotpValue} kg/s</text>
                 <image x="100" y="420" width="60" height="60" href="images/horizontalFour.png" />
-                <image x="255" y="410" width="60" height="60" href="images/bv.png" onClick={(e) => addBVOT(e)}/>
+                <image x="255" y="410" width="60" height="60" href="images/bv.png" onClick={(e) => addBVOTP(e)}/>
                 <text x="250" y="477" fontSize='10px' >BVOTP ({actuatorDict['BVOTP']}) </text>
                 <text x="270" y="495" fontSize='10px' >{sensorDict['BVOTP']} kg/s</text>
                 <image x="200" y="420" width="60" height="60" href="images/horizontalFour.png" />
@@ -318,7 +496,7 @@ const PIDDiagram = () => {
                 <image x="748" y="420" width="60" height="60" href="images/horizontalFour.png" />
                 <image x="788" y="420" width="60" height="60" href="images/horizontalFour.png" />
                 <image x="834" y="410" width="60" height="60" href="images/pmov.png" onClick={(e) => addMOV(e)}/>
-                {mov == true ? <text x="834" y="410" fontSize='10px'>MOV (Open)</text>: <text x="834" y="410" fontSize='10px'>MOV (Closed)</text>}
+                {mov == true ? <text x="834" y="410" fontSize='10px'>MOV (on)</text>: <text x="834" y="410" fontSize='10px'>MOV (off)</text>}
                 <text x="850" y="470" fontSize='10px'>{movValue} kg/s</text>
                 <image x="782" y="420" width="60" height="60" href="images/horizontalFour.png" />
                 <image x="888" y="420" width="60" height="60" href="images/horizontalFour.png" />
@@ -335,7 +513,7 @@ const PIDDiagram = () => {
                 <image x="440" y="335" width="60" height="60" href="images/svunshaded.png" onClick={(e) => addSVOTD(e)}/>
                 <text x="448" y="335" fontSize='10px'>Dump</text>
                 <text x="420" y="365" fontSize='10px'>SVOTD</text>
-                <text x="407" y="377" fontSize='10px'>{actuatorDict['SVOTD']}</text>
+                <text x="407" y="377" fontSize='10px'>({actuatorDict['SVOTD']})</text>
                 <text x="407" y="389" fontSize='10px'>{svotdValue} kg/s</text>
                 <image x="440" y="450" width="60" height="60" href="images/verticalThree.png" />
                 <text x="460" y="520" fontSize='10px'>vent</text>
@@ -348,7 +526,7 @@ const PIDDiagram = () => {
                 
                 <image x="435" y="390" width="60" height="60" href="images/verticalThree.png" />
                 <image x="488" y="336" width="60" height="60" href="images/rv.png"  onClick={(e) => addRVOT(e)}/>
-                {rvot == true ? <text x="542" y="366" fontSize='10px'>RVOT (Open)</text>: <text x="542" y="366" fontSize='10px'>RVOT (Closed)</text>}
+                {rvot == true ? <text x="542" y="366" fontSize='10px'>RVOT (on)</text>: <text x="542" y="366" fontSize='10px'>RVOT (off)</text>}
                 <text x="562" y="376" fontSize='10px'>{rvotValue} kg/s</text>
                 <image x="482" y="390" width="60" height="60" href="images/verticalThree.png" />
                 <image x="488" y="500" width="60" height="60" href="images/pt.png" />
