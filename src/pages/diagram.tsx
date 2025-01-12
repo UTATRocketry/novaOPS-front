@@ -155,7 +155,7 @@ const PIDDiagram = () => {
       await sendStatusData(updatedActuatorDict);
       
     } else {
-      const updatedActuatorDict = {...actuatorDict, 'RFTB': 'off'};
+      const updatedActuatorDict = {...actuatorDict, 'BVFTB': 'off'};
       const updatedActuatorBuffer = convertActuatorsToBuffer(updatedActuatorDict);
       setActuatorDictBuffer(updatedActuatorBuffer);
       seteventArray([...eventArray, {name: 'BVFTB', value: 'off'}]);
