@@ -3,31 +3,17 @@ import {useState, useEffect} from 'react'
 
 import { fetchRandomData, fetchTestWS, Data, Actuator, Sensor } from "./api/backend";
 import { LineChart } from './chart';
+import { getRandomNumber } from './api/basicData';
 
 interface DataPoint {
     time: number;
     value: number;
 }
 
-const arraysToData = (...arrays: { name: string, data: DataPoint[] }[]): any[][] => {
-  const timeSet = new Set<number>();
-  arrays.forEach(arr => arr.data.forEach(dp => timeSet.add(dp.time)));
-  const times = Array.from(timeSet).sort((a, b) => a - b);
-
-  const result: any[][] = [['time', ...arrays.map(arr => arr.name)]];
-
-  for (const time of times) {
-    const row: any[] = [time];
-    for (const array of arrays) {
-      const dataPoint = array.data.find(dp => dp.time === time);
-      row.push(dataPoint ? dataPoint.value : null);
-    }
-    result.push(row);
-  }
-  console.log('result');
-  console.log(result);
-  return result;
-};
+export interface DataSeries {
+  name: string;
+  data: DataPoint[];
+}
 
 export default function PressureGraph() {
 
@@ -82,7 +68,7 @@ export default function PressureGraph() {
     
         for (let i = 0; i < sensors.length; i++) {
           const now = Math.round(Date.now() / 1000);
-          console.log(now);
+          // console.log(now);
           
           const sensor = sensors[i];
           // console.log("Sensor: ", sensor)
@@ -112,7 +98,7 @@ export default function PressureGraph() {
             })
           }
         }
-        console.log(mot, pgngArray);
+        // console.log(mot, pgngArray);
       }
     
     const formatArrayfromBackend = (sensors: [], actuators: []) => { // for keeping values for plotting
@@ -125,6 +111,19 @@ export default function PressureGraph() {
     useEffect(() => {
 
         const fetchWSData = async () => {
+          const currentTime = Math.round(Date.now() / 1000);
+          setMOT([
+            { time: currentTime - 100 * getRandomNumber(), value: getRandomNumber() },
+            { time: currentTime - 100 * getRandomNumber(), value: getRandomNumber() },
+            { time: currentTime - 100 * getRandomNumber(), value: getRandomNumber() },
+            { time: currentTime - 100 * getRandomNumber(), value: getRandomNumber() }
+          ]);
+          setPGNG([
+            { time: currentTime - 100 * getRandomNumber(), value: getRandomNumber() },
+            { time: currentTime - 100 * getRandomNumber(), value: getRandomNumber() },
+            { time: currentTime - 100 * getRandomNumber(), value: getRandomNumber() },
+            { time: currentTime - 100 * getRandomNumber(), value: getRandomNumber() }
+          ]);
             var result: Data;
             try {
               result = await fetchRandomData();
@@ -153,8 +152,8 @@ export default function PressureGraph() {
 
     return (
         <div className={'graphs__container'}>
-            <LineChart title="Graph #1" data={arraysToData({name: 'data1', data: mot}, {name: 'data2', data: pgngArray})} />
-            <LineChart title="Graph #2" data={arraysToData({name: 'data3', data: pftpgArray})} />
+            <LineChart title="Graph #1 Title" data={[{name: 'data1', data: mot}, {name: 'data2', data: pgngArray}]} />
+            <LineChart title="Graph #2" data={[{name: 'data3', data: pftpgArray}]} />
         </div>
     )
 }
