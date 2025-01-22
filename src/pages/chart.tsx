@@ -1,60 +1,86 @@
 import { Chart } from 'react-google-charts';
 import {useState, useEffect} from 'react'
 import { DataSeries } from './pressureG';
+import {
+    Chart as ChartJS,
+    CategoryScale,
+    LinearScale,
+    PointElement,
+    LineElement,
+    Title,
+    Tooltip,
+    Legend,
+  } from 'chart.js';
+import { Line } from 'react-chartjs-2';
+
+ChartJS.register(
+    CategoryScale,
+    LinearScale,
+    PointElement,
+    LineElement,
+    Title,
+    Tooltip,
+    Legend
+  );
 
 export const LineChart = ({ title, data }: { title: string, data: DataSeries[] }) => {
-    const [plotData, setPlotData] = useState<(string | number | null)[][]>([]);
+    const [plotData, setPlotData] = useState<{ labels: string[], datasets: { label: string, data: (number | null)[], fill: boolean, borderColor: string, tension: number }[] }>({labels: [], datasets: []});
 
-    const options = {
-        title,
-        curveType: "none",
-        // legend: { position: "none" },
-        hAxis: {
-            gridlines: { count: 10 },
-        },
-        vAxis: {
-            viewWindow: {
-                min: 0,
-                max: 60,
-            },
-        },
-    };
     if (data.length === 0) {
         return <div>No data</div>;
     }
 
+    const options = {
+        responsive: true,
+        spanGaps: true,
+        plugins: {
+          legend: {
+            position: 'top' as const,
+          },
+          title: {
+            display: true,
+            text: title,
+          },
+        },
+        scales: {
+          x: {
+            min: -5,
+            max: 0,
+            type: 'linear',
+            position: 'bottom',
+          },
+        },
+      };
+
     const formatData = (data: DataSeries[]) => {
-        const headers = ['time', ...data.map(series => series.name)];
-        const rows: (number | string | null)[][] = [];
-
-        const allDataPoints = data.flatMap(series => series.data);
-        const uniqueTimes = Array.from(new Set(allDataPoints.map(point => point.time))).sort((a, b) => a - b);
+        console.log(data);
         const currentTime = Math.round(Date.now() / 1000);
+        console.log(currentTime);
+        const labels = Array.from(new Set(data.flatMap(series => series.data.map(point => ((point.time - currentTime)).toString())))).sort((a, b) => Number(a) - Number(b));
 
-        uniqueTimes.forEach(time => {
-            const row: (number | string | null)[] = [(time - currentTime)/1000];
-            data.forEach(series => {
-                const dataPoint = series.data.find(point => point.time === time);
-                row.push(dataPoint ? dataPoint.value : null);
-            });
-            rows.push(row);
+        const datasets = data.map(series => {
+            const dataMap = new Map(series.data.map(point => [(point.time - currentTime), point.value]));
+            const seriesData = labels.map(label => dataMap.get(Number(label)) ?? null);
+            return {
+                label: series.name,
+                data: seriesData,
+                fill: false,
+                borderColor: series.color,
+                tension: 0.1
+            };
         });
-        return [headers, ...rows];
+
+        return {
+            labels,
+            datasets
+        };
     }
 
     useEffect(() => {
-        console.log(data);
         setPlotData(formatData(data));
-        console.log(plotData);
     }, [data]);
 
     return (
-        <Chart
-            chartType="LineChart"
-            width="600px"
-            height="400px"
-            data={plotData}
-            options={options}
-        />
+        <Line className="graphs__component" data={plotData} options={options} />
     );
 };

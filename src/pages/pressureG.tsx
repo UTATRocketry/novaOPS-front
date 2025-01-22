@@ -13,6 +13,7 @@ interface DataPoint {
 export interface DataSeries {
   name: string;
   data: DataPoint[];
+  color: string;
 }
 
 export default function PressureGraph() {
@@ -113,16 +114,16 @@ export default function PressureGraph() {
         const fetchWSData = async () => {
           const currentTime = Math.round(Date.now() / 1000);
           setMOT([
-            { time: currentTime - 100 * getRandomNumber(), value: getRandomNumber() },
-            { time: currentTime - 100 * getRandomNumber(), value: getRandomNumber() },
-            { time: currentTime - 100 * getRandomNumber(), value: getRandomNumber() },
-            { time: currentTime - 100 * getRandomNumber(), value: getRandomNumber() }
+            { time: currentTime - 0.1 * getRandomNumber(), value: getRandomNumber() },
+            { time: currentTime - 0.1 * getRandomNumber(), value: getRandomNumber() },
+            { time: currentTime - 0.1 * getRandomNumber(), value: getRandomNumber() },
+            { time: currentTime - 0.1 * getRandomNumber(), value: getRandomNumber() }
           ]);
           setPGNG([
-            { time: currentTime - 100 * getRandomNumber(), value: getRandomNumber() },
-            { time: currentTime - 100 * getRandomNumber(), value: getRandomNumber() },
-            { time: currentTime - 100 * getRandomNumber(), value: getRandomNumber() },
-            { time: currentTime - 100 * getRandomNumber(), value: getRandomNumber() }
+            { time: currentTime - 0.1 * getRandomNumber(), value: getRandomNumber() },
+            { time: currentTime - 0.1 * getRandomNumber(), value: getRandomNumber() },
+            { time: currentTime - 0.1 * getRandomNumber(), value: getRandomNumber() },
+            { time: currentTime - 0.1 * getRandomNumber(), value: getRandomNumber() }
           ]);
             var result: Data;
             try {
@@ -142,7 +143,7 @@ export default function PressureGraph() {
             }
           }
 
-        const delay = 1000; //delay to actually read the values in real time
+        const delay = 2000; //delay to actually read the values in real time
         const intervalId = setInterval(fetchWSData, delay);
 
         return () => clearInterval(intervalId);
@@ -152,8 +153,8 @@ export default function PressureGraph() {
 
     return (
         <div className={'graphs__container'}>
-            <LineChart title="Graph #1 Title" data={[{name: 'data1', data: mot}, {name: 'data2', data: pgngArray}]} />
-            <LineChart title="Graph #2" data={[{name: 'data3', data: pftpgArray}]} />
+            <LineChart title="Graph #1 Title" data={[{name: 'data1', data: mot, color:'red'}, {name: 'data2', data: pgngArray, color:'blue'}]} />
+            <LineChart title="Graph #2" data={[{name: 'data3', data: pftpgArray, color:'red'}]} />
         </div>
     )
 }

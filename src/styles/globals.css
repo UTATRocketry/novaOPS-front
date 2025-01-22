@@ -45,3 +45,8 @@ a {
   display: flex;
   flex-wrap: wrap;
 }
+
+.graphs__component {
+  flex: 1 1 30rem;
+  max-width: 30rem;
+}
