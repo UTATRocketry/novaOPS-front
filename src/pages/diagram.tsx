@@ -17,7 +17,7 @@ import { getRandomNumber } from "./api/basicData";
 import { fetchTestMessage } from "./api/backend";
 import { sendDataCommand } from "./api/backend";
 import { fetchTestWS } from "./api/backend";
-import { text } from "stream/consumers";
+
 
 
 
@@ -312,7 +312,7 @@ const PIDDiagram = () => {
         continue;
       } else {
         const current_dict = sensors[i];
-        new_dict[current_dict['name']] = current_dict['value']; // we are only storing because that's all we care about for display
+        new_dict[current_dict['id']] = current_dict['value']; // we are only storing because that's all we care about for display
       }
 
     }
@@ -446,7 +446,7 @@ const PIDDiagram = () => {
                 <image x="325" y="295" width="60" height="60" href="images/verticalThree.png" />
                 <image x="367" y="265" scale="0.7" width="60" height="60" href="images/pt.png" />
                 <text x="385" y="327" fontSize='10px'>PFT</text>
-                <text x="385" y="337" fontSize='10px'>{sensorDict['PFT']} psi</text>
+                <text x="385" y="337" fontSize='10px'>{sensorDict[0]} psi</text>
                 <image x="365" y="215" width="60" height="60" href="images/verticalThree.png" />
                 <image x="412" y="266" width="60" height="60" href="images/rv.png" onClick={(e) => addRVFT(e)}/>
                 {rvft == true ? <text x="465" y="296" fontSize='10px'>RVFT (open)</text>: <text x="465" y="296" fontSize='10px'>RVFT (close)</text>}
@@ -458,15 +458,15 @@ const PIDDiagram = () => {
                 <image x="465" y="75" width="60" height="60" href="images/verticalThree.png" />
                 <image x="536" y="79" width="60" height="60" href="images/LC.png" />
                 <text x="550" y="75" fontSize='12px'>MFT</text>
-                <text x="550" y="60" fontSize='12px'>{sensorDict['MFT']} mV/V</text>
+                <text x="550" y="60" fontSize='12px'>{sensorDict[1]} mV/V</text>
                 <image x="533" y="126" width="60" height="60" href="images/verticalThree.png" />
                 <image x="1010" y="105" width="60" height="60" href="images/pt.png" />
                 <text x="1027" y="109" fontSize='10px'>PFM</text>
-                <text x="1027" y="95" fontSize='10px'>{sensorDict['PFM']} psi</text>
+                <text x="1027" y="95" fontSize='10px'>{sensorDict[2]} psi</text>
                 <image x="1010" y="155" width="60" height="60" href="images/verticalThree.png" />
                 <image x="952" y="109" width="60" height="60" href="images/tc.png" />
                 <text x="966" y="109" fontSize='10px'>TFM</text>
-                <text x="966" y="95" fontSize='10px'>{sensorDict['TFM']} V</text>
+                <text x="966" y="95" fontSize='10px'>{sensorDict[3]} V</text>
                 <image x="950" y="155" width="60" height="60" href="images/verticalThree.png" />
                 <image x="997" y="288" width="100" height="100" scale='2' href="images/cc.png" />
                 <image x="1070" y="285" width="60" height="60" href="images/horizontalFour.png" />
@@ -483,7 +483,7 @@ const PIDDiagram = () => {
                 <image x="100" y="420" width="60" height="60" href="images/horizontalFour.png" />
                 <image x="255" y="410" width="60" height="60" href="images/bv.png" onClick={(e) => addBVOTP(e)}/>
                 <text x="250" y="477" fontSize='10px' >BVOTP ({actuatorDict['BVOTP']}) </text>
-                <text x="270" y="495" fontSize='10px' >{sensorDict['BVOTP']} kg/s</text>
+                <text x="270" y="495" fontSize='10px' >{sensorDict[4]} kg/s</text>
                 <image x="200" y="420" width="60" height="60" href="images/horizontalFour.png" />
                 <image x="307" y="420" width="60" height="60" href="images/horizontalFour.png" />
                 <image x="366" y="420" width="60" height="60" href="images/horizontalFour.png" />
@@ -531,20 +531,20 @@ const PIDDiagram = () => {
                 <image x="482" y="390" width="60" height="60" href="images/verticalThree.png" />
                 <image x="488" y="500" width="60" height="60" href="images/pt.png" />
                 <text x="502" y="566" fontSize='10px'>POTT</text>
-                <text x="504" y="576" fontSize='10px'>{sensorDict['POTT']} psi</text>
+                <text x="504" y="576" fontSize='10px'>{sensorDict[5]} psi</text>
                 <image x="485" y="450" width="60" height="60" href="images/verticalThree.png" />
                 <image x="618" y="506" width="60" height="60" href="images/LC.png" onClick={() => console.log("hello")}/>
                 <text x="636" y="566" fontSize='10px'>MOT</text>
-                <text x="636" y="576" fontSize='10px'>{sensorDict['MOT']} mV/V</text>
+                <text x="636" y="576" fontSize='10px'>{sensorDict[6]} mV/V</text>
                 <image x="566" y="505" width="60" height="60" href="images/horizontalFour.png" />
                 <image x="537" y="475" width="60" height="60" href="images/verticalThree.png" />
                 <image x="667" y="343" width="60" height="60" href="images/tc.png" />
                 <text x="685" y="349" fontSize='10px'>TOT</text>
-                <text x="685" y="339" fontSize='10px'>{sensorDict['TOT']} V</text>
+                <text x="685" y="339" fontSize='10px'>{sensorDict[7]} V</text>
                 <image x="665" y="389" width="60" height="60" href="images/verticalThree.png" />
                 <image x="740" y="339" width="60" height="60" href="images/pt.png" />
                 <text x="755" y="339" fontSize='10px'>POTB</text>
-                <text x="755" y="327" fontSize='10px'>{sensorDict['POTB']} psi</text>
+                <text x="755" y="327" fontSize='10px'>{sensorDict[0]} psi</text>
                 <image x="740" y="389" width="60" height="60" href="images/verticalThree.png" />
                 <image x="917" y="339" width="60" height="60" href="images/verticalThree.png" />
                 <image x="917" y="279" width="60" height="60" href="images/verticalThree.png" />
@@ -552,7 +552,7 @@ const PIDDiagram = () => {
                 <image x="917" y="280" width="60" height="60" href="images/verticalThree.png" />
                 <image x="1102" y="364" width="60" height="60" href="images/pt.png" />
                 <text x="1123" y="424" fontSize='10px'>PCC</text>
-                <text x="1123" y="434" fontSize='10px'>{sensorDict['PCC']} psi</text>
+                <text x="1123" y="434" fontSize='10px'>{sensorDict[1]} psi</text>
                 <image x="1100" y="314" width="60" height="60" href="images/verticalThree.png" />
                 
 

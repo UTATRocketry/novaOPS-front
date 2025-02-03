@@ -25,7 +25,7 @@ export const fetchTestMessage = async () => {
     var result;
 
     try {
-        const response = await axios.get(`raspberrypi.local/entry`, {
+        const response = await axios.get(`http://raspberrypi.local/entry`, {
             method: 'GET',
             headers: {
                 "Content-Type": "application/json"
@@ -50,7 +50,7 @@ export const fetchTestMessage = async () => {
 export const fetchTestWS = async () => {
     var result;
     try {
-        const response = await axios.get(`raspberrypi.local/front`, {  //changed from localhost to raspberrypi.local
+        const response = await axios.get(`http://raspberrypi.local:8000/front`, { 
             method: 'GET',
             headers: {
                 "Content-Type": "application/json"
@@ -67,7 +67,7 @@ export const fetchTestWS = async () => {
 export const sendDataCommand = async (data) => {
     
     try {
-        const response = await axios.post(`raspberrypi.local/command`, data, {
+        const response = await axios.post(`http://raspberrypi.local/command`, data, {
             method:'POST',
             headers: {
                 "Content-Type": "application/json"
