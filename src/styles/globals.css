@@ -49,4 +49,6 @@ a {
 .graphs__component {
   flex: 1 1 30rem;
   max-width: 30rem;
+  max-height: 40vh;
+  
 }

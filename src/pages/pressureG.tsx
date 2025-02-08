@@ -51,10 +51,10 @@ export default function PressureGraph() {
 
     const [pgngArray, setPGNG] = useState<DataPoint[]>([]);
     const [pftpgArray, setPFTPG] = useState<DataPoint[]>([]);
-    const [pftArray, setPFT] = useState([]);
-    const [mftArray, setMFT] = useState([]);
-    const [tfmArray, setTFM] = useState([]);
-    const [pfmArray, setPFM] = useState([]);
+    const [pftArray, setPFT] = useState<DataPoint[]>([]);
+    const [mftArray, setMFT] = useState<DataPoint[]>([]);
+    const [tfmArray, setTFM] = useState<DataPoint[]>([]);
+    const [pfmArray, setPFM] = useState<DataPoint[]>([]);
   
     //ox side
     const [potphg, setPOTPHG] = useState([]);
@@ -112,19 +112,72 @@ export default function PressureGraph() {
     useEffect(() => {
 
         const fetchWSData = async () => {
-          const currentTime = Math.round(Date.now() / 1000);
-          setMOT([
-            { time: currentTime - 0.1 * getRandomNumber(), value: getRandomNumber() },
-            { time: currentTime - 0.1 * getRandomNumber(), value: getRandomNumber() },
-            { time: currentTime - 0.1 * getRandomNumber(), value: getRandomNumber() },
-            { time: currentTime - 0.1 * getRandomNumber(), value: getRandomNumber() }
-          ]);
-          setPGNG([
-            { time: currentTime - 0.1 * getRandomNumber(), value: getRandomNumber() },
-            { time: currentTime - 0.1 * getRandomNumber(), value: getRandomNumber() },
-            { time: currentTime - 0.1 * getRandomNumber(), value: getRandomNumber() },
-            { time: currentTime - 0.1 * getRandomNumber(), value: getRandomNumber() }
-          ]);
+          const currentTime = Date.now() / 1000;
+          // setMOT([
+          //   { time: currentTime - 0.1 * getRandomNumber(), value: getRandomNumber() },
+          //   { time: currentTime - 0.1 * getRandomNumber(), value: getRandomNumber() },
+          //   { time: currentTime - 0.1 * getRandomNumber(), value: getRandomNumber() },
+          //   { time: currentTime - 0.1 * getRandomNumber(), value: getRandomNumber() }
+          // ]);
+          // setPGNG([
+          //   { time: currentTime - 0.1 * getRandomNumber(), value: getRandomNumber() },
+          //   { time: currentTime - 0.1 * getRandomNumber(), value: getRandomNumber() },
+          //   { time: currentTime - 0.1 * getRandomNumber(), value: getRandomNumber() },
+          //   { time: currentTime - 0.1 * getRandomNumber(), value: getRandomNumber() }
+          // ]);
+            setMOT(prevArray => {
+            if (prevArray.length >= 20) {
+              prevArray.shift();
+            }
+            return [...prevArray, { time: currentTime - 0.05 * getRandomNumber(), value: getRandomNumber() }];
+            });
+            
+            setPGNG(prevArray => {
+            if (prevArray.length >= 20) {
+              prevArray.shift();
+            }
+            return [...prevArray, { time: currentTime - 0.05 * getRandomNumber(), value: getRandomNumber() }];
+            });
+
+            setPFT(prevArray => {
+              if (prevArray.length >= 20) {
+                prevArray.shift();
+              }
+              return [...prevArray, { time: currentTime - 0.05 * getRandomNumber(), value: getRandomNumber() }];
+              });
+
+            setPFTPG(prevArray => {
+              if (prevArray.length >= 20) {
+                prevArray.shift();
+              }
+              return [...prevArray, { time: currentTime - 0.05 * getRandomNumber(), value: getRandomNumber() }];
+              }
+
+            );  
+
+            setMFT(prevArray => {
+              if (prevArray.length >= 20) {
+                prevArray.shift();
+              }
+              return [...prevArray, { time: currentTime - 0.05 * getRandomNumber(), value: getRandomNumber() }];
+              }
+            );
+
+            setTFM(prevArray => {
+              if (prevArray.length >= 20) {
+                prevArray.shift();
+              }
+              return [...prevArray, { time: currentTime - 0.05 * getRandomNumber(), value: getRandomNumber() }];
+              }
+            );
+
+            setPFM(prevArray => {
+              if (prevArray.length >= 20) {
+                prevArray.shift();
+              }
+              return [...prevArray, { time: currentTime - 0.05 * getRandomNumber(), value: getRandomNumber() }];
+              }
+            );
             var result: Data;
             try {
               result = await fetchRandomData();
@@ -143,7 +196,7 @@ export default function PressureGraph() {
             }
           }
 
-        const delay = 2000; //delay to actually read the values in real time
+        const delay = 500; //delay to actually read the values in real time
         const intervalId = setInterval(fetchWSData, delay);
 
         return () => clearInterval(intervalId);
@@ -154,7 +207,11 @@ export default function PressureGraph() {
     return (
         <div className={'graphs__container'}>
             <LineChart title="Graph #1 Title" data={[{name: 'data1', data: mot, color:'red'}, {name: 'data2', data: pgngArray, color:'blue'}]} />
-            <LineChart title="Graph #2" data={[{name: 'data3', data: pftpgArray, color:'red'}]} />
+            <LineChart title="Graph #2" data={[{name: 'data1', data: pftpgArray, color:'red'}, {name: 'data2', data: pfmArray, color:'blue'}]} />
+            <LineChart title="Graph #3" data={[{name: 'data1', data: mftArray, color:'orange'}]} />
+            <LineChart title="Graph #4" data={[{name: 'data1', data: pftArray, color:'red'}, {name: 'data2', data:pftpgArray, color:'orange'}]} />
+            <LineChart title="Graph #5" data={[{name: 'data1', data: tfmArray, color:'red'}]} />
+            <LineChart title="Graph #6" data={[{name: 'data1', data: pfmArray, color:'green'}]} />
         </div>
     )
 }

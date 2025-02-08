@@ -1,5 +1,5 @@
 export function getRandomNumber(): number {
-  return Math.floor(Math.random() * 50) + 1;
+  return 0.1 * Math.floor(Math.random() * 50) + 5;
 }
 
 
