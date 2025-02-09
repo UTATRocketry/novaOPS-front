@@ -25,7 +25,7 @@ export const fetchTestMessage = async () => {
     var result;
 
     try {
-        const response = await axios.get(`raspberrypi.local/entry`, {
+        const response = await axios.get(`http://localhost:8000/entry`, {
             method: 'GET',
             headers: {
                 "Content-Type": "application/json"
@@ -47,40 +47,21 @@ export const fetchTestMessage = async () => {
 }
 
 
-export const fetchTestWS = async () => {
+export const fetchTestWS = async (): Promise<Data> => {
     var result;
     try {
-        const response = await axios.get(`raspberrypi.local/front`, {  //changed from localhost to raspberrypi.local
+        const response = await axios.get(`http://localhost:8000/ws_front`, { 
             method: 'GET',
             headers: {
                 "Content-Type": "application/json"
             }
         })
         result = await response;
-        return result['data'];
-    } catch (err) {
-        console.log("Message not Fetched")
-        return {};
-    }
-}
-
-export const sendDataCommand = async (data) => {
-    
-    try {
-        const response = await axios.post(`raspberrypi.local/command`, data, {
-            method:'POST',
-            headers: {
-                "Content-Type": "application/json"
-            },
-        })
-        const result = await response;
-        console.log("Status was updated")
         return result;
     } catch (err) {
-        console.log("Status was not updated")
-        return {};
+        console.log("Message not Fetched")
+        return {data: {sensors: [], actuators: []}};
     }
-    
 }
 
 

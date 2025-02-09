@@ -1,13 +1,17 @@
 import { useEffect, useState } from "react";
-import { fetchTestMessage, fetchTestWS } from "./api/backend";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { fetchRandomData, fetchTestMessage, fetchTestWS } from "./api/backend";
+// import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Button, Text, Flex, Box } from '@chakra-ui/react';
+import { LineChart, DataPoint } from './chart';
+import { Data, Sensor, Actuator } from './api/backend';
 import axios from 'axios';
 import Link from "next/link";
+import Chart from "react-google-charts";
 
 export default function Plots() {
   const [trigger, setTrigger] = useState(0);
-  const [sensorDict, setSensorDict] = useState({});
+
+  const [sensorDict, setSensorDict] = useState<{ [key: string]: DataPoint[] }>({});
   const [stopGraphingStatus, setGraphingStatus] = useState(false);
   const [uploadStatus, setUploadStatus] = useState(false);
 
@@ -24,7 +28,7 @@ export default function Plots() {
 
   useEffect(() => {
     const fetchWSData = async () => {
-      const result = await fetchTestWS();
+      const result: Data = await fetchTestWS();
       const result_data_list = result['data'];
       const actuators = result_data_list['actuators'];
       const sensors = result_data_list['sensors'];
@@ -33,12 +37,13 @@ export default function Plots() {
       updateDictFirstTime(sensors);
     };
 
-    const updateDictFirstTime = (sensorArray) => {
+    const updateDictFirstTime = (sensorArray: Sensor[]) => {
       const now = new Date();
-      const secondsSinceStartOfDay =
-        now.getHours() * 3600 +
-        now.getMinutes() * 60 +
-        now.getSeconds();
+      const currentTime = now.getTime() / 1000;
+      // const secondsSinceStartOfDay =
+      //   now.getHours() * 3600 +
+      //   now.getMinutes() * 60 +
+      //   now.getSeconds();
 
       setSensorDict((prevDict) => {
         const newDict = { ...prevDict }; // Create a new object
@@ -47,9 +52,9 @@ export default function Plots() {
 
           const { name, value } = sensor;
           if (!newDict[name]) {
-            newDict[name] = [{ index: secondsSinceStartOfDay, value }];
+            newDict[name] = [{ time: currentTime, value }];
           } else {
-            newDict[name] = [...newDict[name], { index: secondsSinceStartOfDay, value }];
+            newDict[name] = [...newDict[name], { time: currentTime, value }];
           }
         });
         return newDict;
@@ -79,84 +84,12 @@ export default function Plots() {
       <Flex justify='center'>
       <Box width='100%'>
       <div className='mft'>
-      <Text padding="30px" fontSize="20px" marginTop="40px" as="b">MFT Plot</Text>
-      <ResponsiveContainer width="100%" height={300}>
-        <LineChart
-          data={sensorDict['MFT'] || []} // Handle undefined gracefully
-          margin={{
-            top: 5,
-            right: 30,
-            left: 20,
-            bottom: 5,
-          }}
-        >
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis
-            dataKey="index"
-            interval="preserveStartEnd" // Ensure only start and end ticks are displayed
-            tickCount={5} // Adjust the number of ticks shown
-            padding={{ left: 20, right: 20 }}
-            tickFormatter={(value) => `${value}s`} // Optionally format the tick (e.g., append "s")
-            label={{
-              value: "Time (s)", // X-axis label
-              position: "insideBottom", // Position the label at the bottom
-              offset: -20, // Adjust spacing from the axis
-              dx: 40
-            }}
-          />
-          <YAxis label={{
-            value: "Sensor Value (kg/s)", // Y-axis label
-            angle: -90, // Rotate the label vertically
-            position: "insideLeft", // Position inside the left side
-            dx: -10, // Adjust horizontal spacing from the axis
-            dy: 90
-          }}/>
-          <Tooltip />
-          <Legend />
-          <Line type="monotone" dataKey="value" stroke="#8884d8" activeDot={{ r: 8 }} isAnimationActive={false}/>
-        </LineChart>
-      </ResponsiveContainer>
+      <LineChart data={[{name:'MFT', data: sensorDict['MFT'] || [], color:'red'}]} title='MFT Plot' />
       </div>
       </Box>
       <Box width='100%'>
       <div className='mot'>
-      <Text padding="30px" fontSize="20px" marginTop="40px" as="b">MOT Plot</Text>
-      <ResponsiveContainer width="100%" height={300}>
-        <LineChart
-          data={sensorDict['MOT'] || []} // Handle undefined gracefully
-          margin={{
-            top: 5,
-            right: 30,
-            left: 20,
-            bottom: 5,
-          }}
-        >
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis
-            dataKey="index"
-            interval="preserveStartEnd" // Ensure only start and end ticks are displayed
-            tickCount={5} // Adjust the number of ticks shown
-            padding={{ left: 20, right: 20 }}
-            tickFormatter={(value) => `${value}s`} // Optionally format the tick (e.g., append "s")
-            label={{
-              value: "Time (s)", // X-axis label
-              position: "insideBottom", // Position the label at the bottom
-              offset: -20, // Adjust spacing from the axis
-              dx: 40
-            }}
-          />
-          <YAxis label={{
-            value: "Sensor Value (kg/s)", // Y-axis label
-            angle: -90, // Rotate the label vertically
-            position: "insideLeft", // Position inside the left side
-            dx: -10, // Adjust horizontal spacing from the axis
-            dy: 90
-          }}/>
-          <Tooltip />
-          <Legend />
-          <Line type="monotone" dataKey="value" stroke="#8884d8" activeDot={{ r: 8 }} isAnimationActive={false}/>
-        </LineChart>
-      </ResponsiveContainer>
+      <LineChart data={[{name:'MOT', data: sensorDict['MOT'] || [], color:'red'}]} title='MOT Plot' />
       </div>
       </Box>
       </Flex>
@@ -164,85 +97,13 @@ export default function Plots() {
       <Flex justify='center'>
       <Box width='100%'>
       <div className='pcc'>
-      <Text padding="30px" fontSize="20px" marginTop="40px" as="b">PCC Plot</Text>
-      <ResponsiveContainer width="100%" height={300}>
-        <LineChart
-          data={sensorDict['PCC'] || []} // Handle undefined gracefully
-          margin={{
-            top: 5,
-            right: 30,
-            left: 20,
-            bottom: 5,
-          }}
-        >
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis
-            dataKey="index"
-            interval="preserveStartEnd" // Ensure only start and end ticks are displayed
-            tickCount={5} // Adjust the number of ticks shown
-            padding={{ left: 20, right: 20 }}
-            tickFormatter={(value) => `${value}s`} // Optionally format the tick (e.g., append "s")
-            label={{
-              value: "Time (s)", // X-axis label
-              position: "insideBottom", // Position the label at the bottom
-              offset: -20, // Adjust spacing from the axis
-              dx: 40
-            }}
-          />
-          <YAxis label={{
-            value: "Sensor Value (kg/s)", // Y-axis label
-            angle: -90, // Rotate the label vertically
-            position: "insideLeft", // Position inside the left side
-            dx: -10, // Adjust horizontal spacing from the axis
-            dy: 90
-          }}/>
-          <Tooltip />
-          <Legend />
-          <Line type="monotone" dataKey="value" stroke="#8884d8" activeDot={{ r: 8 }} isAnimationActive={false}/>
-        </LineChart>
-      </ResponsiveContainer>
+      <LineChart data={[{name:'PCC', data: sensorDict['PCC'] || [], color:'red'}]} title='PCC Plot' />
       </div>
       </Box>
 
       <Box width='100%'>
       <div className='pfm'>
-      <Text padding="30px" fontSize="20px" marginTop="40px" as="b">PFM Plot</Text>
-      <ResponsiveContainer width="100%" height={300}>
-        <LineChart
-          data={sensorDict['PFM'] || []} // Handle undefined gracefully
-          margin={{
-            top: 5,
-            right: 30,
-            left: 20,
-            bottom: 5,
-          }}
-        >
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis
-            dataKey="index"
-            interval="preserveStartEnd" // Ensure only start and end ticks are displayed
-            tickCount={5} // Adjust the number of ticks shown
-            padding={{ left: 20, right: 20 }}
-            tickFormatter={(value) => `${value}s`} // Optionally format the tick (e.g., append "s")
-            label={{
-              value: "Time (s)", // X-axis label
-              position: "insideBottom", // Position the label at the bottom
-              offset: -20, // Adjust spacing from the axis
-              dx: 40
-            }}
-          />
-          <YAxis label={{
-            value: "Sensor Value (kg/s)", // Y-axis label
-            angle: -90, // Rotate the label vertically
-            position: "insideLeft", // Position inside the left side
-            dx: -10, // Adjust horizontal spacing from the axis
-            dy: 90
-          }}/>
-          <Tooltip />
-          <Legend />
-          <Line type="monotone" dataKey="value" stroke="#8884d8" activeDot={{ r: 8 }} isAnimationActive={false}/>
-        </LineChart>
-      </ResponsiveContainer>
+      <LineChart data={[{name:'PFM', data: sensorDict['PFM'] || [], color:'red'}]} title='PFM Plot' />
       </div>
       </Box>
       </Flex>
