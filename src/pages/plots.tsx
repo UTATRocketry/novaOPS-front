@@ -28,7 +28,7 @@ export default function Plots() {
 
   useEffect(() => {
     const fetchWSData = async () => {
-      const result: Data = await fetchTestWS();
+      const result: Data = await fetchRandomData();
       const result_data_list = result['data'];
       const actuators = result_data_list['actuators'];
       const sensors = result_data_list['sensors'];
@@ -63,8 +63,8 @@ export default function Plots() {
 
     console.log("sensor dict: ", sensorDict);
     if (stopGraphingStatus == false) {
-      fetchWSData();
-      const delay = 2500; // Delay to read the values in real time
+      // fetchWSData();
+      const delay = 500; // Delay to read the values in real time
       const intervalId = setInterval(() => {
         fetchWSData();
         setTrigger((prev) => prev + 1); // Trigger a re-render
@@ -84,7 +84,12 @@ export default function Plots() {
       <Flex justify='center'>
       <Box width='100%'>
       <div className='mft'>
-      <LineChart data={[{name:'MFT', data: sensorDict['MFT'] || [], color:'red'}]} title='MFT Plot' />
+      <LineChart data={[{name:'MFT', data: sensorDict['MFT'] || [], color:'green'}, {name:'MOT', data: sensorDict['MOT'] || [], color:'red'}]} plotDifference={true} title='MFT Plot' />
+      </div>
+      </Box>
+      <Box width='100%'>
+      <div className='mot'>
+      <LineChart data={[{name:'MOT', data: sensorDict['MOT'] || [], color:'red'}]} title='MOT Plot' />
       </div>
       </Box>
       <Box width='100%'>
@@ -101,6 +106,11 @@ export default function Plots() {
       </div>
       </Box>
 
+      <Box width='100%'>
+      <div className='pfm'>
+      <LineChart data={[{name:'PFM', data: sensorDict['PFM'] || [], color:'red'}]} title='PFM Plot' />
+      </div>
+      </Box>
       <Box width='100%'>
       <div className='pfm'>
       <LineChart data={[{name:'PFM', data: sensorDict['PFM'] || [], color:'red'}]} title='PFM Plot' />

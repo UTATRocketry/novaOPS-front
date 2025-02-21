@@ -72,6 +72,9 @@ export const fetchRandomData = async (): Promise<Data> => {
                 { name: 'MOT', value: getRandomNumber() },
                 { name: 'PGSO', value: getRandomNumber() },
                 { name: 'TGSO-G', value: getRandomNumber() },
+                { name: 'MFT', value: getRandomNumber() },
+                { name: 'PCC', value: getRandomNumber() },
+                { name: 'PFM', value: getRandomNumber() },
             ],
             actuators: []
         }

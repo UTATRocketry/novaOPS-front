@@ -34,11 +34,15 @@ export interface DataSeries {
   color: string;
 }
 
-export const LineChart = ({ title, data }: { title: string, data: DataSeries[] }) => {
+export const LineChart = ({ title, data, plotDifference = false }: { title: string, data: DataSeries[], plotDifference: boolean }) => {
   const [plotData, setPlotData] = useState<{ labels: string[], datasets: { label: string, data: (number | null)[], fill: boolean, borderColor: string, tension: number }[] }>({labels: [], datasets: []});
 
   if (data.length === 0) {
     return <div>No data</div>;
+  }
+
+  if (plotDifference && data.length !== 2) {
+    return <div>Plotting difference requires exactly two data series</div>;
   }
 
   const options = {
@@ -66,7 +70,7 @@ export const LineChart = ({ title, data }: { title: string, data: DataSeries[] }
         },
       },
       y: {
-        min: 0,
+        // min: 0,
         title: {
           display: true,
           text: 'Sensor Value',
@@ -79,17 +83,31 @@ export const LineChart = ({ title, data }: { title: string, data: DataSeries[] }
     const currentTime = Date.now() / 1000;
     const labels = Array.from(new Set(data.flatMap(series => series.data.map(point => ((point.time - currentTime)).toString())))).sort((a, b) => Number(a) - Number(b));
 
-    const datasets = data.map(series => {
-      const dataMap = new Map(series.data.map(point => [(point.time - currentTime), point.value]));
-      const seriesData = labels.map(label => dataMap.get(Number(label)) ?? null);
-      return {
-        label: series.name,
+    let datasets;
+    if (plotDifference) {
+      const dataMap1 = new Map(data[0].data.map(point => [(point.time - currentTime), point.value]));
+      const dataMap2 = new Map(data[1].data.map(point => [(point.time - currentTime), point.value]));
+      const seriesData = labels.map(label => dataMap1.get(Number(label)) - dataMap2.get(Number(label)));
+      datasets = [{
+        label: `${data[0].name} - ${data[1].name}`,
         data: seriesData,
         fill: false,
-        borderColor: series.color,
+        borderColor: data[0].color,
         tension: 0.1
-      };
-    });
+      }];
+    } else {
+        datasets = data.map(series => {
+        const dataMap = new Map(series.data.map(point => [(point.time - currentTime), point.value]));
+        const seriesData = labels.map(label => dataMap.get(Number(label)) ?? null);
+        return {
+          label: series.name,
+          data: seriesData,
+          fill: false,
+          borderColor: series.color,
+          tension: 0.1
+        };
+      });
+    }
 
     return {
       labels,
@@ -106,6 +124,6 @@ export const LineChart = ({ title, data }: { title: string, data: DataSeries[] }
   }, [data]);
 
   return (
-    <Line className="graphs__component" data={plotData} options={options} />
+    <Line className="graphs__component" data={plotData} options={options} height="200px" />
   );
 };
