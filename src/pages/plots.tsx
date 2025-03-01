@@ -28,7 +28,7 @@ export default function Plots() {
 
   useEffect(() => {
     const fetchWSData = async () => {
-      const result: Data = await fetchRandomData();
+      const result: Data = await fetchTestWS();
       const result_data_list = result['data'];
       const actuators = result_data_list['actuators'];
       const sensors = result_data_list['sensors'];
