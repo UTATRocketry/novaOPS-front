@@ -95,14 +95,14 @@ const PIDDiagram = () => {
       const updatedActuatorBuffer = convertActuatorsToBuffer(updatedActuatorDict);
       setActuatorDictBuffer(updatedActuatorBuffer);
       seteventArray([...eventArray, {name: 'MFV', value: 'open'}]);
-      await sendStatusData(updatedActuatorDict);
+      await sendStatusData({id: 'MFV', is_low: 0});
       
     } else {
       const updatedActuatorDict = {...actuatorDict, 'MFV': 'close'};
       const updatedActuatorBuffer = convertActuatorsToBuffer(updatedActuatorDict);
       setActuatorDictBuffer(updatedActuatorBuffer);
       seteventArray([...eventArray, {name: 'MFV', value: 'close'}]);
-      await sendStatusData(updatedActuatorDict);
+      await sendStatusData({id: 'MFV', is_low: 1});
     }
 
   }
