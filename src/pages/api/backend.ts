@@ -47,7 +47,7 @@ export const fetchTestMessage = async () => {
 }
 
 
-export const fetchTestWS = async () => {
+export const fetchTestWS = async (): Promise<Data> => {
     var result;
     try {
         const response = await axios.get(`http://raspberrypi.local:8000/front`, { 
@@ -57,7 +57,7 @@ export const fetchTestWS = async () => {
             }
         })
         result = await response;
-        return result['data'];
+        return result;
     } catch (err) {
         console.log("Message not Fetched")
         return {};
@@ -80,7 +80,6 @@ export const sendDataCommand = async (data) => {
         console.log("Status was not updated")
         return {};
     }
-    
 }
 
 
@@ -91,6 +90,9 @@ export const fetchRandomData = async (): Promise<Data> => {
                 { name: 'MOT', value: getRandomNumber() },
                 { name: 'PGSO', value: getRandomNumber() },
                 { name: 'TGSO-G', value: getRandomNumber() },
+                { name: 'MFT', value: getRandomNumber() },
+                { name: 'PCC', value: getRandomNumber() },
+                { name: 'PFM', value: getRandomNumber() },
             ],
             actuators: []
         }
