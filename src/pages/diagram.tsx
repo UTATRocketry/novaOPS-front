@@ -349,9 +349,10 @@ const PIDDiagram = () => {
     }
 
     const fetchWSData = async () => {
-      
+      console.log("in fetching data")
       var result = await fetchTestWS();
-      var result_data_list = result['data'];
+      var result_data_list = result; 
+      console.log("Result data list: ", result);
       var actuators = result_data_list['actuators'];
       var sensors = result_data_list['sensors'];
       console.log("Actuators: ", actuators);
@@ -372,7 +373,7 @@ const PIDDiagram = () => {
       
     }
     
-    const delay = 2500; // Delay to actually read the values in real time
+    const delay = 2000; // Delay to actually read the values in real time
     const timeoutId = setTimeout(() => {
       fetchWSData();
       setTrigger(prev => prev + 1); // Update the trigger state to re-run useEffect
