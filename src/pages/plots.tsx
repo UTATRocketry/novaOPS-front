@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { fetchTestMessage, fetchTestWS } from "./api/backend";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Button, Text, Flex, Box } from '@chakra-ui/react';
-import axios from 'axios';
+import { fetchTestWS } from "./api/backend";
+import { Chart } from "react-google-charts";
+import { Button, Text, Flex, Box } from "@chakra-ui/react";
+import axios from "axios";
 import Link from "next/link";
 
 export default function Plots() {
@@ -14,245 +14,88 @@ export default function Plots() {
   const handleStopExport = async () => {
     setGraphingStatus(true);
     try {
-      await axios.post('/api/writeYaml', { sensorDict });
-      console.log('YAML file created successfully');
+      await axios.post("/api/writeYaml", { sensorDict });
+      console.log("YAML file created successfully");
       setUploadStatus(true);
     } catch (error) {
-      console.error('Failed to create YAML file', error);
+      console.error("Failed to create YAML file", error);
     }
-  }
+  };
 
   useEffect(() => {
     const fetchWSData = async () => {
       const result = await fetchTestWS();
-      const result_data_list = result['data'];
-      const actuators = result_data_list['actuators'];
-      const sensors = result_data_list['sensors'];
-      console.log("Actuators: ", actuators);
-      console.log("Sensors: ", sensors);
+      const sensors = result["data"]["sensors"];
       updateDictFirstTime(sensors);
     };
 
-    const updateDictFirstTime = (sensors: any) => {
-      console.log("sensors: ", sensors);
-    
-      setSensorDict((prevDict: any) => {
+    const updateDictFirstTime = (sensors) => {
+      setSensorDict((prevDict) => {
         const newDict = { ...prevDict };
-    
-        sensors.forEach((sensor: any) => {
-          const new_entry = {
-            index: sensor["timestamp"],  // Use timestamp as index
-            value: sensor["value"],
-          };
-    
-          // Ensure sensor type exists as an array, else initialize it
+        sensors.forEach((sensor) => {
+          const new_entry = [sensor["timestamp"], sensor["value"], sensor["type"]];
           if (!newDict[sensor.type]) {
-            newDict[sensor.type] = [];
+            newDict[sensor.type] = [["Time", "Value"]]; // Google Charts format
           }
-    
-          // Append new entry to the sensor type's array
           newDict[sensor.type].push(new_entry);
         });
-    
         return newDict;
       });
     };
-    
-    
 
-    console.log("sensor dict: ", sensorDict);
-    if (stopGraphingStatus == false) {
+    if (!stopGraphingStatus) {
       fetchWSData();
-      const delay = 2500; // Delay to read the values in real time
       const intervalId = setInterval(() => {
         fetchWSData();
-        setTrigger((prev) => prev + 1); // Trigger a re-render
-      }, delay);
-
-      return () => clearInterval(intervalId); // Cleanup interval
+        setTrigger((prev) => prev + 1);
+      }, 2500);
+      return () => clearInterval(intervalId);
     }
   }, [trigger, stopGraphingStatus]);
+
+  const renderChart = (sensorType, title) => (
+    <Box width="100%">
+      <Text padding="30px" fontSize="20px" marginTop="40px" as="b">{title}</Text>
+      <Chart
+        width="100%"
+        height="300px"
+        chartType="LineChart"
+        loader={<Text>Loading Chart...</Text>}
+        data={sensorDict[sensorType] || [["Time", "Value"]]}
+        options={{
+          hAxis: { title: "Time (s)" },
+          vAxis: { title: "Sensor Value" },
+          legend: "none",
+        }}
+      />
+    </Box>
+  );
 
   return (
     <div>
       <Text padding="30px" fontSize="40px" marginTop="40px" as="b">
         Plots
       </Text>
-      <Button position='absolute' padding='20px' margin='40px' top='0' right='0' onClick={() => handleStopExport()}><Text>Export</Text></Button>
-      <Button position='absolute' padding='20px' margin='40px' top='0' right='120'><Link href='/'>Home</Link></Button>
-      <Flex justify='center'>
-      <Box width='100%'>
-      <div className='mft'>
-      <Text padding="30px" fontSize="20px" marginTop="40px" as="b">PFT Plot</Text>
-      <ResponsiveContainer width="100%" height={300}>
-        <LineChart
-          data={sensorDict['PFT'] || []} // Handle undefined gracefully
-          margin={{
-            top: 5,
-            right: 30,
-            left: 20,
-            bottom: 5,
-          }}
-        >
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis
-            dataKey="index"
-            interval="preserveStartEnd" // Ensure only start and end ticks are displayed
-            tickCount={5} // Adjust the number of ticks shown
-            padding={{ left: 20, right: 20 }}
-            tickFormatter={(value) => `${value}s`} // Optionally format the tick (e.g., append "s")
-            label={{
-              value: "Time (s)", // X-axis label
-              position: "insideBottom", // Position the label at the bottom
-              offset: -20, // Adjust spacing from the axis
-              dx: 40
-            }}
-          />
-          <YAxis label={{
-            value: "Sensor Value (kg/s)", // Y-axis label
-            angle: -90, // Rotate the label vertically
-            position: "insideLeft", // Position inside the left side
-            dx: -10, // Adjust horizontal spacing from the axis
-            dy: 90
-          }}/>
-          <Tooltip />
-          <Legend />
-          <Line type="monotone" dataKey="value" stroke="#8884d8" activeDot={{ r: 8 }} isAnimationActive={false}/>
-        </LineChart>
-      </ResponsiveContainer>
-      </div>
-      </Box>
-      <Box width='100%'>
-      <div className='mot'>
-      <Text padding="30px" fontSize="20px" marginTop="40px" as="b">MOT Plot</Text>
-      <ResponsiveContainer width="100%" height={300}>
-        <LineChart
-          data={sensorDict['MOT'] || []} // Handle undefined gracefully
-          margin={{
-            top: 5,
-            right: 30,
-            left: 20,
-            bottom: 5,
-          }}
-        >
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis
-            dataKey="index"
-            interval="preserveStartEnd" // Ensure only start and end ticks are displayed
-            tickCount={5} // Adjust the number of ticks shown
-            padding={{ left: 20, right: 20 }}
-            tickFormatter={(value) => `${value}s`} // Optionally format the tick (e.g., append "s")
-            label={{
-              value: "Time (s)", // X-axis label
-              position: "insideBottom", // Position the label at the bottom
-              offset: -20, // Adjust spacing from the axis
-              dx: 40
-            }}
-          />
-          <YAxis label={{
-            value: "Sensor Value (kg/s)", // Y-axis label
-            angle: -90, // Rotate the label vertically
-            position: "insideLeft", // Position inside the left side
-            dx: -10, // Adjust horizontal spacing from the axis
-            dy: 90
-          }}/>
-          <Tooltip />
-          <Legend />
-          <Line type="monotone" dataKey="value" stroke="#8884d8" activeDot={{ r: 8 }} isAnimationActive={false}/>
-        </LineChart>
-      </ResponsiveContainer>
-      </div>
-      </Box>
+      <Button position="absolute" padding="20px" margin="40px" top="0" right="0" onClick={handleStopExport}>
+        <Text>Export</Text>
+      </Button>
+      <Button position="absolute" padding="20px" margin="40px" top="0" right="120">
+        <Link href="/">Home</Link>
+      </Button>
+      <Flex justify="center">
+        {renderChart("PFT", "PFT Plot")}
+        {renderChart("MOT", "MOT Plot")}
       </Flex>
-
-      <Flex justify='center'>
-      <Box width='100%'>
-      <div className='pcc'>
-      <Text padding="30px" fontSize="20px" marginTop="40px" as="b">PCC Plot</Text>
-      <ResponsiveContainer width="100%" height={300}>
-        <LineChart
-          data={sensorDict['PCC'] || []} // Handle undefined gracefully
-          margin={{
-            top: 5,
-            right: 30,
-            left: 20,
-            bottom: 5,
-          }}
-        >
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis
-            dataKey="index"
-            interval="preserveStartEnd" // Ensure only start and end ticks are displayed
-            tickCount={5} // Adjust the number of ticks shown
-            padding={{ left: 20, right: 20 }}
-            tickFormatter={(value) => `${value}s`} // Optionally format the tick (e.g., append "s")
-            label={{
-              value: "Time (s)", // X-axis label
-              position: "insideBottom", // Position the label at the bottom
-              offset: -20, // Adjust spacing from the axis
-              dx: 40
-            }}
-          />
-          <YAxis label={{
-            value: "Sensor Value (kg/s)", // Y-axis label
-            angle: -90, // Rotate the label vertically
-            position: "insideLeft", // Position inside the left side
-            dx: -10, // Adjust horizontal spacing from the axis
-            dy: 90
-          }}/>
-          <Tooltip />
-          <Legend />
-          <Line type="monotone" dataKey="value" stroke="#8884d8" activeDot={{ r: 8 }} isAnimationActive={false}/>
-        </LineChart>
-      </ResponsiveContainer>
-      </div>
-      </Box>
-
-      <Box width='100%'>
-      <div className='pfm'>
-      <Text padding="30px" fontSize="20px" marginTop="40px" as="b">PFM Plot</Text>
-      <ResponsiveContainer width="100%" height={300}>
-        <LineChart
-          data={sensorDict['PFM'] || []} // Handle undefined gracefully
-          margin={{
-            top: 5,
-            right: 30,
-            left: 20,
-            bottom: 5,
-          }}
-        >
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis
-            dataKey="index"
-            interval="preserveStartEnd" // Ensure only start and end ticks are displayed
-            tickCount={5} // Adjust the number of ticks shown
-            padding={{ left: 20, right: 20 }}
-            tickFormatter={(value) => `${value}s`} // Optionally format the tick (e.g., append "s")
-            label={{
-              value: "Time (s)", // X-axis label
-              position: "insideBottom", // Position the label at the bottom
-              offset: -20, // Adjust spacing from the axis
-              dx: 40
-            }}
-          />
-          <YAxis label={{
-            value: "Sensor Value (kg/s)", // Y-axis label
-            angle: -90, // Rotate the label vertically
-            position: "insideLeft", // Position inside the left side
-            dx: -10, // Adjust horizontal spacing from the axis
-            dy: 90
-          }}/>
-          <Tooltip />
-          <Legend />
-          <Line type="monotone" dataKey="value" stroke="#8884d8" activeDot={{ r: 8 }} isAnimationActive={false}/>
-        </LineChart>
-      </ResponsiveContainer>
-      </div>
-      </Box>
+      <Flex justify="center">
+        {renderChart("PCC", "PCC Plot")}
+        {renderChart("PFM", "PFM Plot")}
       </Flex>
-
-      <div style={{ textAlign: 'center' }}>
-      {uploadStatus == true ? <Text padding="30px" fontSize="15px" marginTop="40px" as="b" color='green'>Exported successfully</Text> : null}
+      <div style={{ textAlign: "center" }}>
+        {uploadStatus && (
+          <Text padding="30px" fontSize="15px" marginTop="40px" as="b" color="green">
+            Exported successfully
+          </Text>
+        )}
       </div>
     </div>
   );
