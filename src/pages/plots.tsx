@@ -33,11 +33,11 @@ export default function Plots() {
       setSensorDict((prevDict) => {
         const newDict = { ...prevDict };
         sensors.forEach((sensor) => {
-          const new_entry = [sensor["timestamp"], sensor["value"], sensor["type"]];
-          if (!newDict[sensor.type]) {
-            newDict[sensor.type] = [["Time", "Value"]]; // Google Charts format
+          const new_entry = [sensor["timestamp"], sensor["value"], sensor["name"]];
+          if (!newDict[sensor.name]) {
+            newDict[sensor.name] = [["Time", "Value"]]; // Google Charts format
           }
-          newDict[sensor.type].push(new_entry);
+          newDict[sensor.name].push(new_entry);
         });
         return newDict;
       });
