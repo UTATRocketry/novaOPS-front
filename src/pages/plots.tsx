@@ -34,21 +34,30 @@ export default function Plots() {
     };
 
     const updateDictFirstTime = (sensors: any) => {
-      const now = new Date();
       console.log("sensors: ", sensors);
-      const target_sensor_array = sensors[0];
     
-      // Create a new sensor entry
-      const new_entry = {
-        index: target_sensor_array["timestamp"],
-        value: target_sensor_array["value"],
-      };
-    
-      // updating state dict properly
       setSensorDict((prevDict: any) => {
-        return { ...prevDict, [new_entry.index]: new_entry.value };
+        const newDict = { ...prevDict };
+    
+        sensors.forEach((sensor: any) => {
+          const new_entry = {
+            index: sensor["timestamp"],  // Use timestamp as index
+            value: sensor["value"],
+          };
+    
+          // Ensure sensor type exists as an array, else initialize it
+          if (!newDict[sensor.type]) {
+            newDict[sensor.type] = [];
+          }
+    
+          // Append new entry to the sensor type's array
+          newDict[sensor.type].push(new_entry);
+        });
+    
+        return newDict;
       });
     };
+    
     
 
     console.log("sensor dict: ", sensorDict);
