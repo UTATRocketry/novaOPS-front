@@ -353,6 +353,7 @@ const PIDDiagram = () => {
       var result = await fetchTestWS();
       var result_data_list = result; 
       console.log("Result data list: ", result);
+      result_data_list = result_data_list['data'];
       var actuators = result_data_list['actuators'];
       var sensors = result_data_list['sensors'];
       console.log("Actuators: ", actuators);

@@ -33,28 +33,23 @@ export default function Plots() {
       updateDictFirstTime(sensors);
     };
 
-    const updateDictFirstTime = (sensorArray) => {
+    const updateDictFirstTime = (sensors: any) => {
       const now = new Date();
-      const secondsSinceStartOfDay =
-        now.getHours() * 3600 +
-        now.getMinutes() * 60 +
-        now.getSeconds();
-
-      setSensorDict((prevDict) => {
-        const newDict = { ...prevDict }; // Create a new object
-        sensorArray.forEach((sensor) => {
-          if (!sensor) return;
-
-          const { name, value } = sensor;
-          if (!newDict[name]) {
-            newDict[name] = [{ index: secondsSinceStartOfDay, value }];
-          } else {
-            newDict[name] = [...newDict[name], { index: secondsSinceStartOfDay, value }];
-          }
-        });
-        return newDict;
+      console.log("sensors: ", sensors);
+      const target_sensor_array = sensors[0];
+    
+      // Create a new sensor entry
+      const new_entry = {
+        index: target_sensor_array["timestamp"],
+        value: target_sensor_array["value"],
+      };
+    
+      // updating state dict properly
+      setSensorDict((prevDict: any) => {
+        return { ...prevDict, [new_entry.index]: new_entry.value };
       });
     };
+    
 
     console.log("sensor dict: ", sensorDict);
     if (stopGraphingStatus == false) {
@@ -79,10 +74,10 @@ export default function Plots() {
       <Flex justify='center'>
       <Box width='100%'>
       <div className='mft'>
-      <Text padding="30px" fontSize="20px" marginTop="40px" as="b">MFT Plot</Text>
+      <Text padding="30px" fontSize="20px" marginTop="40px" as="b">PFT Plot</Text>
       <ResponsiveContainer width="100%" height={300}>
         <LineChart
-          data={sensorDict['MFT'] || []} // Handle undefined gracefully
+          data={sensorDict['PFT'] || []} // Handle undefined gracefully
           margin={{
             top: 5,
             right: 30,
