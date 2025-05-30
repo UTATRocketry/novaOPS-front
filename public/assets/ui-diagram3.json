@@ -1,0 +1,767 @@
+[
+  {
+    "id": "G8iMF-lxdpQcQJCvX94N-195",
+    "label": "BVFTP",
+    "UIType": "ActuatorButton",
+    "x": 4684.719999999999,
+    "y": 507,
+    "width": 60,
+    "height": 30
+  },
+  {
+    "id": "G8iMF-lxdpQcQJCvX94N-199",
+    "label": "SVFTV",
+    "UIType": "ActuatorButton",
+    "x": 4726.999999999999,
+    "y": 551,
+    "width": 60,
+    "height": 30
+  },
+  {
+    "id": "G8iMF-lxdpQcQJCvX94N-205",
+    "label": "MFV",
+    "UIType": "ActuatorButton",
+    "x": 5136.129999999999,
+    "y": 498,
+    "width": 50,
+    "height": 30
+  },
+  {
+    "id": "5N1uGk8ztbwP2YtJo4-4-33",
+    "label": "PCC",
+    "UIType": "SensorComponent",
+    "x": 134,
+    "y": 236,
+    "width": 80,
+    "height": 40
+  },
+  {
+    "id": "5N1uGk8ztbwP2YtJo4-4-34",
+    "label": "%SensorUnit%",
+    "UIType": "SensorUnit",
+    "x": 50,
+    "y": 20,
+    "width": 30,
+    "height": 20
+  },
+  {
+    "id": "5N1uGk8ztbwP2YtJo4-4-35",
+    "label": "%SensorValue%",
+    "UIType": "SensorValue",
+    "x": 0,
+    "y": 20,
+    "width": 50,
+    "height": 20
+  },
+  {
+    "id": "G8iMF-lxdpQcQJCvX94N-133",
+    "label": "BVOTP",
+    "UIType": "ActuatorButton",
+    "x": 4747,
+    "y": 736,
+    "width": 60,
+    "height": 30
+  },
+  {
+    "id": "G8iMF-lxdpQcQJCvX94N-142",
+    "label": "MOV",
+    "UIType": "ActuatorButton",
+    "x": 5253.3099999999995,
+    "y": 641.81,
+    "width": 50,
+    "height": 30
+  },
+  {
+    "id": "G8iMF-lxdpQcQJCvX94N-54",
+    "label": "SVOTD",
+    "UIType": "ActuatorButton",
+    "x": 5014,
+    "y": 754,
+    "width": 60,
+    "height": 30
+  },
+  {
+    "id": "3VX8zneFX24EJAu5s5_D-41",
+    "label": "SVOTV",
+    "UIType": "ActuatorButton",
+    "x": 4876,
+    "y": 784,
+    "width": 59,
+    "height": 26
+  },
+  {
+    "id": "5N1uGk8ztbwP2YtJo4-4-18",
+    "label": "PFT",
+    "UIType": "SensorComponent",
+    "x": 5000,
+    "y": 370,
+    "width": 80,
+    "height": 40
+  },
+  {
+    "id": "5N1uGk8ztbwP2YtJo4-4-17",
+    "label": "%SensorUnit%",
+    "UIType": "SensorUnit",
+    "x": 50,
+    "y": 20,
+    "width": 30,
+    "height": 20
+  },
+  {
+    "id": "5N1uGk8ztbwP2YtJo4-4-16",
+    "label": "%SensorValue%",
+    "UIType": "SensorValue",
+    "x": 0,
+    "y": 20,
+    "width": 50,
+    "height": 20
+  },
+  {
+    "id": "5N1uGk8ztbwP2YtJo4-4-30",
+    "label": "POT",
+    "UIType": "SensorComponent",
+    "x": 5070,
+    "y": 633,
+    "width": 80,
+    "height": 40
+  },
+  {
+    "id": "5N1uGk8ztbwP2YtJo4-4-31",
+    "label": "%SensorUnit%",
+    "UIType": "SensorUnit",
+    "x": 50,
+    "y": 20,
+    "width": 30,
+    "height": 20
+  },
+  {
+    "id": "5N1uGk8ztbwP2YtJo4-4-32",
+    "label": "%SensorValue%",
+    "UIType": "SensorValue",
+    "x": 0,
+    "y": 20,
+    "width": 50,
+    "height": 20
+  },
+  {
+    "id": "SoNSZqjNJ5JNH-9I7Czr-1",
+    "label": "Sensor",
+    "UIType": "SensorComponent",
+    "x": 5659.8,
+    "y": 444,
+    "width": 80,
+    "height": 40
+  },
+  {
+    "id": "Q7Aj4TDem2_bHVDsCIPg-1",
+    "label": "Button",
+    "UIType": "ActuatorButton",
+    "x": 5557.5,
+    "y": 454,
+    "width": 60,
+    "height": 30
+  },
+  {
+    "id": "0rcYALMB40wMataaB7Bq-12",
+    "label": "NAME",
+    "UIType": "\t\nServoComponent",
+    "x": 410,
+    "y": 270,
+    "width": 100,
+    "height": 40
+  },
+  {
+    "id": "0rcYALMB40wMataaB7Bq-13",
+    "label": "closed",
+    "UIType": "ActuatorStateButton",
+    "x": 0,
+    "y": 20,
+    "width": 50,
+    "height": 20
+  },
+  {
+    "id": "0rcYALMB40wMataaB7Bq-14",
+    "label": "disabled",
+    "UIType": "ActuatorStatusButton",
+    "x": 50,
+    "y": 20,
+    "width": 50,
+    "height": 20
+  },
+  {
+    "id": "0rcYALMB40wMataaB7Bq-15",
+    "label": "",
+    "UIType": "ActuatorButton",
+    "x": 0,
+    "y": 0,
+    "width": 0,
+    "height": 0
+  },
+  {
+    "id": "0rcYALMB40wMataaB7Bq-16",
+    "label": "NAME",
+    "UIType": "\t\nServoComponent",
+    "x": 410,
+    "y": 360,
+    "width": 100,
+    "height": 40
+  },
+  {
+    "id": "0rcYALMB40wMataaB7Bq-17",
+    "label": "open",
+    "UIType": "ActuatorStateButton",
+    "x": 0,
+    "y": 20,
+    "width": 50,
+    "height": 20
+  },
+  {
+    "id": "0rcYALMB40wMataaB7Bq-18",
+    "label": "enabled",
+    "UIType": "ActuatorStatusButton",
+    "x": 50,
+    "y": 20,
+    "width": 50,
+    "height": 20
+  },
+  {
+    "id": "0rcYALMB40wMataaB7Bq-19",
+    "label": "NAME",
+    "UIType": "SolenoidComponent",
+    "x": 250,
+    "y": 270,
+    "width": 60,
+    "height": 40
+  },
+  {
+    "id": "0rcYALMB40wMataaB7Bq-20",
+    "label": "closed",
+    "UIType": "ActuatorStateButton",
+    "x": 0,
+    "y": 20,
+    "width": 60,
+    "height": 20
+  },
+  {
+    "id": "0rcYALMB40wMataaB7Bq-21",
+    "label": "NAME",
+    "UIType": "SolenoidComponent",
+    "x": 250,
+    "y": 360,
+    "width": 60,
+    "height": 40
+  },
+  {
+    "id": "0rcYALMB40wMataaB7Bq-22",
+    "label": "open",
+    "UIType": "ActuatorStateButton",
+    "x": 0,
+    "y": 20,
+    "width": 60,
+    "height": 20
+  },
+  {
+    "id": "-d_S3DJC4JoPe6PjOMY--285",
+    "label": "PFT",
+    "UIType": "SensorComponent",
+    "x": -1008,
+    "y": 260,
+    "width": 80,
+    "height": 40
+  },
+  {
+    "id": "-d_S3DJC4JoPe6PjOMY--286",
+    "label": "psi",
+    "UIType": "SensorUnit",
+    "x": 50,
+    "y": 20,
+    "width": 30,
+    "height": 20
+  },
+  {
+    "id": "-d_S3DJC4JoPe6PjOMY--287",
+    "label": "%SensorValue%",
+    "UIType": "SensorValue",
+    "x": 0,
+    "y": 20,
+    "width": 50,
+    "height": 20
+  },
+  {
+    "id": "-d_S3DJC4JoPe6PjOMY--288",
+    "label": "POT",
+    "UIType": "SensorComponent",
+    "x": -1095,
+    "y": 512,
+    "width": 80,
+    "height": 40
+  },
+  {
+    "id": "-d_S3DJC4JoPe6PjOMY--289",
+    "label": "psi",
+    "UIType": "SensorUnit",
+    "x": 50,
+    "y": 20,
+    "width": 30,
+    "height": 20
+  },
+  {
+    "id": "-d_S3DJC4JoPe6PjOMY--290",
+    "label": "%SensorValue%",
+    "UIType": "SensorValue",
+    "x": 0,
+    "y": 20,
+    "width": 50,
+    "height": 20
+  },
+  {
+    "id": "-d_S3DJC4JoPe6PjOMY--291",
+    "label": "MFT",
+    "UIType": "SensorComponent",
+    "x": -1028,
+    "y": 110,
+    "width": 80,
+    "height": 40
+  },
+  {
+    "id": "-d_S3DJC4JoPe6PjOMY--292",
+    "label": "kg",
+    "UIType": "SensorUnit",
+    "x": 50,
+    "y": 20,
+    "width": 30,
+    "height": 20
+  },
+  {
+    "id": "-d_S3DJC4JoPe6PjOMY--293",
+    "label": "%SensorValue%",
+    "UIType": "SensorValue",
+    "x": 0,
+    "y": 20,
+    "width": 50,
+    "height": 20
+  },
+  {
+    "id": "-d_S3DJC4JoPe6PjOMY--294",
+    "label": "PFM",
+    "UIType": "SensorComponent",
+    "x": -668,
+    "y": 80,
+    "width": 80,
+    "height": 40
+  },
+  {
+    "id": "-d_S3DJC4JoPe6PjOMY--295",
+    "label": "psi",
+    "UIType": "SensorUnit",
+    "x": 50,
+    "y": 20,
+    "width": 30,
+    "height": 20
+  },
+  {
+    "id": "-d_S3DJC4JoPe6PjOMY--296",
+    "label": "%SensorValue%",
+    "UIType": "SensorValue",
+    "x": 0,
+    "y": 20,
+    "width": 50,
+    "height": 20
+  },
+  {
+    "id": "-d_S3DJC4JoPe6PjOMY--298",
+    "label": "PGS",
+    "UIType": "SensorComponent",
+    "x": -929,
+    "y": 797,
+    "width": 80,
+    "height": 40
+  },
+  {
+    "id": "-d_S3DJC4JoPe6PjOMY--299",
+    "label": "psi",
+    "UIType": "SensorUnit",
+    "x": 50,
+    "y": 20,
+    "width": 30,
+    "height": 20
+  },
+  {
+    "id": "-d_S3DJC4JoPe6PjOMY--300",
+    "label": "%SensorValue%",
+    "UIType": "SensorValue",
+    "x": 0,
+    "y": 20,
+    "width": 50,
+    "height": 20
+  },
+  {
+    "id": "-d_S3DJC4JoPe6PjOMY--301",
+    "label": "PGSO",
+    "UIType": "SensorComponent",
+    "x": -1205,
+    "y": 771,
+    "width": 80,
+    "height": 40
+  },
+  {
+    "id": "-d_S3DJC4JoPe6PjOMY--302",
+    "label": "psi",
+    "UIType": "SensorUnit",
+    "x": 50,
+    "y": 20,
+    "width": 30,
+    "height": 20
+  },
+  {
+    "id": "-d_S3DJC4JoPe6PjOMY--303",
+    "label": "%SensorValue%",
+    "UIType": "SensorValue",
+    "x": 0,
+    "y": 20,
+    "width": 50,
+    "height": 20
+  },
+  {
+    "id": "-d_S3DJC4JoPe6PjOMY--308",
+    "label": "PCC",
+    "UIType": "SensorComponent",
+    "x": -708,
+    "y": 510,
+    "width": 80,
+    "height": 40
+  },
+  {
+    "id": "-d_S3DJC4JoPe6PjOMY--309",
+    "label": "psi",
+    "UIType": "SensorUnit",
+    "x": 50,
+    "y": 20,
+    "width": 30,
+    "height": 20
+  },
+  {
+    "id": "-d_S3DJC4JoPe6PjOMY--310",
+    "label": "%SensorValue%",
+    "UIType": "SensorValue",
+    "x": 0,
+    "y": 20,
+    "width": 50,
+    "height": 20
+  },
+  {
+    "id": "-d_S3DJC4JoPe6PjOMY--312",
+    "label": "MOT",
+    "UIType": "SensorComponent",
+    "x": -1028,
+    "y": 350,
+    "width": 80,
+    "height": 40
+  },
+  {
+    "id": "-d_S3DJC4JoPe6PjOMY--313",
+    "label": "kg",
+    "UIType": "SensorUnit",
+    "x": 50,
+    "y": 20,
+    "width": 30,
+    "height": 20
+  },
+  {
+    "id": "-d_S3DJC4JoPe6PjOMY--314",
+    "label": "%SensorValue%",
+    "UIType": "SensorValue",
+    "x": 0,
+    "y": 20,
+    "width": 50,
+    "height": 20
+  },
+  {
+    "id": "KQqw3_C_rDqJHmWYSDyP-12",
+    "label": "<span style=\"color: rgb(51, 51, 51); text-wrap-mode: nowrap;\">SVFTV</span>",
+    "UIType": "SolenoidComponent",
+    "x": -1308.5,
+    "y": 265,
+    "width": 60,
+    "height": 40
+  },
+  {
+    "id": "KQqw3_C_rDqJHmWYSDyP-13",
+    "label": "closed",
+    "UIType": "ActuatorStateButton",
+    "x": 0,
+    "y": 20,
+    "width": 60,
+    "height": 20
+  },
+  {
+    "id": "KQqw3_C_rDqJHmWYSDyP-14",
+    "label": "<span style=\"color: rgb(51, 51, 51); text-wrap-mode: nowrap;\">BVFTP</span>",
+    "UIType": "\t\nServoComponent",
+    "x": -1391.75,
+    "y": 212,
+    "width": 100,
+    "height": 40
+  },
+  {
+    "id": "KQqw3_C_rDqJHmWYSDyP-15",
+    "label": "closed",
+    "UIType": "ActuatorStateButton",
+    "x": 0,
+    "y": 20,
+    "width": 50,
+    "height": 20
+  },
+  {
+    "id": "KQqw3_C_rDqJHmWYSDyP-16",
+    "label": "disabled",
+    "UIType": "ActuatorStatusButton",
+    "x": 50,
+    "y": 20,
+    "width": 50,
+    "height": 20
+  },
+  {
+    "id": "KQqw3_C_rDqJHmWYSDyP-17",
+    "label": "",
+    "UIType": "ActuatorButton",
+    "x": 0,
+    "y": 0,
+    "width": 0,
+    "height": 0
+  },
+  {
+    "id": "KQqw3_C_rDqJHmWYSDyP-18",
+    "label": "<span style=\"color: rgb(51, 51, 51); text-wrap-mode: nowrap;\">SVOTV</span>",
+    "UIType": "SolenoidComponent",
+    "x": -1303.75,
+    "y": 497,
+    "width": 60,
+    "height": 40
+  },
+  {
+    "id": "KQqw3_C_rDqJHmWYSDyP-19",
+    "label": "closed",
+    "UIType": "ActuatorStateButton",
+    "x": 0,
+    "y": 20,
+    "width": 60,
+    "height": 20
+  },
+  {
+    "id": "KQqw3_C_rDqJHmWYSDyP-20",
+    "label": "<span style=\"color: rgb(51, 51, 51); text-wrap-mode: nowrap;\">BVOTP</span>",
+    "UIType": "\t\nServoComponent",
+    "x": -1377,
+    "y": 450,
+    "width": 100,
+    "height": 40
+  },
+  {
+    "id": "KQqw3_C_rDqJHmWYSDyP-21",
+    "label": "closed",
+    "UIType": "ActuatorStateButton",
+    "x": 0,
+    "y": 20,
+    "width": 50,
+    "height": 20
+  },
+  {
+    "id": "KQqw3_C_rDqJHmWYSDyP-22",
+    "label": "disabled",
+    "UIType": "ActuatorStatusButton",
+    "x": 50,
+    "y": 20,
+    "width": 50,
+    "height": 20
+  },
+  {
+    "id": "KQqw3_C_rDqJHmWYSDyP-23",
+    "label": "",
+    "UIType": "ActuatorButton",
+    "x": 0,
+    "y": 0,
+    "width": 0,
+    "height": 0
+  },
+  {
+    "id": "KQqw3_C_rDqJHmWYSDyP-24",
+    "label": "MFV",
+    "UIType": "\t\nServoComponent",
+    "x": -943,
+    "y": 217,
+    "width": 100,
+    "height": 40
+  },
+  {
+    "id": "KQqw3_C_rDqJHmWYSDyP-25",
+    "label": "closed",
+    "UIType": "ActuatorStateButton",
+    "x": 0,
+    "y": 20,
+    "width": 50,
+    "height": 20
+  },
+  {
+    "id": "KQqw3_C_rDqJHmWYSDyP-26",
+    "label": "disabled",
+    "UIType": "ActuatorStatusButton",
+    "x": 50,
+    "y": 20,
+    "width": 50,
+    "height": 20
+  },
+  {
+    "id": "KQqw3_C_rDqJHmWYSDyP-27",
+    "label": "",
+    "UIType": "ActuatorButton",
+    "x": 0,
+    "y": 0,
+    "width": 0,
+    "height": 0
+  },
+  {
+    "id": "KQqw3_C_rDqJHmWYSDyP-28",
+    "label": "<span style=\"color: rgb(51, 51, 51); text-wrap-mode: nowrap;\">BVGSO</span>",
+    "UIType": "\t\nServoComponent",
+    "x": -1043,
+    "y": 740,
+    "width": 100,
+    "height": 40
+  },
+  {
+    "id": "KQqw3_C_rDqJHmWYSDyP-29",
+    "label": "closed",
+    "UIType": "ActuatorStateButton",
+    "x": 0,
+    "y": 20,
+    "width": 50,
+    "height": 20
+  },
+  {
+    "id": "KQqw3_C_rDqJHmWYSDyP-30",
+    "label": "disabled",
+    "UIType": "ActuatorStatusButton",
+    "x": 50,
+    "y": 20,
+    "width": 50,
+    "height": 20
+  },
+  {
+    "id": "KQqw3_C_rDqJHmWYSDyP-31",
+    "label": "",
+    "UIType": "ActuatorButton",
+    "x": 0,
+    "y": 0,
+    "width": 0,
+    "height": 0
+  },
+  {
+    "id": "KQqw3_C_rDqJHmWYSDyP-32",
+    "label": "<span style=\"color: rgb(51, 51, 51); text-wrap-mode: nowrap;\">SVOTD</span>",
+    "UIType": "SolenoidComponent",
+    "x": -998,
+    "y": 470,
+    "width": 60,
+    "height": 40
+  },
+  {
+    "id": "KQqw3_C_rDqJHmWYSDyP-33",
+    "label": "closed",
+    "UIType": "ActuatorStateButton",
+    "x": 0,
+    "y": 20,
+    "width": 60,
+    "height": 20
+  },
+  {
+    "id": "KQqw3_C_rDqJHmWYSDyP-34",
+    "label": "<span style=\"color: rgb(51, 51, 51); text-wrap-mode: nowrap;\">SVGSD</span>",
+    "UIType": "SolenoidComponent",
+    "x": -966.8800000000001,
+    "y": 590,
+    "width": 60,
+    "height": 40
+  },
+  {
+    "id": "KQqw3_C_rDqJHmWYSDyP-35",
+    "label": "closed",
+    "UIType": "ActuatorStateButton",
+    "x": 0,
+    "y": 20,
+    "width": 60,
+    "height": 20
+  },
+  {
+    "id": "KQqw3_C_rDqJHmWYSDyP-36",
+    "label": "<span style=\"color: rgb(51, 51, 51); text-wrap-mode: nowrap;\">BVGSP</span>",
+    "UIType": "\t\nServoComponent",
+    "x": -1058,
+    "y": 860.55,
+    "width": 100,
+    "height": 40
+  },
+  {
+    "id": "KQqw3_C_rDqJHmWYSDyP-37",
+    "label": "closed",
+    "UIType": "ActuatorStateButton",
+    "x": 0,
+    "y": 20,
+    "width": 50,
+    "height": 20
+  },
+  {
+    "id": "KQqw3_C_rDqJHmWYSDyP-38",
+    "label": "disabled",
+    "UIType": "ActuatorStatusButton",
+    "x": 50,
+    "y": 20,
+    "width": 50,
+    "height": 20
+  },
+  {
+    "id": "KQqw3_C_rDqJHmWYSDyP-39",
+    "label": "",
+    "UIType": "ActuatorButton",
+    "x": 0,
+    "y": 0,
+    "width": 0,
+    "height": 0
+  },
+  {
+    "id": "KQqw3_C_rDqJHmWYSDyP-40",
+    "label": "<span style=\"color: rgb(51, 51, 51); text-wrap-mode: nowrap;\">SVMOVP</span>",
+    "UIType": "SolenoidComponent",
+    "x": -788.95,
+    "y": 980,
+    "width": 60,
+    "height": 40
+  },
+  {
+    "id": "KQqw3_C_rDqJHmWYSDyP-41",
+    "label": "closed",
+    "UIType": "ActuatorStateButton",
+    "x": 0,
+    "y": 20,
+    "width": 60,
+    "height": 20
+  },
+  {
+    "id": "KQqw3_C_rDqJHmWYSDyP-42",
+    "label": "<span style=\"color: rgb(51, 51, 51); text-wrap-mode: nowrap;\">SVBVGS</span>",
+    "UIType": "SolenoidComponent",
+    "x": -816.85,
+    "y": 780,
+    "width": 60,
+    "height": 40
+  },
+  {
+    "id": "KQqw3_C_rDqJHmWYSDyP-43",
+    "label": "closed",
+    "UIType": "ActuatorStateButton",
+    "x": 0,
+    "y": 20,
+    "width": 60,
+    "height": 20
+  }
+]
