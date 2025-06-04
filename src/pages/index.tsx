@@ -19,6 +19,8 @@ import {
 import Diagram from "./diagram";
 import Plots from "./plots";
 import ConfigPage from "./config";
+import TestPage from "./testing";
+import Parser from './parser';
 
 export default function Home() {
     const [isOpen, onOpen] = useState(false)
@@ -43,7 +45,11 @@ export default function Home() {
                     </TabPanel>
                     <TabPanel>
                         <Text margin='10px' fontSize='20px' as='b' position='absolute' top='0' left='0'> UTAT Rocketry</Text>
-                        <ConfigPage />
+                        <ComingSoon />
+                        {/* <Plots/> */}
+                        {/* <ConfigPage /> */}
+                        {/* <Parser /> */}
+                        {/* <TestPage /> */}
                     </TabPanel>
                 </TabPanels>
             </Tabs>
@@ -51,3 +57,20 @@ export default function Home() {
         </div>
     );
 }
+
+export function ComingSoon() {
+
+    return (
+        <div style={{position: 'relative', width: '100%', height: '100%', textAlign: 'center'}}>
+            <Text margin='10px' fontSize='20px' as='b'> Coming Soon!</Text>
+            <Text margin='10px' fontSize='16px'> This page is under construction.</Text>
+        </div>
+    );
+}
+/*
+<Parser />
+<Diagram/>
+<Plots/>
+<ConfigPage />
+<TestPage />
+*/

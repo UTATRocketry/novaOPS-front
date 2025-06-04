@@ -10,7 +10,7 @@ export type SensorData = {
 export type SensorUpdateCallback = (sensors: SensorData[]) => void;
 
 export type Command = {
-    type: 'solenoid' | 'servo';
+    type: string;
     name: string;
     state: string;
 };
@@ -77,8 +77,10 @@ export type ActuatorSvgProps = {
     fillColor?: string;
     strokeColor?: string;
     textColor?: string;
-    state: boolean;
+    openState?: boolean;
     powerState?: boolean;
-    onClick: () => void;
-    onClick2?: () => void;
+    armedState?: boolean;
+    onOpenClick?: () => void;
+    onPowerClick?: () => void;
+    onArmedClick?: () => void;
 };

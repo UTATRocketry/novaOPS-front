@@ -17,18 +17,24 @@ import {
     Tooltip,
     Legend
 } from 'recharts';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { connectToSensorStream } from './backend';
 
-type SensorDataPoint = { index: number; value: number };
+// Settable constants
+const TIME_WINDOW_SECONDS = 10; // visible time window
+const TICK_INTERVAL_SECONDS = 0; // x-axis tick spacing
+
+type SensorDataPoint = { time: number; value: number };
 
 export default function SensorPlots() {
     const [sensorDict, setSensorDict] = useState<Record<string, SensorDataPoint[]>>({});
     const [availableSensors, setAvailableSensors] = useState<string[]>([]);
     const [selectedSensors, setSelectedSensors] = useState<string[]>(['']);
-    const [startTime] = useState(() => Date.now());
 
-    // Handle dropdown change
+    const sensorStartTimes = useRef<Record<string, number>>({});
+    const latestTime = useRef<number>(0);
+    const useFakeBackend = false; // set to `true` to use the fake Backend
+
     const handleChange = (value: string, index: number) => {
         const updated = [...selectedSensors];
         updated[index] = value;
@@ -37,28 +43,35 @@ export default function SensorPlots() {
 
     useEffect(() => {
         const cleanup = connectToSensorStream((sensors) => {
-            const now = Math.floor((Date.now() - startTime) / 1000);
+            const now = Date.now();
             setSensorDict((prev) => {
                 const updated = { ...prev };
-                sensors.forEach(({ name, value }) => {
+                sensors.forEach(({ name, value, timestamp }) => {
                     const num = parseFloat(value);
                     if (isNaN(num)) return;
 
+                    const ts = timestamp ? new Date(timestamp).getTime() : now;
+
+                    if (!sensorStartTimes.current[name]) {
+                        sensorStartTimes.current[name] = ts;
+                    }
+                    const relTime = (ts - sensorStartTimes.current[name]) / 1000;
+                    latestTime.current = Math.max(latestTime.current, relTime);
+
                     if (!updated[name]) updated[name] = [];
-                    updated[name] = [...updated[name], { index: now, value: num }].slice(-100); // keep last 100 points
+                    updated[name] = [...updated[name], { time: relTime, value: num }]
+                        .filter(d => relTime - d.time <= TIME_WINDOW_SECONDS);
                 });
 
                 const allNames = Array.from(new Set(sensors.map(s => s.name)));
-                setAvailableSensors((prev) =>
-                    prev.length === 0 ? allNames : prev
-                );
+                setAvailableSensors((prev) => (prev.length === 0 ? allNames : prev));
 
                 return updated;
             });
-        }, true); // set to `true` to use the fake Backend
+        }, useFakeBackend);
 
         return () => cleanup?.();
-    }, [startTime]);
+    }, []);
 
     return (
         <Box p={4}>
@@ -66,7 +79,7 @@ export default function SensorPlots() {
                 Sensor Plots
             </Text>
 
-            <Flex gap={4} mb={6}>
+            <Flex gap={4} mb={6} wrap="wrap">
                 {selectedSensors.map((sensor, idx) => (
                     <Select
                         key={idx}
@@ -91,15 +104,21 @@ export default function SensorPlots() {
                 {selectedSensors.map((sensor, idx) =>
                     sensor && sensorDict[sensor] ? (
                         <Box key={sensor + idx}>
-                            <Text mb={2} fontWeight="semibold">
+                            <Text mb={2} fontWeight="semibold" textAlign="center">
                                 {sensor}
                             </Text>
                             <ResponsiveContainer width="100%" height={300}>
                                 <LineChart data={sensorDict[sensor]}>
                                     <CartesianGrid strokeDasharray="3 3" />
                                     <XAxis
-                                        dataKey="index"
-                                        tickFormatter={(v) => `${v}s`}
+                                        dataKey="time"
+                                        domain={[Math.max(0, latestTime.current - TIME_WINDOW_SECONDS), latestTime.current]}
+                                        type="number"
+                                        interval="preserveStartEnd" //{TICK_INTERVAL_SECONDS}
+                                        tickCount={TIME_WINDOW_SECONDS}
+                                        allowDecimals={true}
+                                        //tickFormatter={(v) => `${(latestTime.current-v).toFixed(0)}s`}
+                                        tickFormatter={(v) => `${(v).toFixed(1)}s`}
                                         label={{ value: 'Time (s)', position: 'insideBottom', offset: -10 }}
                                     />
                                     <YAxis
@@ -111,10 +130,11 @@ export default function SensorPlots() {
                                         }}
                                     />
                                     <Tooltip />
-                                    <Legend />
+                                    {/* <Legend /> */}
                                     <Line type="monotone" dataKey="value" stroke="#3182ce" dot={false} isAnimationActive={false} />
                                 </LineChart>
                             </ResponsiveContainer>
+                            
                         </Box>
                     ) : null
                 )}

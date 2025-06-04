@@ -1,10 +1,22 @@
 'use client';
 
 import React, {useEffect, useState} from 'react';
+import {
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+  PopoverHeader,
+  PopoverBody,
+  PopoverFooter,
+  PopoverArrow,
+  PopoverCloseButton,
+  PopoverAnchor,
+  Button,
+} from '@chakra-ui/react'
 import {SensorSvg} from './components/SensorComponent';
-import {ActuatorSvg, ServoSvg, SolenoidSvg} from './components/ActuatorComponent';
+import {ActuatorSvg, ServoSvg, SolenoidSvg, PoweredSvg, GpioSvg, PoweredGpioSvg} from './components/ActuatorComponent';
 import {connectToSensorStream, sendCommand} from './backend';
-import debounce from 'lodash.debounce';
+import throttle from 'lodash.throttle';
 
 // 1329 x 1014
 type UIComponent = {
@@ -19,60 +31,72 @@ type UIComponent = {
 };
 
 interface OverlayProps {
+    diagramFilename?: string
+    width: number;
+    height: number;
     isLocked: boolean
     useFakeBackend: boolean
+    
 }
 
-const Overlay: React.FC = ({isLocked, useFakeBackend}: OverlayProps) => {
+const Overlay: React.FC = ({diagramFilename, width, height, isLocked, useFakeBackend}: OverlayProps) => {
     const [components, setComponents] = useState<UIComponent[]>([]);
     const [sensorValues, setSensorValues] = useState<Record<string, string>>({});
     const [sensorUnits, setSensorUnits] = useState<Record<string, string>>({});
-    const [actuatorStates, setActuatorStates] = useState<Record<string, boolean>>({});
+    const [openStates, setOpenStates] = useState<Record<string, boolean>>({});
+    const [powerStates, setPowerStates] = useState<Record<string, boolean>>({});
+    const [armingStates, setArmingStates] = useState<Record<string, boolean>>({});
 
-    const [servoPowerStates, setServoPowerStates] = useState<Record<string, boolean>>({});
-
-
-    // Debounced updater to limit re-renders
-    const debouncedSetSensorValues = debounce(
-        (updates: Record<string, string>) => {
-            setSensorValues(prev => ({...prev, ...updates}));
-        },
-        0.5,
-        {leading: true, trailing: true}
-    );
+    const yOffset = 2; // Adjust if needed for your diagram
+    const xOffset = -8; 
 
     useEffect(() => {
-        fetch('/assets/ui-diagram.json')
+        fetch(`/assets/${diagramFilename}-overlay.json`) // ui-diagram-v4-overlay ${diagramFilename}-overlay.json
             .then(res => res.json())
             .then(data => {
                 setComponents(data);
 
-                const actuatorInit: Record<string, boolean> = {};
-                const servoPowerInit: Record<string, boolean> = {};
+                const openStatesInit: Record<string, boolean> = {};
+                const powerStatesInit: Record<string, boolean> = {};
+                const armingStatesInit: Record<string, boolean> = {};
                 const sensorValueInit: Record<string, string> = {};
                 const sensorUnitInit: Record<string, string> = {};
 
                 data.forEach((comp: UIComponent) => {
                     if (comp.UIType === 'SolenoidComponent') {
-                        actuatorInit[comp.id] = false;
+                        openStatesInit[comp.id] = false;
                     }
                     if (comp.UIType === 'ServoComponent') {
-                        actuatorInit[comp.id] = false;
-                        servoPowerInit[comp.id] = false;
+                        openStatesInit[comp.id] = false;
+                        powerStatesInit[comp.id] = false;
+                    }
+                    if (comp.UIType === 'PoweredDeviceComponent') {
+                        powerStatesInit[comp.id] = false;
+                    }
+                    if (comp.UIType === 'GpioDeviceComponent') {
+                        armingStatesInit[comp.id] = false;
+                        openStatesInit[comp.id] = false;
+                    }
+                    if (comp.UIType === 'PoweredGpioDeviceComponent') {
+                        powerStatesInit[comp.id] = false;
+                        armingStatesInit[comp.id] = false; 
+                        openStatesInit[comp.id] = false;
                     }
                     if (comp.UIType === 'SensorComponent') {
                         sensorValueInit[comp.id] = '0.00';
                         sensorUnitInit[comp.id] = 'unit';
                     }
                 });
-
-                setActuatorStates(actuatorInit);
-                setServoPowerStates(servoPowerInit);
+                // Initialize actuator states
+                setOpenStates(openStatesInit);
+                setPowerStates(powerStatesInit);
+                setArmingStates(armingStatesInit);
+                // Initialize sensor values and units
                 setSensorValues(sensorValueInit);
                 setSensorUnits(sensorUnitInit);
             });
     }, []);
-
+    /*
     useEffect(() => {
         if (components.length === 0) return;
 
@@ -87,157 +111,254 @@ const Overlay: React.FC = ({isLocked, useFakeBackend}: OverlayProps) => {
                     unitUpdates[comp.id] = sensor.unit;
                 }
             });
-
-            debouncedSetSensorValues(valueUpdates);
+            // Update sensor values and units
+            setSensorValues(prev => ({...prev, ...valueUpdates}));
             setSensorUnits(prev => ({...prev, ...unitUpdates}));
         }, useFakeBackend); // set to `true` to use the fake WebSocket
 
         return () => cleanup?.();
     }, [components]);
+    */
+    useEffect(() => {
+        if (components.length === 0) return;
+
+        // Throttled handler to avoid frequent UI updates
+        const throttledUpdate = throttle((sensors: any[]) => {
+            const valueUpdates: Record<string, string> = {};
+            const unitUpdates: Record<string, string> = {};
+
+            sensors.forEach(sensor => {
+                const comp = components.find(c => c.label === sensor.name);
+                if (comp) {
+                    valueUpdates[comp.id] = sensor.value;
+                    unitUpdates[comp.id] = sensor.unit;
+                }
+            });
+
+            setSensorValues(prev => ({ ...prev, ...valueUpdates }));
+            setSensorUnits(prev => ({ ...prev, ...unitUpdates }));
+        }, 200); // Adjust throttle delay in ms
+
+        const cleanup = connectToSensorStream(throttledUpdate, useFakeBackend);
+
+        return () => {
+            cleanup?.();
+            throttledUpdate.cancel(); // prevent memory leaks
+        };
+    }, [components, useFakeBackend]);
 
     // Toggle solenoid/servo actuator "open/closed" (affects `state`)
     const toggleActuator = async (
         id: string,
         label: string,
-        type: 'solenoid' | 'servo'
+        actuatorType: 'servo' | 'solenoid' | 'poweredDevice' | 'gpioDevice' | 'poweredGpioDevice',
+        stateType: 'open' | 'power' | 'arming'
     ) => {
-        const currentState = actuatorStates[id];
-        const newState = !currentState;
-
-        try {
-            await sendCommand(
-                {
-                    type,
-                    name: label,
-                    state: newState ? 'open' : 'closed',
-                },
-                useFakeBackend
-            );
-
-            // ✅ Only update the state after the command succeeds
-            setActuatorStates(prev => ({
-                ...prev,
-                [id]: newState,
-            }));
-        } catch (error) {
-            console.error('Command failed:', error);
-            // Don't update the state if the command failed
+        let currentState;
+        let commandState;
+        if (stateType === 'open') {
+            currentState = openStates[id];
+            commandState = !currentState ? 'open' : 'closed';
+        } else if (stateType === 'power') {
+            currentState = powerStates[id];
+            commandState = !currentState ? 'on' : 'off';
+        } else if (stateType === 'arming') {
+            currentState = armingStates[id];
+            commandState = !currentState ? 'armed' : 'disarmed';
+        } else {
+            console.error('Unknown state type:', stateType);
+            return;
         }
-    };
-
-
-    // Toggle servo "enabled/disabled" (affects `powerState`)
-    const toggleServoPower = async (
-        id: string,
-        label: string,
-        type: 'solenoid' | 'servo'
-    ) => {
-        const currentState = servoPowerStates[id];
         const newState = !currentState;
 
         try {
             await sendCommand(
                 {
-                    type,
+                    type: actuatorType,
                     name: label,
-                    state: newState ? 'on' : 'off',
+                    state: commandState,
                 },
                 useFakeBackend
             );
 
-            setServoPowerStates(prev => ({
-                ...prev,
-                [id]: newState,
-            }));
+            if (stateType === 'open') {
+                setOpenStates(prev => ({
+                    ...prev,
+                    [id]: newState,
+                }));
+            } else if (stateType === 'power') {
+                setPowerStates(prev => ({
+                    ...prev,
+                    [id]: newState,
+                }));
+            } else if (stateType === 'arming') {
+                setArmingStates(prev => ({
+                    ...prev,
+                    [id]: newState,
+                }));
+            }
         } catch (error) {
-            console.error('Power toggle failed:', error);
+            console.error('Toggle failed:', error);
         }
     };
 
 
     return (
         //<svg width={1329} height={1014} style={{ position: 'absolute', top: 0, left: 0, isolation: 'isolate'  }}>
-        <svg
-            viewBox="0 0 1329 1014"
-            preserveAspectRatio="xMidYMid meet"
-            style={{width: '100%', height: '100%', position: 'absolute', top: 0, left: 0, zIndex: 1}}
-        >
-            {components.map(component => {
-                const {id, label, UIType, x, y, width, height} = component;
+        <div>
+            <svg
+                viewBox={`0 0 ${width} ${height}`}
+                preserveAspectRatio="xMidYMid meet"
+                style={{width: '100%', height: '100%', position: 'absolute', top: 0, left: 0, zIndex: 1}}
+            >
+                {components.map(component => {
+                    const {id, label, UIType, x, y, width, height} = component;
 
-                if (UIType === 'SensorComponent') {
-                    return (
-                        <SensorSvg
-                            key={id}
-                            name={label}
-                            value={sensorValues[id] ?? 'No Data'}
-                            unit={sensorUnits[id] ?? 'unit'}
-                            x={x - 40}
-                            y={y - 48}
-                        />
-                    );
-                }
+                    if (UIType === 'SensorComponent') {
+                        return (
+                            <SensorSvg
+                                key={id}
+                                name={label}
+                                value={sensorValues[id] ?? 'No Data'}
+                                unit={sensorUnits[id] ?? 'unit'}
+                                x={x + xOffset}
+                                y={y + yOffset}
+                            />
+                        );
+                    }
 
-                if (UIType === 'ActuatorButton') {
-                    return (
-                        <ActuatorSvg
-                            key={id}
-                            name={label}
-                            x={x - 4404}
-                            y={y}
-                            width={width}
-                            height={height}
-                            state={actuatorStates[id]}
-                            onClick={() => isLocked ? null : toggleActuator(id, label, 'solenoid')}
-                        />
-                    );
-                }
+                    if (UIType === 'SolenoidComponent') {
+                        return (
+                            <SolenoidSvg
+                                key={id}
+                                name={label}
+                                x={x + xOffset}
+                                y={y + yOffset}
+                                width={width}
+                                height={height}
+                                openState={openStates[id]}
+                                onOpenClick={() => isLocked ? null : toggleActuator(id, label, 'solenoid', 'open')}
+                            />
+                        );
+                    }
 
-                if (UIType === 'SolenoidComponent') {
-                    return (
-                        <SolenoidSvg
-                            key={id}
-                            name={label}
-                            x={x - 40}
-                            y={y - 45}
-                            width={width}
-                            height={height}
-                            state={actuatorStates[id]}
-                            onClick={() => isLocked ? null : toggleActuator(id, label, 'solenoid')}
-                        />
-                    );
-                }
-
-                if (UIType === 'ServoComponent') {
-                    const isPowered = servoPowerStates[id];
-                    return (
-                        <ServoSvg
-                            key={id}
-                            name={label}
-                            x={x - 40}
-                            y={y - 40}
-                            width={width}
-                            height={height}
-                            state={actuatorStates[id]}
-                            powerState={isPowered}
-                            onClick={() =>
-                                isLocked || !isPowered
-                                    ? null
-                                    : toggleActuator(id, label, 'servo')
-                            }
-                            //powerState={servoPowerStates[id]}
-                            //onClick={() => isLocked ? null : toggleActuator(id, label, 'servo')}
-                            onClick2={() => isLocked ? null : toggleServoPower(id, label, 'servo')}
-                        />
-                    );
-                }
-
-                return null;
-            })}
-        </svg>
+                    if (UIType === 'ServoComponent') {
+                        const isPowered = powerStates[id];
+                        return (
+                            <ServoSvg
+                                key={id}
+                                name={label}
+                                x={x + xOffset}
+                                y={y + yOffset}
+                                width={width}
+                                height={height}
+                                openState={openStates[id]}
+                                powerState={isPowered}
+                                onOpenClick={() =>
+                                    isLocked || !isPowered
+                                        ? null
+                                        : toggleActuator(id, label, 'servo', 'open')
+                                }
+                                //powerState={servoPowerStates[id]}
+                                //onClick={() => isLocked ? null : toggleActuator(id, label, 'servo')}
+                                onPowerClick={() => isLocked ? null : toggleActuator(id, label, 'servo', 'power')}
+                            />
+                        );
+                    }
+                    if (UIType === 'PoweredDeviceComponent') {
+                        return (
+                            <PoweredSvg
+                                key={id}
+                                name={label}
+                                x={x + xOffset}
+                                y={y + yOffset}
+                                width={width}
+                                height={height}
+                                powerState={powerStates[id]}
+                                onPowerClick={() => isLocked ? null : toggleActuator(id, label, 'poweredDevice', 'power')}
+                            />
+                        );
+                    }
+                    if (UIType === 'GpioDeviceComponent') {
+                        return (
+                            <GpioSvg
+                                key={id}
+                                name={label}
+                                x={x + xOffset}
+                                y={y + yOffset}
+                                width={width}
+                                height={height}
+                                armedState={armingStates[id]}
+                                onArmedClick={() => isLocked ? null : toggleActuator(id, label, 'gpioDevice', 'arming')}
+                            />
+                        );
+                    }
+                    if (UIType === 'PoweredGpioDeviceComponent') {
+                        const isPowered = powerStates[id];
+                        return (
+                            <PoweredGpioSvg
+                                key={id}
+                                name={label}
+                                x={x + xOffset}
+                                y={y + yOffset}
+                                width={width}
+                                height={height}
+                                powerState={powerStates[id]}
+                                armedState={armingStates[id]}
+                                onPowerClick={() => isLocked ? null : toggleActuator(id, label, 'poweredGpioDevice', 'power')}
+                                onArmedClick={() =>
+                                    isLocked || !isPowered
+                                        ? null
+                                        : toggleActuator(id, label, 'poweredGpioDevice', 'arming')
+                                }
+                            />
+                        );
+                    }
+                    
+                    return null;
+                })}
+            </svg>
+            
+        </div>
     )
 }
 export default Overlay;
 
 
 // onClick={() => handleToggle(component.label)}
+/*
+{ Popovers rendered in HTML space }
+            {components.map(component => {
+                const { id, label, UIType, x, y } = component;
+
+                if (UIType === 'SensorComponent') {
+                return (
+                    <Popover key={`popover-${id}`} placement="top">
+                    <PopoverTrigger>
+                        <Button
+                            position="absolute"
+                            left={x - 40}
+                            top={y - 40}
+                            size="xs"
+                            variant="outline"
+                            colorScheme="blue"
+                            zIndex={2}
+                        >
+                            {label}
+                        </Button>
+                    </PopoverTrigger>
+                    <PopoverContent p={3}>
+                        <PopoverArrow />
+                        <PopoverCloseButton />
+                        <PopoverHeader>{label}</PopoverHeader>
+                        <PopoverBody>
+                        <strong>Value:</strong> {sensorValues[id] ?? 'No Data'}<br />
+                        <strong>Unit:</strong> {sensorUnits[id] ?? 'unit'}
+                        </PopoverBody>
+                    </PopoverContent>
+                    </Popover>
+                );
+                }
+                return null;
+            })}
+*/

@@ -1,10 +1,15 @@
 // components/Background.tsx
 import React from 'react';
 
-const Background: React.FC = () => (
+interface BackgroundProps {
+  diagramFilename: string;
+  width: number;
+  height: number;
+}
+const Background: React.FC = ({diagramFilename, width, height}: BackgroundProps) => (
     <svg
         id="pid-background"
-        viewBox="0 0 1329 1014"
+        viewBox={`0 0 ${width} ${height}`}
         preserveAspectRatio="xMidYMid meet"
         style={{
             width: '100%',
@@ -15,7 +20,7 @@ const Background: React.FC = () => (
             zIndex: 0,
         }}
     >
-        <image href="/assets/ui-diagram-background.svg" x="0" y="0" width="1329" height="1014" />
+        <image href={`/assets/${diagramFilename}-background.svg`} x="0" y="0" width={width} height={height} />
     </svg>
 );
 export default Background;

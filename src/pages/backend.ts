@@ -2,11 +2,13 @@
 import {SensorData, SensorUpdateCallback, Command, Config, ConfigUpdateCallback} from './components/types';
 
 const BACKEND_URL = 'http://192.168.0.1:8000';
-// /start_saving_data, /stop_saving_data, /download_data_file, /upload_config, /update_config
+// /start_saving_data, /stop_saving_data, /download_data_file, /upload_config, /update_config, /toggle_calibration, /get_config
 const WS_URL = 'ws://192.168.0.1:8000/ws_basic';
 
 
 const FAKE_SENSOR_NAMES = ['PFT', 'POT', 'PVO', 'MOT', 'MFT', 'PFM', 'PCC', 'PGSO', 'PGS'];
+
+const FAKE_SERVO_NAMES = ['BVFTP', 'BVGSO', 'BVGSP', 'BVOTP'];
 let socket: WebSocket | null = null;
 let reconnectTimeout: NodeJS.Timeout;
 
@@ -21,6 +23,7 @@ export function connectToSensorStream(onUpdate: SensorUpdateCallback, useFake = 
                 name,
                 value: (Math.random() * 100).toFixed(2),
                 unit: 'psi',
+                // Simulate a integer timestamp
                 timestamp: Date.now()
             }));
             onUpdate(sensors);
@@ -111,7 +114,16 @@ export async function downloadDataFile(useFake = false): Promise<void> {
                 filename = match[1];
             }
         }
-        return response.blob().then(blob => ({blob, filename}));
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        //document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
         console.log('[DATA FILE DOWNLOADED]');
 
     }
@@ -120,13 +132,45 @@ export async function downloadDataFile(useFake = false): Promise<void> {
     }
 }
 
+export async function getConfigs(useFake = false): Promise<string[]> {
+    if (useFake) {
+        console.log('[FAKE CONFIGS]');
+        return ["config1.yml", "config2.yml", "config3.yml"];
+    }
+    try {
+        const response = await fetch(`${BACKEND_URL}/get_configs`);
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+
+        const configs: string[] = await response.json();
+        console.log('[CONFIGS LOADED]', configs);
+        return configs;
+    } catch (err) {
+        console.error('[CONFIGS ERROR]', err);
+        return [];
+    }
+}
 /**
  * Gets the config from the backend HTTP endpoint or logs it if in fake mode.
  */
-export async function getConfig(onUpdate: ConfigUpdateCallback, useFake = false): Promise<void> {
+export async function getConfig(onUpdate: ConfigUpdateCallback, useFake = false): Promise<Config | void> {
     if (useFake) {
         console.log('[FAKE CONFIG]');
-        return;
+        // Return a fake config structure
+        const fakeConfig: Config = {
+            // Simulate sensor data with fake names and IDs (go from 0 to 7 for sensors in FAKE_SENSOR_NAMES, after that increase hatID)
+            sensors: FAKE_SENSOR_NAMES.map((name, index) => ({
+                hatID: index % 8, // Simulate 8 sensors with IDs from 0 to 7
+                channelID: index - 8*(index % 8), // Channel IDs from 0 to 7
+                name,
+                value: (Math.random() * 100).toFixed(2),
+                unit: 'psi',
+                timestamp: Date.now()
+            })),
+        };
+        onUpdate(fakeConfig);
+        return fakeConfig;
     }
     try {
         const response = await fetch(`${BACKEND_URL}/get_config`);
@@ -226,5 +270,28 @@ export async function stopRecording(useFake = false): Promise<void> {
     }
     catch (err) {
         console.error('[STOP RECORDING DATA ERROR]', err);
+    }
+}
+
+export async function toggleCalibration(calibrationState: boolean, useFake: boolean = false): Promise<void> {
+    if (useFake) {
+        console.log('[FAKE TOGGLED CALIBRATION]');
+        return;
+    }
+    try {
+        const response = await fetch(`${BACKEND_URL}/toggle_calibration`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({calibration: calibrationState})
+        });
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+        console.log('[TOGGLED CALIBRATION]');
+    }
+    catch (err) {
+        console.error('[TOGGLE CALIBRATION ERROR]', err);
     }
 }
