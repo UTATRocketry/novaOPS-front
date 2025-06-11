@@ -44,8 +44,8 @@ const Diagram: React.FC = () => {
         onClose: onParserClose,
     } = useDisclosure();
     const toast = useToast();
-    let diagramFilename = 'ui-diagram-v6.2'; // default diagram filename
-    const useFakeBackend = false; // set to `true` to use the fake Backend
+    let diagramFilename = 'ui-diagram-v7.2'; // default diagram filename
+    const useFakeBackend = true; // set to `true` to use the fake Backend
 
     useEffect(() => {
         isRecordingRef.current = isRecording;
@@ -107,7 +107,7 @@ const Diagram: React.FC = () => {
         });
     }, [assetsAvailable]);
     
-
+    
     const reloadConfig = async () => {
         try {
             await loadConfig(useFakeBackend);
@@ -141,7 +141,7 @@ const Diagram: React.FC = () => {
                     id: 'recording-started',
                     position: 'top',
                     title: 'Started recording data',
-                    status: 'success',
+                    status: 'info',
                     duration: 1000,
                     isClosable: true,
                 });
@@ -167,11 +167,11 @@ const Diagram: React.FC = () => {
                     id: 'recording-stopped',
                     position: 'top',
                     title: 'Stopped recording data',
-                    status: 'info',
+                    status: 'success',
                     duration: 1000,
                     isClosable: true,
                 });
-                await downloadDataFile(useFakeBackend);
+                //await downloadDataFile(useFakeBackend);
             }
             catch (err) {
                 console.error(err);
@@ -185,6 +185,30 @@ const Diagram: React.FC = () => {
                     isClosable: true,
                 });
             }
+        }
+    }
+    const downloadData = async () => {
+        try {
+            await downloadDataFile(useFakeBackend);
+            toast({
+                id: 'data-downloaded',
+                position: 'top',
+                title: 'Data file downloaded',
+                status: 'success',
+                duration: 1000,
+                isClosable: true,
+            });
+        } catch (err) {
+            console.error('Failed to download data file:', err);
+            toast({
+                id: 'data-download-error',
+                position: 'top',
+                title: 'Failed to download data file',
+                description: 'Please check the console for errors.',
+                status: 'error',
+                duration: 5000,
+                isClosable: true,
+            });
         }
     }
     const toggleCalibrationState = async () => {
@@ -254,6 +278,10 @@ const Diagram: React.FC = () => {
             if ((e.key === 's' || e.key === 'S') && e.altKey && !isParserOpen) {
                 e.preventDefault();
                 toggleRecording();
+            }
+            if ((e.key === 'd' || e.key === 'D') && e.altKey && !isParserOpen) {
+                e.preventDefault();
+                downloadData();
             }
             if ((e.key === 'c' || e.key === 'C') && e.ctrlKey && e.altKey && !isParserOpen) {
                 e.preventDefault();
@@ -328,6 +356,7 @@ const Diagram: React.FC = () => {
                         onOpen={onMenuOpen}
                         isRecording={isRecording}
                         toggleRecording={toggleRecording}
+                        downloadData={downloadData}
                         reloadConfig={reloadConfig}
                         isCalibrated={isCalibrated}
                         toggleCalibrationState={toggleCalibrationState}

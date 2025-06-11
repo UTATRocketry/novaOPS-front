@@ -1,5 +1,25 @@
 import * as React from 'react'
-import { ActuatorSvgProps } from './types';
+
+export type ActuatorSvgProps = {
+    name: string;
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    fontSize?: number;
+    fillColor?: string;
+    strokeColor?: string;
+    textColor?: string;
+    openState?: boolean;
+    powerState?: boolean;
+    armedState?: boolean;
+    positionState?: number;
+    positionOptions?: string[];
+    onOpenClick?: () => void;
+    onPowerClick?: () => void;
+    onArmedClick?: () => void;
+    onPositionClick?: (newPosition: number) => void;
+};
 
 //fontSize="xs"
 export function ActuatorSvg({name, x, y, width, height, onPowerClick, powerState, fontSize = 12, fillColor = "#e6e6e6", textColor = "#333333", strokeColor = "#666666"  }: ActuatorSvgProps) {
@@ -72,6 +92,42 @@ export function ServoSvg({name, x, y, width, height, onOpenClick, onPowerClick, 
                       stroke={powerState ? '#666666' : '#666666'}
                 />
                 <text x={x + 50 + 50/2} y={y + 20 + 20/2} fill={textColor} fontSize={fontSize}
+                      fontFamily="Helvetica" textAnchor="middle" dominantBaseline="middle">
+                    {powerState ? "enabled" : "disabled"}
+                </text>
+            </g>
+        </g>
+
+
+    );
+}
+
+export function Servo3Svg({name, x, y, width, height, onPositionClick, onPowerClick, positionState, positionOptions, powerState, fontSize = 12, fillColor = "#e6e6e6", textColor = "#333333", strokeColor = "#666666"  }: ActuatorSvgProps) {
+    return (
+        <g>
+            <text x={x + 120/2} y={y + 20/2}  fill={textColor} fontSize={fontSize}
+                  fontFamily="Arial" textAnchor="middle" dominantBaseline="middle">
+                {name}
+            </text>
+            
+            {[1, 2, 3].map((i) => (
+                <g key={i} onClick={() => onPositionClick && onPositionClick(i)} style={{ cursor: 'pointer' }}>
+                    <rect x={x + (i-1) * 20} y={y+20} width={20} height={20}
+                          fill={positionState === i ? '#A9C4EB' : '#DAE8FC'}
+                          stroke={positionState === i ? '#6C8EBF' : '#6C8EBF'}
+                    />
+                    <text x={x + (i-1) * 20 + 20/2} y={y + 20 + 20/2} fill={textColor} fontSize={fontSize}
+                          fontFamily="Arial" textAnchor="middle" dominantBaseline="middle">
+                        {positionOptions && positionOptions[i-1] ? positionOptions[i-1] : (i).toString()}
+                    </text>
+                </g>
+            ))}
+            <g onClick={onPowerClick} style={{ cursor: 'pointer' }}>
+                <rect x={x+60} y={y+20} width={60} height={20}
+                      fill={powerState ? '#E6E6E6' : '#BBBBBB'}
+                      stroke={powerState ? '#666666' : '#666666'}
+                />
+                <text x={x + 60 + 60/2} y={y + 20 + 20/2} fill={textColor} fontSize={fontSize}
                       fontFamily="Helvetica" textAnchor="middle" dominantBaseline="middle">
                     {powerState ? "enabled" : "disabled"}
                 </text>
@@ -184,6 +240,48 @@ type ActuatorComponentProps = {
 */
 
 /*
+{[1, 2, 3].map((i) => (
+            <g key={i} onClick={() => onPositionClick && onPositionClick(i)} style={{ cursor: 'pointer' }}>
+                <rect x={x + (i-1) * 20} y={y+20} width={20} height={20}
+                      fill={positionState === i ? '#A9C4EB' : '#DAE8FC'}
+                      stroke={positionState === i ? '#6C8EBF' : '#6C8EBF'}
+                />
+                <text x={x + i * 20 + 20/2} y={y + 20 + 20/2} fill={textColor} fontSize={fontSize}
+                      fontFamily="Arial" textAnchor="middle" dominantBaseline="middle">
+                    {i.toString()}
+                </text>
+            </g>
+            ))}
+            <g onClick={() => onPositionClick && onPositionClick(1)} style={{ cursor: 'pointer' }}>
+                <rect x={x} y={y+20} width={20} height={20}
+                      fill={positionState === 1 ? '#A9C4EB' : '#DAE8FC'}
+                      stroke={positionState === 1 ? '#6C8EBF' : '#6C8EBF'}
+                />
+                <text x={x + 20/2} y={y + 20 + 20/2} fill={textColor} fontSize={fontSize}
+                      fontFamily="Arial" textAnchor="middle" dominantBaseline="middle">
+                    1
+                </text>
+            </g>
+            <g onClick={() => onPositionClick && onPositionClick(2)} style={{ cursor: 'pointer' }}>
+                <rect x={x + 20} y={y+20} width={20} height={20}
+                      fill={positionState === 2 ? '#A9C4EB' : '#DAE8FC'}
+                      stroke={positionState === 2 ? '#6C8EBF' : '#6C8EBF'}
+                />
+                <text x={x +  20 + 20/2} y={y + 20 + 20/2} fill={textColor} fontSize={fontSize}
+                      fontFamily="Arial" textAnchor="middle" dominantBaseline="middle">
+                    2
+                </text>
+            </g>
+            <g onClick={() => onPositionClick && onPositionClick(3)} style={{ cursor: 'pointer' }}>
+                <rect x={x + 40} y={y+20} width={20} height={20}
+                      fill={positionState === 3 ? '#A9C4EB' : '#DAE8FC'}
+                      stroke={positionState === 3 ? '#6C8EBF' : '#6C8EBF'}
+                />
+                <text x={x +  40 + 20/2} y={y + 20 + 20/2} fill={textColor} fontSize={fontSize}
+                      fontFamily="Arial" textAnchor="middle" dominantBaseline="middle">
+                    3
+                </text>
+            </g>
           <g transform="translate(-0.5 -0.5)">
             <foreignObject overflow="visible" text-align="left" pointer-events="none"  x={x} y={y} width="100%"
                              height="100%" requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility">

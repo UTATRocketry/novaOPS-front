@@ -3,15 +3,18 @@
 import React from "react";
 import {IconButton, MenuButton, MenuList, MenuItem, Menu} from '@chakra-ui/react';
 import {
-    FaChevronUp, FaChevronDown, 
-    FaTools, FaPlay, FaStop, FaLock, FaUnlock, FaBolt, FaProjectDiagram 
+    FaChevronUp, FaChevronDown, FaChevronLeft, FaChevronRight,
+    FaTools, 
+    FaPlay, FaStop, FaDownload , 
+    FaLock, FaUnlock, FaBolt, FaProjectDiagram 
 } from "react-icons/fa";
-import {LuMenu, LuSettings2, LuSlidersHorizontal } from "react-icons/lu";
+import {LuMenu, LuSettings2, LuSlidersHorizontal, LuDownload  } from "react-icons/lu";
 
 interface ControlMenuProps {
     reloadConfig?: () => void
     isRecording?: boolean
     toggleRecording?: () => void
+    downloadData?: () => void
     isLocked?: boolean
     setIsLocked?: (isLocked: boolean) => void
     isCalibrated?: boolean
@@ -20,7 +23,7 @@ interface ControlMenuProps {
 }
 
 
-const ControlMenu: React.FC = ({reloadConfig, isRecording, toggleRecording, isLocked, setIsLocked, isCalibrated, toggleCalibration, openParser}: ControlMenuProps) => {
+const ControlMenu: React.FC = ({reloadConfig, isRecording, toggleRecording, downloadData, isLocked, setIsLocked, isCalibrated, toggleCalibration, openParser}: ControlMenuProps) => {
     return (
         <div>
             <Menu>
@@ -40,6 +43,9 @@ const ControlMenu: React.FC = ({reloadConfig, isRecording, toggleRecording, isLo
                     </MenuItem>
                     <MenuItem icon={isRecording ? <FaStop/> : <FaPlay/>} onClick={() => toggleRecording ? toggleRecording() : null} command="Alt+S">
                         {isRecording ? "Stop Recording Data" : "Start Recording Data"}
+                    </MenuItem>
+                    <MenuItem icon={<FaDownload />} onClick={() => downloadData ? downloadData() : null} command="Alt+D">
+                        Download Data
                     </MenuItem>
                     <MenuItem icon={isLocked ? <FaUnlock/> : <FaLock/>} onClick={() => setIsLocked ? setIsLocked(!isLocked) : null} command="Alt+L">
                         {isLocked ? "Unlock Actuators" : "Lock Actuators"}

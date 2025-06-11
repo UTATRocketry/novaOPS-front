@@ -49,6 +49,8 @@ export type UIComponent = {
     id: string;
     label: string;
     UIType: string;
+    positions?: string[];
+    defaultState?: string;
     x: number;
     y: number;
     width: number;
@@ -65,22 +67,4 @@ export type SensorSvgProps = {
     fillColor?: string;
     strokeColor?: string;
     textColor?: string;
-};
-
-export type ActuatorSvgProps = {
-    name: string;
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-    fontSize?: number;
-    fillColor?: string;
-    strokeColor?: string;
-    textColor?: string;
-    openState?: boolean;
-    powerState?: boolean;
-    armedState?: boolean;
-    onOpenClick?: () => void;
-    onPowerClick?: () => void;
-    onArmedClick?: () => void;
 };

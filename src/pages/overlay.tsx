@@ -12,23 +12,15 @@ import {
   PopoverCloseButton,
   PopoverAnchor,
   Button,
+  useToast
 } from '@chakra-ui/react'
 import {SensorSvg} from './components/SensorComponent';
-import {ActuatorSvg, ServoSvg, SolenoidSvg, PoweredSvg, GpioSvg, PoweredGpioSvg} from './components/ActuatorComponent';
+import {ActuatorSvg, ServoSvg, Servo3Svg, SolenoidSvg, PoweredSvg, GpioSvg, PoweredGpioSvg} from './components/ActuatorComponent';
 import {connectToSensorStream, sendCommand} from './backend';
+import { UIComponent } from './components/types';
 import throttle from 'lodash.throttle';
 
 // 1329 x 1014
-type UIComponent = {
-    id: string;
-    label: string;
-    UIType: string;
-    x: number;
-    y: number;
-    z: number;
-    width: number;
-    height: number;
-};
 
 interface OverlayProps {
     diagramFilename?: string
@@ -39,16 +31,41 @@ interface OverlayProps {
     
 }
 
-const Overlay: React.FC = ({diagramFilename, width, height, isLocked, useFakeBackend}: OverlayProps) => {
+const Overlay: React.FC = ({diagramFilename, width, height, isLocked, useFakeBackend }: OverlayProps) => {
     const [components, setComponents] = useState<UIComponent[]>([]);
     const [sensorValues, setSensorValues] = useState<Record<string, string>>({});
     const [sensorUnits, setSensorUnits] = useState<Record<string, string>>({});
     const [openStates, setOpenStates] = useState<Record<string, boolean>>({});
     const [powerStates, setPowerStates] = useState<Record<string, boolean>>({});
     const [armingStates, setArmingStates] = useState<Record<string, boolean>>({});
+    const [positionStates, setPositionStates] = useState<Record<string, number>>({}); // For Servo3Component position, 1, 2, or 3
+    const toast = useToast();
 
-    const yOffset = 2; // Adjust if needed for your diagram
-    const xOffset = -8; 
+    const yOffset = -1116.5; // Adjust if needed for your diagram
+    const xOffset = -876.4; 
+
+    const notifyLocked = () => {
+        console.warn('Actuators are locked. No action taken.');
+        toast({
+            id: 'actuators-locked',
+            position: 'top',
+            title: "Actuators are locked",
+            status: "error",
+            duration: 1000,
+            isClosable: true,
+        });
+    }
+    const notifyDisabled = () => {
+        console.warn('Actuator is disabled. No action taken.');
+        toast({
+            id: 'actuator-disabled',
+            position: 'top',
+            title: "Actuator is disabled",
+            status: "error",
+            duration: 1000,
+            isClosable: true,
+        });
+    }
 
     useEffect(() => {
         fetch(`/assets/${diagramFilename}-overlay.json`) // ui-diagram-v4-overlay ${diagramFilename}-overlay.json
@@ -59,6 +76,7 @@ const Overlay: React.FC = ({diagramFilename, width, height, isLocked, useFakeBac
                 const openStatesInit: Record<string, boolean> = {};
                 const powerStatesInit: Record<string, boolean> = {};
                 const armingStatesInit: Record<string, boolean> = {};
+                const positionStatesInit: Record<string, number> = {};
                 const sensorValueInit: Record<string, string> = {};
                 const sensorUnitInit: Record<string, string> = {};
 
@@ -68,6 +86,10 @@ const Overlay: React.FC = ({diagramFilename, width, height, isLocked, useFakeBac
                     }
                     if (comp.UIType === 'ServoComponent') {
                         openStatesInit[comp.id] = false;
+                        powerStatesInit[comp.id] = false;
+                    }
+                    if (comp.UIType === 'Servo3Component') {
+                        positionStatesInit[comp.id] = 1; // Initialize position state
                         powerStatesInit[comp.id] = false;
                     }
                     if (comp.UIType === 'PoweredDeviceComponent') {
@@ -91,6 +113,7 @@ const Overlay: React.FC = ({diagramFilename, width, height, isLocked, useFakeBac
                 setOpenStates(openStatesInit);
                 setPowerStates(powerStatesInit);
                 setArmingStates(armingStatesInit);
+                setPositionStates(positionStatesInit);
                 // Initialize sensor values and units
                 setSensorValues(sensorValueInit);
                 setSensorUnits(sensorUnitInit);
@@ -148,11 +171,14 @@ const Overlay: React.FC = ({diagramFilename, width, height, isLocked, useFakeBac
     }, [components, useFakeBackend]);
 
     // Toggle solenoid/servo actuator "open/closed" (affects `state`)
+    // Toggle servo3 actuator "position" (1, 2, or 3)
+    // Toggle powered device "on/off" (affects `power`)
     const toggleActuator = async (
         id: string,
         label: string,
-        actuatorType: 'servo' | 'solenoid' | 'poweredDevice' | 'gpioDevice' | 'poweredGpioDevice',
-        stateType: 'open' | 'power' | 'arming'
+        actuatorType: 'servo' | 'servo3' | 'solenoid' | 'poweredDevice' | 'gpioDevice' | 'poweredGpioDevice',
+        stateType: 'open' | 'power' | 'arming' | 'position',
+        newPosition?: number
     ) => {
         let currentState;
         let commandState;
@@ -165,6 +191,11 @@ const Overlay: React.FC = ({diagramFilename, width, height, isLocked, useFakeBac
         } else if (stateType === 'arming') {
             currentState = armingStates[id];
             commandState = !currentState ? 'armed' : 'disarmed';
+        } else if (stateType === 'position' && newPosition) {
+            const component = components.find(c => c.id === id);
+            currentState = positionStates[id];
+            commandState = component?.positions? component.positions[newPosition] : ["1", "2", "3"][newPosition]; // Default to 1, 2, 3 if not provided
+
         } else {
             console.error('Unknown state type:', stateType);
             return;
@@ -196,6 +227,11 @@ const Overlay: React.FC = ({diagramFilename, width, height, isLocked, useFakeBac
                     ...prev,
                     [id]: newState,
                 }));
+            } else if (stateType === 'position' && newPosition) {
+                setPositionStates(prev => ({
+                    ...prev,
+                    [id]: newPosition,
+                }));
             }
         } catch (error) {
             console.error('Toggle failed:', error);
@@ -209,7 +245,16 @@ const Overlay: React.FC = ({diagramFilename, width, height, isLocked, useFakeBac
             <svg
                 viewBox={`0 0 ${width} ${height}`}
                 preserveAspectRatio="xMidYMid meet"
-                style={{width: '100%', height: '100%', position: 'absolute', top: 0, left: 0, zIndex: 1}}
+                style={{
+                    width: '100%', 
+                    height: '100%', 
+                    position: 'absolute', 
+                    top: 0, 
+                    left: 0, 
+                    zIndex: 1,
+                    pointerEvents: 'auto'
+                
+                }}
             >
                 {components.map(component => {
                     const {id, label, UIType, x, y, width, height} = component;
@@ -237,7 +282,7 @@ const Overlay: React.FC = ({diagramFilename, width, height, isLocked, useFakeBac
                                 width={width}
                                 height={height}
                                 openState={openStates[id]}
-                                onOpenClick={() => isLocked ? null : toggleActuator(id, label, 'solenoid', 'open')}
+                                onOpenClick={() => isLocked ? notifyLocked() : toggleActuator(id, label, 'solenoid', 'open')}
                             />
                         );
                     }
@@ -254,14 +299,36 @@ const Overlay: React.FC = ({diagramFilename, width, height, isLocked, useFakeBac
                                 height={height}
                                 openState={openStates[id]}
                                 powerState={isPowered}
-                                onOpenClick={() =>
+                                onOpenClick={ () =>
                                     isLocked || !isPowered
-                                        ? null
+                                        ? (isLocked ? notifyLocked() : notifyDisabled())
                                         : toggleActuator(id, label, 'servo', 'open')
                                 }
                                 //powerState={servoPowerStates[id]}
                                 //onClick={() => isLocked ? null : toggleActuator(id, label, 'servo')}
-                                onPowerClick={() => isLocked ? null : toggleActuator(id, label, 'servo', 'power')}
+                                onPowerClick={() => isLocked ? notifyLocked() : toggleActuator(id, label, 'servo', 'power')}
+                            />
+                        );
+                    }
+                    if (UIType === 'Servo3Component') {
+                        const isPowered = powerStates[id];
+                        return (
+                            <Servo3Svg
+                                key={id}
+                                name={label}
+                                x={x + xOffset}
+                                y={y + yOffset}
+                                width={width}
+                                height={height}
+                                powerState={isPowered}
+                                positionState={positionStates[id]} // Use position state
+                                positionOptions={component.positions || ['1', '2', '3']} // Default to 1, 2, 3 if not provided
+                                onPositionClick={(newPosition: number) =>
+                                    isLocked || !isPowered
+                                        ? (isLocked ? notifyLocked() : notifyDisabled())
+                                        : toggleActuator(id, label, 'servo3', 'position', newPosition)
+                                }
+                                onPowerClick={() => isLocked ? notifyLocked() : toggleActuator(id, label, 'servo3', 'power')}
                             />
                         );
                     }
@@ -275,7 +342,7 @@ const Overlay: React.FC = ({diagramFilename, width, height, isLocked, useFakeBac
                                 width={width}
                                 height={height}
                                 powerState={powerStates[id]}
-                                onPowerClick={() => isLocked ? null : toggleActuator(id, label, 'poweredDevice', 'power')}
+                                onPowerClick={() => isLocked ? notifyLocked() : toggleActuator(id, label, 'poweredDevice', 'power')}
                             />
                         );
                     }
@@ -289,7 +356,7 @@ const Overlay: React.FC = ({diagramFilename, width, height, isLocked, useFakeBac
                                 width={width}
                                 height={height}
                                 armedState={armingStates[id]}
-                                onArmedClick={() => isLocked ? null : toggleActuator(id, label, 'gpioDevice', 'arming')}
+                                onArmedClick={() => isLocked ? notifyLocked() : toggleActuator(id, label, 'gpioDevice', 'arming')}
                             />
                         );
                     }
@@ -305,10 +372,10 @@ const Overlay: React.FC = ({diagramFilename, width, height, isLocked, useFakeBac
                                 height={height}
                                 powerState={powerStates[id]}
                                 armedState={armingStates[id]}
-                                onPowerClick={() => isLocked ? null : toggleActuator(id, label, 'poweredGpioDevice', 'power')}
+                                onPowerClick={() => isLocked ? notifyLocked() : toggleActuator(id, label, 'poweredGpioDevice', 'power')}
                                 onArmedClick={() =>
                                     isLocked || !isPowered
-                                        ? null
+                                        ? (isLocked ? notifyLocked() : notifyDisabled())
                                         : toggleActuator(id, label, 'poweredGpioDevice', 'arming')
                                 }
                             />
