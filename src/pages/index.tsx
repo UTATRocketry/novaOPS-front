@@ -1,96 +1,76 @@
-import Head from "next/head";
-import Image from "next/image";
-
-import styles from "@/styles/Home.module.css";
-
-import { Flex, Spacer,  Box, Center, Text, FormControl, FormLabel, SimpleGrid} from '@chakra-ui/react'
-import { Switch, Divider } from '@chakra-ui/react'
-import {useState, useEffect} from 'react'
-
-//Graph Imports
-import PressureGraph from "./pressureG";
-import FlowVelocityGraph from "./flowvelocity";
-
-import PIDDiagram from "./diagram";
-
-
+import { useState, useRef,  } from "react";
+import {
+    Text,
+    Button,
+    Tabs,
+    TabList,
+    TabPanels,
+    Tab,
+    TabPanel,
+    Drawer,
+    DrawerBody,
+    DrawerFooter,
+    DrawerHeader,
+    DrawerOverlay,
+    DrawerContent,
+    DrawerCloseButton,
+} from '@chakra-ui/react'
+// import Link from "next/link";
+import Diagram from "./diagram";
+import Plots from "./plots";
+import ConfigPage from "./config";
+import TestPage from "./testing";
+import Parser from './parser';
 
 export default function Home() {
+    const [isOpen, onOpen] = useState(false)
+    //const btnRef = useRef(false)
+    return (
+        <div style={{ backgroundColor: 'white', width: '100%', height: '100%' }}>
+            <Tabs align='end'>
+                <TabList>
+                    <Tab>P&ID</Tab>
+                    <Tab>Plots</Tab>
+                    <Tab>Config</Tab>
+                </TabList>
 
-  const [bvftp, SetBvftp] = useState(false);
-  const [rftp, Setrftp] = useState(false);
-  const [rvft, Setrvft] = useState(false);
-  const [bvftb, Setbvftb] = useState(false);
-  const [mfv, Setmfv] = useState(false);
-  const [eventArray, seteventArray] = useState([])
+                <TabPanels>
+                    <TabPanel>
+                        <Text margin='10px' fontSize='20px' as='b' position='absolute' top='0' left='0'> UTAT Rocketry</Text>
+                        <Diagram/>
+                    </TabPanel>
+                    <TabPanel>
+                        <Text margin='10px' fontSize='20px' as='b' position='absolute' top='0' left='0'> UTAT Rocketry</Text>
+                        <Plots/>
+                    </TabPanel>
+                    <TabPanel>
+                        <Text margin='10px' fontSize='20px' as='b' position='absolute' top='0' left='0'> UTAT Rocketry</Text>
+                        <ComingSoon />
+                        {/* <Plots/> */}
+                        {/* <ConfigPage /> */}
+                        {/* <Parser /> */}
+                        {/* <TestPage /> */}
+                    </TabPanel>
+                </TabPanels>
+            </Tabs>
 
-  
-  function addRFTP(e: any) {
-    const currentTime = new Date().toLocaleString(); // Get the current time
-    Setrftp(e.target.checked);
-    seteventArray(prevArray => [
-      ...prevArray,
-      { event: "RFTP", value: e.target.checked, time: currentTime }
-    ]);
-  }
-
-  function addBVFTP(e: any) {
-    const currentTime = new Date().toLocaleString(); // Get the current time
-    SetBvftp(e.target.checked);
-    seteventArray(prevArray => [
-      ...prevArray,
-      { event: "BVFTP", value: e.target.checked, time: currentTime }
-    ]);
-  }
-
-  function addRVFT(e: any) {
-    const currentTime = new Date().toLocaleString(); // Get the current time
-    Setrvft(e.target.checked);
-    seteventArray(prevArray => [
-      ...prevArray,
-      { event: "RVFT", value: e.target.checked, time: currentTime }
-    ]);
-  }
-
-  function addBVFTB(e: any) {
-    const currentTime = new Date().toLocaleString(); // Get the current time
-    Setbvftb(e.target.checked);
-    seteventArray(prevArray => [
-      ...prevArray,
-      { event: "BVFTB", value: e.target.checked, time: currentTime }
-    ]);
-  }
-
-  function addMFV(e: any) {
-    const currentTime = new Date().toLocaleString(); // Get the current time
-    Setmfv(e.target.checked);
-    seteventArray(prevArray => [
-      ...prevArray,
-      { event: "MFV", value: e.target.checked, time: currentTime }
-    ]);
-  }
-
-
-  useEffect(() => {
-    if (bvftp == true) {
-      console.log("it is true")
-      console.log(bvftp)
-    }
-  })
-
-
-  return (
-    <>
-    <div>
-      <PIDDiagram />
-    </div>
-    
-      
-          
-          
-          
-          
-
-    </>
-  )
+        </div>
+    );
 }
+
+export function ComingSoon() {
+
+    return (
+        <div style={{position: 'relative', width: '100%', height: '100%', textAlign: 'center'}}>
+            <Text margin='10px' fontSize='20px' as='b'> Coming Soon!</Text>
+            <Text margin='10px' fontSize='16px'> This page is under construction.</Text>
+        </div>
+    );
+}
+/*
+<Parser />
+<Diagram/>
+<Plots/>
+<ConfigPage />
+<TestPage />
+*/
