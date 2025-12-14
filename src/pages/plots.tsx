@@ -15,7 +15,6 @@ import {
     XAxis,
     YAxis,
     Tooltip,
-    Legend
 } from 'recharts';
 import { useEffect, useRef, useState } from 'react';
 import { connectToSensorStream } from './backend';
@@ -24,7 +23,7 @@ import { connectToSensorStream } from './backend';
 import { DndContext, closestCenter } from '@dnd-kit/core';
 import {SortableContext, useSortable, rectSortingStrategy, arrayMove } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Grid, GridItem, IconButton } from "@chakra-ui/react";
+import { Grid, GridItem } from "@chakra-ui/react";
 
 // Settable constants
 const TIME_WINDOW_SECONDS = 20; // visible time window
