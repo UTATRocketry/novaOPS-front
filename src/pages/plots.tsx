@@ -26,20 +26,31 @@ const TICK_INTERVAL_SECONDS = 0; // x-axis tick spacing
 
 type SensorDataPoint = { time: number; value: number };
 
+type Plot = {id: string; sensor: string };
+
 export default function SensorPlots() {
     const [sensorDict, setSensorDict] = useState<Record<string, SensorDataPoint[]>>({});
     const [availableSensors, setAvailableSensors] = useState<string[]>([]);
-    const [selectedSensors, setSelectedSensors] = useState<string[]>(['']);
+    const [plots, setPlots] = useState<Plot[]>([{ id: crypto.randomUUID(), sensor: ''}])        // React likes unique identifiers
 
     const sensorStartTimes = useRef<Record<string, number>>({});
     const latestTime = useRef<number>(0);
     const useFakeBackend = false; // set to `true` to use the fake Backend
 
-    const handleChange = (value: string, index: number) => {
-        const updated = [...selectedSensors];
-        updated[index] = value;
-        setSelectedSensors(updated);
+    const setPlotSensor = (id: string, sensor: string) => {
+        // set prev plot state's object that we are looking for to have the new sensor.
+        console.log("id: " + id + "sensor: " + sensor);
+        setPlots(prev => prev.map(p => (p.id === id ? { ...p, sensor } : p)));
     };
+
+    const addPlot = () => {
+        // append a new object at the end
+        setPlots(prev => [...prev, { id: crypto.randomUUID(), sensor: '' }]);
+    }
+
+    const deletePlot = (id: string) => {
+        setPlots(prev => prev.filter(p => p.id !== id));
+    }
 
     useEffect(() => {
         const cleanup = connectToSensorStream((sensors) => {
@@ -50,6 +61,7 @@ export default function SensorPlots() {
                     const num = parseFloat(value);
                     if (isNaN(num)) return;
 
+                    // timestamp is now getting the correct ms input
                     const ts = timestamp ? new Date(timestamp).getTime() : now;
 
                     if (!sensorStartTimes.current[name]) {
@@ -68,7 +80,8 @@ export default function SensorPlots() {
 
                 return updated;
             });
-        }, useFakeBackend);
+        }, 
+        useFakeBackend);
 
         return () => cleanup?.();
     }, []);
@@ -79,36 +92,41 @@ export default function SensorPlots() {
                 Sensor Plots
             </Text>
 
-            <Flex gap={4} mb={6} wrap="wrap">
-                {selectedSensors.map((sensor, idx) => (
-                    <Select
-                        key={idx}
-                        value={sensor}
-                        onChange={(e) => handleChange(e.target.value, idx)}
-                        placeholder="Select a sensor"
-                        width="200px"
-                    >
-                        {availableSensors.map((s) => (
-                            <option key={s} value={s}>
-                                {s}
-                            </option>
-                        ))}
-                    </Select>
+            <Flex gap={4} mb={6} wrap="wrap" align="center">
+                {plots.map((p) => (
+                        <Flex key={p.id} gap={2} align="center">
+                                <Select 
+                                value={p.sensor} 
+                                onChange={(e) => setPlotSensor(p.id, e.target.value)}
+                                placeholder="Select a sensor"
+                                width="200px"
+                                >
+                                        {availableSensors.map((s) => (
+                                                <option key={s} value={s}>{s}</option>
+                                        ))}
+                                </Select>
+                                <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => deletePlot(p.id)}
+                                isDisabled={plots.length === 1}
+                                >
+                                        [x]
+                                </Button>
+                        </Flex>
                 ))}
-                <Button onClick={() => setSelectedSensors([...selectedSensors, ''])}>
-                    + Add Plot
-                </Button>
+                <Button onClick={addPlot}>+ Add Plot</Button>
             </Flex>
 
             <Flex direction="column" gap={8}>
-                {selectedSensors.map((sensor, idx) =>
-                    sensor && sensorDict[sensor] ? (
-                        <Box key={sensor + idx}>
+                {plots.map((p) =>
+                    p.sensor && sensorDict[p.sensor] ? (
+                        <Box key={p.id}>
                             <Text mb={2} fontWeight="semibold" textAlign="center">
-                                {sensor}
+                                {p.sensor}
                             </Text>
                             <ResponsiveContainer width="100%" height={300}>
-                                <LineChart data={sensorDict[sensor]}>
+                                <LineChart data={sensorDict[p.sensor]}>
                                     <CartesianGrid strokeDasharray="3 3" />
                                     <XAxis
                                         dataKey="time"
