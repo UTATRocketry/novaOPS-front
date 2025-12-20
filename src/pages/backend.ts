@@ -39,7 +39,6 @@ export function connectToSensorStream(onUpdate: SensorUpdateCallback, useFake = 
             console.log('[WebSocket] Connected');
         };
 
-        // Call back is now firing at the frequency at which backend is sending
         socket.onmessage = event => {
             try {
                 const data = JSON.parse(event.data);

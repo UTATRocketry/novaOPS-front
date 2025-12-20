@@ -28,9 +28,14 @@ import { Grid, GridItem } from "@chakra-ui/react";
 // Settable constants
 const TIME_WINDOW_SECONDS = 20; // visible time window
 const TICK_INTERVAL_SECONDS = 0; // x-axis tick spacing
+const LAYOUT_KEY = "sensorPlots.layout.v1";
 
 type SensorDataPoint = { time: number; value: number };
 type Plot = { id: string; sensor: string, expanded: boolean };
+type SavedLayoutV1 = {
+    version: 1;
+    plots: Array<{ id: string; sensor: string; expanded: boolean }>;
+};
 
 function SortablePlotCard({
     plot,
@@ -80,6 +85,34 @@ function SortablePlotCard({
     );
 }
 
+// Helpers for saving plot setup into local storage
+function safeParseLayout(raw: string | null): SavedLayoutV1 | null {
+    if (!raw) return null;
+    try {
+        const obj = JSON.parse(raw);
+        if (obj?.version !== 1 || !Array.isArray(obj.plots)) return null;
+        // basic shape check
+        for (const p of obj.plots) {
+            if (typeof p?.id !== "string") return null;
+            if (typeof p?.sensor !== "string") return null;
+            if (typeof p?.expanded !== "boolean") return null;
+        }
+        return obj as SavedLayoutV1;
+    } catch {
+        return null;
+    }
+}
+
+function downloadJSON(filename: string, data: unknown) {
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
 export default function SensorPlots() {
     const [sensorDict, setSensorDict] = useState<Record<string, SensorDataPoint[]>>({});
     const [availableSensors, setAvailableSensors] = useState<string[]>([]);
@@ -102,18 +135,58 @@ export default function SensorPlots() {
             sensor: '',
             expanded: false
         }]);
-    }
+    };
 
     const deletePlot = (id: string) => {
         setPlots(prev => prev.filter(p => p.id !== id));
-    }
+    };
 
     const toggleExpand = (id: string) => {
         // toggle id's particular expanded status
         setPlots(prev => prev.map(p => (p.id === id ? { ...p, expanded: !p.expanded } : p)))
-    }
+    };
 
     const plotIds = plots.map(p => p.id);
+
+
+    // PLOT CONFIGURATION HELPERS
+    const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+    useEffect(() => {
+        const saved = safeParseLayout(localStorage.getItem(LAYOUT_KEY));
+        if (saved?.plots?.length) {
+            setPlots(saved.plots);
+        }
+    }, []);
+
+    useEffect(() => {
+        const payload: SavedLayoutV1 = {
+            version: 1,
+            plots
+        };
+        localStorage.setItem(LAYOUT_KEY, JSON.stringify(payload));
+    }, [plots]);
+
+    const saveToFile = () => {
+        const payload: SavedLayoutV1 = { version: 1, plots };
+        downloadJSON("sensor-plots-layout.json", payload);
+    };
+
+    const triggerLoadFromFile = () => fileInputRef.current?.click();
+
+    const onLoadFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const text = await file.text();
+        const loaded = safeParseLayout(text);
+        if (!loaded?.plots?.length) return;
+
+        setPlots(loaded.plots);
+        localStorage.setItem(LAYOUT_KEY, JSON.stringify(loaded));
+
+        e.target.value = "";
+    };
 
 
     useEffect(() => {
@@ -156,6 +229,18 @@ export default function SensorPlots() {
             <Text fontSize="2xl" mb={4} fontWeight="bold" textAlign="center">
                 Sensor Plots
             </Text>
+            <Flex gap={2} mb={4} justify="center" wrap="wrap">
+                <Button onClick={saveToFile} variant="outline">Save Layout</Button>
+                <Button onClick={triggerLoadFromFile} variant="outline">Load Layout</Button>
+
+                <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="application/json"
+                    style={{ display: "none" }}
+                    onChange={onLoadFile}
+                />
+            </Flex>
 
             <Flex gap={4} mb={6} wrap="wrap" align="center">
                 {plots.map((p) => (
