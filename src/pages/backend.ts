@@ -1,9 +1,11 @@
 // backend.ts
 import {SensorData, SensorUpdateCallback, Command, Config, ConfigUpdateCallback} from './components/types';
 
-const BACKEND_URL = 'http://0.0.0.0:8000';
+// const BACKEND_URL = 'http://0.0.0.0:8000';
+const BACKEND_URL = 'http://192.168.0.1:8000';
 // /start_saving_data, /stop_saving_data, /download_data_file, /upload_config, /update_config, /toggle_calibration, /get_config
-const WS_URL = 'ws://0.0.0.0:8000/ws_basic';
+// const WS_URL = 'ws://0.0.0.0:8000/ws_basic';
+const WS_URL = 'ws://192.168.0.1:8000/ws_basic';
 
 
 const FAKE_SENSOR_NAMES = ['PFT', 'POT', 'PVO', 'MOT', 'MFT', 'PFM', 'PCC', 'PGSO', 'PGS'];
