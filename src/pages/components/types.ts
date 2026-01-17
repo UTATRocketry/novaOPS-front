@@ -50,6 +50,7 @@ export type UIComponent = {
     label: string;
     UIType: string;
     positions?: string[];
+    defaultPosition?: string;
     defaultState?: string;
     x: number;
     y: number;

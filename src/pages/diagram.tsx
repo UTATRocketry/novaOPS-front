@@ -44,8 +44,8 @@ const Diagram: React.FC = () => {
         onClose: onParserClose,
     } = useDisclosure();
     const toast = useToast();
-    let diagramFilename = 'ui-diagram-v7.2'; // default diagram filename
-    const useFakeBackend = false; // set to `true` to use the fake Backend
+    let diagramFilename = 'ui-diagram-v8'; // default diagram filename
+    const useFakeBackend = true; // set to `true` to use the fake Backend
 
     useEffect(() => {
         isRecordingRef.current = isRecording;

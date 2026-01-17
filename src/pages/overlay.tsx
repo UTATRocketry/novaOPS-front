@@ -41,8 +41,8 @@ const Overlay: React.FC = ({diagramFilename, width, height, isLocked, useFakeBac
     const [positionStates, setPositionStates] = useState<Record<string, number>>({}); // For Servo3Component position, 1, 2, or 3
     const toast = useToast();
 
-    const yOffset = -1116.5; // Adjust if needed for your diagram
-    const xOffset = -876.4; 
+    const yOffset = -1117.5; // Adjust if needed for your diagram
+    const xOffset = -886.4; 
 
     const notifyLocked = () => {
         console.warn('Actuators are locked. No action taken.');
@@ -89,7 +89,14 @@ const Overlay: React.FC = ({diagramFilename, width, height, isLocked, useFakeBac
                         powerStatesInit[comp.id] = false;
                     }
                     if (comp.UIType === 'Servo3Component') {
-                        positionStatesInit[comp.id] = 1; // Initialize position state
+                        let initialPosition = 1; // fallback to position 1
+                        if (comp.defaultPosition && comp.positions) {
+                            const defaultIndex = comp.positions.indexOf(comp.defaultPosition);
+                            if (defaultIndex !== -1) {
+                                initialPosition = defaultIndex + 1; // positions are 1-indexed
+                            }
+                        }
+                        positionStatesInit[comp.id] = initialPosition;
                         powerStatesInit[comp.id] = false;
                     }
                     if (comp.UIType === 'PoweredDeviceComponent') {
@@ -194,7 +201,7 @@ const Overlay: React.FC = ({diagramFilename, width, height, isLocked, useFakeBac
         } else if (stateType === 'position' && newPosition) {
             const component = components.find(c => c.id === id);
             currentState = positionStates[id];
-            commandState = component?.positions? component.positions[newPosition] : ["1", "2", "3"][newPosition]; // Default to 1, 2, 3 if not provided
+            commandState = component?.positions? component.positions[newPosition - 1] : ["1", "2", "3"][newPosition - 1]; // Default to 1, 2, 3 if not provided
 
         } else {
             console.error('Unknown state type:', stateType);

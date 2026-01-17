@@ -119,8 +119,9 @@ export async function parseAndGenerateFiles(svgFile: File, xmlFile: File, diagra
         const w = parseFloat(geo.getAttribute('width') || '0');
         const h = parseFloat(geo.getAttribute('height') || '0');
         const positions = obj.getAttribute('Positions')?.split(',').map(p => p.trim()) || [];
+        const defaultPosition = obj.getAttribute('DefaultPosition') || '1';
         cellMap.set(id, true);
-        uiComponents.push({ id, label, UIType, positions, x, y, width: w, height: h });
+        uiComponents.push({ id, label, UIType, positions, defaultPosition, x, y, width: w, height: h });
     });
 
     // Strip interactive elements

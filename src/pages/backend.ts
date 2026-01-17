@@ -8,9 +8,9 @@ const BACKEND_URL = 'http://192.168.0.1:8000';
 const WS_URL = 'ws://192.168.0.1:8000/ws_basic';
 
 
-const FAKE_SENSOR_NAMES = ['PFT', 'POT', 'PVO', 'MOT', 'MFT', 'PFM', 'PCC', 'PGSO', 'PGS'];
+const FAKE_SENSOR_NAMES = ['PFT', 'POT', 'PVO', 'MOT', 'MFT', 'PFM', 'PCC', 'PGSO', 'PGS', 'CC-LC'];
 
-const FAKE_SERVO_NAMES = ['BVFTP', 'BVGSO', 'BVGSP', 'BVOTP'];
+const FAKE_SERVO_NAMES = ['BVGSO', 'BVGSP', 'BVGSD', 'SVGSD', 'SVBVGS','SVPP', 'SVMOVP','BVOTP', 'BVFTP', 'SVOTV', 'SVFTV', 'BVOTFD'];
 let socket: WebSocket | null = null;
 let reconnectTimeout: NodeJS.Timeout;
 
