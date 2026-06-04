@@ -27,7 +27,6 @@ import { Grid, GridItem } from "@chakra-ui/react";
 
 // Settable constants
 const TIME_WINDOW_SECONDS = 20; // visible time window
-const TICK_INTERVAL_SECONDS = 0; // x-axis tick spacing
 const LAYOUT_KEY = "sensorPlots.layout.v1";
 
 type SensorDataPoint = { time: number; value: number };
@@ -111,6 +110,26 @@ function downloadJSON(filename: string, data: unknown) {
     a.download = filename;
     a.click();
     URL.revokeObjectURL(url);
+}
+
+function timestampToMs(timestamp: number | string | null | undefined, fallbackMs: number) {
+    if (timestamp === null || timestamp === undefined || timestamp === '') {
+        return fallbackMs;
+    }
+
+    const numericTimestamp = Number(timestamp);
+    if (Number.isFinite(numericTimestamp)) {
+        if (numericTimestamp > 1_000_000_000_000) {
+            return numericTimestamp;
+        }
+        if (numericTimestamp > 1_000_000_000) {
+            return numericTimestamp * 1000;
+        }
+        return fallbackMs + numericTimestamp * 1000;
+    }
+
+    const parsed = new Date(timestamp).getTime();
+    return Number.isFinite(parsed) ? parsed : fallbackMs;
 }
 
 export default function SensorPlots() {
@@ -198,9 +217,7 @@ export default function SensorPlots() {
                     const num = parseFloat(value);
                     if (isNaN(num)) return;
 
-                    // timestamp is now getting the correct ms input
-                    // TODO: make sure that webserver (using mqtt) is giving this ms
-                    const ts = timestamp ? new Date(timestamp).getTime() : now;
+                    const ts = timestampToMs(timestamp, now);
 
                     if (!sensorStartTimes.current[name]) {
                         sensorStartTimes.current[name] = ts;
@@ -331,5 +348,3 @@ export default function SensorPlots() {
         </Box>
     );
 }
-
-
