@@ -11,8 +11,12 @@ export type SensorUpdateCallback = (sensors: SensorData[]) => void;
 
 export type Command = {
     type: string;
-    name: string;
-    state: string;
+    name?: string;
+    state?: string;
+    target?: number;
+    cmd_id?: number;
+    opcode?: number;
+    args?: number[];
 };
 
 export type SensorConfig = {

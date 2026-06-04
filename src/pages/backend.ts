@@ -1,18 +1,43 @@
 // backend.ts
 import {SensorData, SensorUpdateCallback, Command, Config, ConfigUpdateCallback} from './components/types';
 
-// const BACKEND_URL = 'http://0.0.0.0:8000';
-const BACKEND_URL = 'http://192.168.0.1:8000';
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL ?? 'http://192.168.0.1:8000';
+const BACKEND_WS_URL = process.env.NEXT_PUBLIC_BACKEND_WS_URL ?? BACKEND_URL.replace(/^http/, 'ws');
 // /start_saving_data, /stop_saving_data, /download_data_file, /upload_config, /update_config, /toggle_calibration, /get_config
-// const WS_URL = 'ws://0.0.0.0:8000/ws_basic';
-const WS_URL = 'ws://192.168.0.1:8000/ws_basic';
+const WS_URL = `${BACKEND_WS_URL}/ws_basic`;
+const FULL_WS_URL = `${BACKEND_WS_URL}/ws`;
 
 
 const FAKE_SENSOR_NAMES = ['PFT', 'POT', 'PVO', 'MOT', 'MFT', 'PFM', 'PCC', 'PGSO', 'PGS', 'CC-LC'];
 
-const FAKE_SERVO_NAMES = ['BVGSO', 'BVGSP', 'BVGSD', 'SVGSD', 'SVBVGS','SVPP', 'SVMOVP','BVOTP', 'BVFTP', 'SVOTV', 'SVFTV', 'BVOTFD'];
 let socket: WebSocket | null = null;
+let backendSocket: WebSocket | null = null;
 let reconnectTimeout: NodeJS.Timeout;
+let backendReconnectTimeout: NodeJS.Timeout;
+
+export type UartAck = {
+    ack_schema?: string;
+    sender?: number;
+    cmd_id?: number;
+    opcode?: number;
+    ok?: boolean;
+    status?: number;
+};
+
+export type BackendStreamData = {
+    sensors?: SensorData[];
+    uart?: Record<string, unknown>;
+    uart_ack?: UartAck;
+    uart_error?: Record<string, unknown>;
+    uart_decoded?: Record<string, unknown>;
+};
+
+export type UartCommand = {
+    target: number;
+    cmd_id: number;
+    opcode: number;
+    args?: number[];
+};
 
 /**
  * Connects to the sensor data WebSocket or starts fake data generation.
@@ -70,6 +95,58 @@ export function connectToSensorStream(onUpdate: SensorUpdateCallback, useFake = 
     };
 }
 
+export function connectToBackendStream(onUpdate: (data: BackendStreamData) => void, useFake = false) {
+    if (useFake) {
+        const fakeInterval = setInterval(() => {
+            onUpdate({
+                sensors: [],
+                uart_ack: {
+                    ack_schema: 'fake',
+                    sender: 4,
+                    cmd_id: Date.now() & 0xffff,
+                    opcode: 1,
+                    ok: true,
+                    status: 4,
+                },
+            });
+        }, 5000);
+
+        return () => clearInterval(fakeInterval);
+    }
+
+    const connect = () => {
+        backendSocket = new WebSocket(FULL_WS_URL);
+
+        backendSocket.onopen = () => {
+            console.log('[Backend WebSocket] Connected');
+        };
+
+        backendSocket.onmessage = event => {
+            try {
+                onUpdate(JSON.parse(event.data));
+            } catch (err) {
+                console.error('[Backend WebSocket] Message parse error:', err);
+            }
+        };
+
+        backendSocket.onerror = error => {
+            console.error('[Backend WebSocket] Error:', error);
+        };
+
+        backendSocket.onclose = () => {
+            console.warn('[Backend WebSocket] Connection closed. Retrying in 2s...');
+            backendReconnectTimeout = setTimeout(connect, 2000);
+        };
+    };
+
+    connect();
+
+    return () => {
+        clearTimeout(backendReconnectTimeout);
+        backendSocket?.close();
+    };
+}
+
 /**
  * Sends a command to the backend HTTP endpoint or logs it if in fake mode.
  */
@@ -95,7 +172,18 @@ export async function sendCommand(command: Command, useFake = false): Promise<vo
         console.log('[COMMAND SENT]', command);
     } catch (err) {
         console.error('[COMMAND ERROR]', err);
+        throw err;
     }
+}
+
+export async function sendUartCommand(command: UartCommand, useFake = false): Promise<void> {
+    await sendCommand({
+        type: 'uart',
+        target: command.target,
+        cmd_id: command.cmd_id,
+        opcode: command.opcode,
+        args: command.args ?? [],
+    }, useFake);
 }
 
 export async function downloadDataFile(useFake = false): Promise<void> {
