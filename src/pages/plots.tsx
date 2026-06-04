@@ -27,7 +27,9 @@ import { Grid, GridItem } from "@chakra-ui/react";
 
 // Settable constants
 const TIME_WINDOW_SECONDS = 20; // visible time window
+const MIN_PLOT_SAMPLE_INTERVAL_MS = 900;
 const LAYOUT_KEY = "sensorPlots.layout.v1";
+const USE_FAKE_BACKEND = false;
 
 type SensorDataPoint = { time: number; value: number };
 type Plot = { id: string; sensor: string, expanded: boolean };
@@ -132,14 +134,23 @@ function timestampToMs(timestamp: number | string | null | undefined, fallbackMs
     return Number.isFinite(parsed) ? parsed : fallbackMs;
 }
 
+function isStm32Sensor(name: string) {
+    return name.startsWith('FMC ') ||
+        name.startsWith('PMB ') ||
+        name.startsWith('EPB1 ') ||
+        name.startsWith('EPB2 ') ||
+        name.startsWith('EPB3 ') ||
+        name.startsWith('EPB4 ');
+}
+
 export default function SensorPlots() {
     const [sensorDict, setSensorDict] = useState<Record<string, SensorDataPoint[]>>({});
     const [availableSensors, setAvailableSensors] = useState<string[]>([]);
     const [plots, setPlots] = useState<Plot[]>([{ id: crypto.randomUUID(), sensor: '', expanded: false }])        // React likes unique identifiers
 
     const sensorStartTimes = useRef<Record<string, number>>({});
+    const lastPlottedTimes = useRef<Record<string, number>>({});
     const latestTime = useRef<number>(0);
-    const useFakeBackend = false; // set to `true` to use the fake Backend
 
     const setPlotSensor = (id: string, sensor: string) => {
         // set prev plot state's object that we are looking for to have the new sensor.
@@ -218,6 +229,14 @@ export default function SensorPlots() {
                     if (isNaN(num)) return;
 
                     const ts = timestampToMs(timestamp, now);
+                    const lastPlottedTime = lastPlottedTimes.current[name];
+                    if (lastPlottedTime !== undefined) {
+                        const elapsedMs = ts - lastPlottedTime;
+                        if (elapsedMs <= 0 || (isStm32Sensor(name) && elapsedMs < MIN_PLOT_SAMPLE_INTERVAL_MS)) {
+                            return;
+                        }
+                    }
+                    lastPlottedTimes.current[name] = ts;
 
                     if (!sensorStartTimes.current[name]) {
                         sensorStartTimes.current[name] = ts;
@@ -231,12 +250,12 @@ export default function SensorPlots() {
                 });
 
                 const allNames = Array.from(new Set(sensors.map(s => s.name)));
-                setAvailableSensors((prev) => (prev.length === 0 ? allNames : prev));
+                setAvailableSensors((prev) => Array.from(new Set([...prev, ...allNames])));
 
                 return updated;
             });
         },
-            useFakeBackend);
+            USE_FAKE_BACKEND);
 
         return () => cleanup?.();
     }, []);
