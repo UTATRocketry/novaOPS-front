@@ -1,0 +1,418 @@
+"use client";
+
+import { useCallback, useEffect, useState } from "react";
+import { Box, Flex } from "@chakra-ui/react";
+import { Card, Chip, Icon, Mono } from "@/components/primitives";
+import { useNovaStore } from "@/lib/store/store";
+import { sel } from "@/lib/store/selectors";
+import {
+  startRecording,
+  stopRecording,
+  getRecordingStatus,
+  toggleCalibration,
+  getCalibrationStatus,
+  downloadData,
+  reloadConfig,
+} from "@/lib/api";
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function cssVar(token: string): string {
+  return `var(--chakra-colors-${token.replace(/\./g, "-")})`;
+}
+
+// ---------------------------------------------------------------------------
+// Procedure card
+// ---------------------------------------------------------------------------
+
+interface Step {
+  label: string;
+}
+
+const DEFAULT_STEPS: Step[] = [
+  { label: "Verify all valves closed" },
+  { label: "Pressurize pressurant line" },
+  { label: "Open fuel fill valve" },
+  { label: "Confirm fuel level reading" },
+  { label: "Close fuel fill valve" },
+  { label: "Arm igniter" },
+  { label: "Confirm GO for ignition" },
+];
+
+interface ProcedureCardProps {
+  steps?: Step[];
+}
+
+function ProcedureCard({ steps = DEFAULT_STEPS }: ProcedureCardProps) {
+  const [active, setActive] = useState(0);
+  const done = active >= steps.length;
+
+  return (
+    <Card
+      title="Procedure"
+      headerAction={
+        <Chip status={done ? "nominal" : "info"}>
+          {done ? "Complete" : `${active + 1} / ${steps.length}`}
+        </Chip>
+      }
+    >
+      <Flex direction="column" gap={1.5}>
+        {steps.map((step, idx) => {
+          const isCompleted = idx < active;
+          const isCurrent = idx === active;
+          return (
+            <Flex
+              key={idx}
+              align="flex-start"
+              gap={2.5}
+              px={2}
+              py={1.5}
+              borderRadius="control"
+              border="1px solid"
+              borderColor={isCurrent ? "accent.solid" : "transparent"}
+              bg={
+                isCurrent
+                  ? `color-mix(in srgb, ${cssVar("accent.solid")} 10%, transparent)`
+                  : "transparent"
+              }
+              opacity={isCompleted ? 0.45 : 1}
+              transition="all 0.15s"
+            >
+              <Flex flexShrink={0} mt="1px" w="16px" justify="center">
+                {isCompleted ? (
+                  <Icon name="check_circle" size={15} fill={1} color="nominal" />
+                ) : (
+                  <Mono fontSize="xs" color="text.muted" lineHeight="1.4">
+                    {idx + 1}
+                  </Mono>
+                )}
+              </Flex>
+              <Box
+                fontSize="xs"
+                lineHeight="1.4"
+                color={isCompleted ? "text.muted" : "text.primary"}
+              >
+                {step.label}
+              </Box>
+            </Flex>
+          );
+        })}
+      </Flex>
+
+      <Flex justify="space-between" mt={3}>
+        <Box
+          as="button"
+          onClick={active === 0 ? undefined : () => setActive((a) => Math.max(a - 1, 0))}
+          aria-disabled={active === 0}
+          px={3}
+          py={1.5}
+          fontSize="xs"
+          fontFamily="mono"
+          fontWeight="600"
+          borderRadius="control"
+          border="1px solid"
+          borderColor={active === 0 ? "transparent" : "border.default"}
+          bg="transparent"
+          color={active === 0 ? "transparent" : "text.muted"}
+          cursor={active === 0 ? "default" : "pointer"}
+          transition="all 0.15s"
+          _hover={active === 0 ? {} : { borderColor: "accent.solid", color: "text.primary" }}
+        >
+          Back
+        </Box>
+        <Box
+          as="button"
+          onClick={done ? undefined : () => setActive((a) => Math.min(a + 1, steps.length))}
+          aria-disabled={done}
+          px={3}
+          py={1.5}
+          fontSize="xs"
+          fontFamily="mono"
+          fontWeight="600"
+          borderRadius="control"
+          bg={done ? "bg.surfaceRaised" : "accent.solid"}
+          color={done ? "text.muted" : "white"}
+          cursor={done ? "not-allowed" : "pointer"}
+          opacity={done ? 0.5 : 1}
+          transition="all 0.15s"
+          _hover={done ? {} : { opacity: 0.85 }}
+        >
+          {done ? "Done" : "Next"}
+        </Box>
+      </Flex>
+    </Card>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Actions card
+// ---------------------------------------------------------------------------
+
+interface ActionButtonProps {
+  label: string;
+  icon: string;
+  description: string;
+  onClick: () => void;
+  busy?: boolean;
+  /** Render in a "danger/active" tone (e.g. recording is live). */
+  active?: boolean;
+}
+
+function ActionButton({
+  label,
+  icon,
+  description,
+  onClick,
+  busy = false,
+  active = false,
+}: ActionButtonProps) {
+  return (
+    <Box
+      as="button"
+      w="100%"
+      textAlign="left"
+      px={3}
+      py={2}
+      borderRadius="control"
+      border="1px solid"
+      borderColor={active ? "nominal" : "border.default"}
+      bg={
+        active
+          ? `color-mix(in srgb, ${cssVar("nominal")} 12%, transparent)`
+          : "transparent"
+      }
+      cursor={busy ? "wait" : "pointer"}
+      opacity={busy ? 0.6 : 1}
+      aria-disabled={busy}
+      onClick={busy ? undefined : onClick}
+      transition="all 0.15s"
+      _hover={
+        busy
+          ? {}
+          : active
+            ? { bg: `color-mix(in srgb, ${cssVar("nominal")} 20%, transparent)` }
+            : {
+                borderColor: "accent.solid",
+                bg: `color-mix(in srgb, ${cssVar("accent.solid")} 8%, transparent)`,
+              }
+      }
+    >
+      <Flex align="center" gap={2}>
+        <Icon name={icon} size={16} color={active ? "nominal" : "text.muted"} />
+        <Box flex={1}>
+          <Mono
+            fontSize="xs"
+            fontWeight="600"
+            display="block"
+            color={active ? "nominal" : "text.primary"}
+          >
+            {label}
+          </Mono>
+          <Box fontSize="2xs" color="text.muted" mt={0.5}>
+            {description}
+          </Box>
+        </Box>
+      </Flex>
+    </Box>
+  );
+}
+
+function ActionsCard() {
+  const clientId = useNovaStore(sel.clientId);
+
+  const [recording, setRecording] = useState(false);
+  const [calibration, setCalibration] = useState(false);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  // Seed state from backend on mount — swallow errors silently if unavailable.
+  useEffect(() => {
+    getRecordingStatus()
+      .then((s) => setRecording(s.enabled))
+      .catch(() => {});
+    getCalibrationStatus()
+      .then((s) => setCalibration(s.enabled))
+      .catch(() => {});
+  }, []);
+
+  const run = useCallback(
+    async (key: string, fn: () => Promise<void>) => {
+      setBusy(key);
+      setError(null);
+      try {
+        await fn();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Action failed");
+      } finally {
+        setBusy(null);
+      }
+    },
+    [],
+  );
+
+  const onToggleRecording = () =>
+    run("recording", async () => {
+      const res = recording
+        ? await stopRecording(clientId ?? "")
+        : await startRecording(clientId ?? "");
+      setRecording(res.enabled);
+    });
+
+  const onReloadConfig = () =>
+    run("reload", async () => {
+      await reloadConfig();
+    });
+
+  const onDownload = () =>
+    run("download", async () => {
+      await downloadData();
+    });
+
+  const onToggleCalibration = () =>
+    run("calibration", async () => {
+      const res = await toggleCalibration(clientId ?? "", !calibration);
+      setCalibration(res.enabled);
+    });
+
+  return (
+    <Card title="Actions">
+      <Flex direction="column" gap={2}>
+        <ActionButton
+          label={recording ? "Stop recording" : "Start recording"}
+          icon={recording ? "stop_circle" : "fiber_manual_record"}
+          description={recording ? "Recording in progress" : "Begin saving data"}
+          onClick={onToggleRecording}
+          busy={busy === "recording"}
+          active={recording}
+        />
+        <ActionButton
+          label="Reload config"
+          icon="refresh"
+          description="Re-read config from disk"
+          onClick={onReloadConfig}
+          busy={busy === "reload"}
+        />
+        <ActionButton
+          label="Download data"
+          icon="download"
+          description="Save recorded data set"
+          onClick={onDownload}
+          busy={busy === "download"}
+        />
+        <ActionButton
+          label="Toggle calibration"
+          icon="tune"
+          description={calibration ? "Calibration: on" : "Calibration: off"}
+          onClick={onToggleCalibration}
+          busy={busy === "calibration"}
+          active={calibration}
+        />
+      </Flex>
+
+      {error && (
+        <Box mt={2.5} fontSize="2xs" fontFamily="mono" color="fault">
+          {error}
+        </Box>
+      )}
+    </Card>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Legend card
+// ---------------------------------------------------------------------------
+
+const SYSTEM_COLORS: { color: string; label: string }[] = [
+  { color: "blue.500", label: "Pressurant" },
+  { color: "red.500", label: "Fuel" },
+  { color: "green.500", label: "Oxidizer" },
+];
+
+const SYMBOL_LEGEND: { symbol: string; label: string }[] = [
+  { symbol: "⊗", label: "Ball valve (2-way)" },
+  { symbol: "⨂", label: "Ball valve (3-way)" },
+  { symbol: "⋈", label: "Solenoid valve" },
+  { symbol: "○", label: "Pressure transducer (PT)" },
+  { symbol: "□", label: "Thermocouple (TC)" },
+  { symbol: "◉", label: "Load cell (LC)" },
+];
+
+function LegendCard() {
+  return (
+    <Card title="Legend">
+      <Box
+        fontSize="2xs"
+        textTransform="uppercase"
+        letterSpacing="0.07em"
+        color="text.muted"
+        mb={2}
+      >
+        Systems
+      </Box>
+      <Flex direction="column" gap={1.5} mb={4}>
+        {SYSTEM_COLORS.map(({ color, label }) => (
+          <Flex key={label} align="center" gap={2}>
+            <Box
+              flexShrink={0}
+              w="20px"
+              h="3px"
+              bg={color}
+              borderRadius="full"
+            />
+            <Box fontSize="xs" color="text.primary">
+              {label}
+            </Box>
+          </Flex>
+        ))}
+      </Flex>
+
+      <Box
+        fontSize="2xs"
+        textTransform="uppercase"
+        letterSpacing="0.07em"
+        color="text.muted"
+        mb={2}
+      >
+        Symbols
+      </Box>
+      <Flex direction="column" gap={1.5}>
+        {SYMBOL_LEGEND.map(({ symbol, label }) => (
+          <Flex key={label} align="center" gap={2}>
+            <Mono
+              fontSize="sm"
+              color="text.primary"
+              w="20px"
+              textAlign="center"
+              flexShrink={0}
+            >
+              {symbol}
+            </Mono>
+            <Box fontSize="xs" color="text.muted">
+              {label}
+            </Box>
+          </Flex>
+        ))}
+      </Flex>
+    </Card>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Sidebar
+// ---------------------------------------------------------------------------
+
+export interface EngineSidebarProps {
+  steps?: Step[];
+}
+
+export function EngineSidebar({ steps }: EngineSidebarProps) {
+  return (
+    <Flex direction="column" gap={4} w="280px" flexShrink={0}>
+      <ProcedureCard steps={steps} />
+      <ActionsCard />
+      <LegendCard />
+    </Flex>
+  );
+}

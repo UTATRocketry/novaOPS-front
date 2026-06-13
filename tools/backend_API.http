@@ -1,0 +1,43 @@
+
+### Get the current acutators configuration
+GET http://nova-server:8000/api/actuators
+Accept: application/json
+
+
+### Get the current sensors configuration
+GET http://nova-server:8000/api/sensors
+Accept: application/json
+
+### Get the current roles
+GET http://nova-server:8000/api/flags/calibration
+Accept: application/json
+
+
+### Get the current roles
+GET http://192.168.1.19:8000/api/config
+Accept: application/json
+
+###
+POST http://nova-server:8000/api/lock
+Content-Type: application/json
+{
+  "enabled": false
+}
+
+### Update the current role
+POST http://nova-server:8000/api/roles
+Content-Type: application/json
+{
+  "role": "operator"
+}
+
+### Update another client's current role
+POST http://nova-server:8000/api/roles
+x-client-id: c830731e-b32b-40d7-860f-806a4183b646
+Content-Type: application/json
+
+{
+    "role": "admin",
+    "password": "admin",
+    "target_client_id": "c830731e-b32b-40d7-860f-806a4183b646"
+}
