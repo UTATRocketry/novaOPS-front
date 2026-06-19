@@ -2,6 +2,7 @@ import type {
   ActuatorStatesMessage,
   ClientMessage,
   ClientRole,
+  ConfigUpdateMessage,
   EngineDataMessage,
   ErrorMessage,
   FlightDataMessage,
@@ -12,6 +13,7 @@ import type {
   RoleRequestMessage,
   SessionMessage,
   SnapshotMessage,
+  SystemConfig,
 } from "../types";
 import { validateLayout } from "../pid/serializer";
 import { createStalenessTimer, useNovaStore } from "../store";
@@ -31,6 +33,13 @@ export interface NovaSocketOptions {
   baseReconnectDelayMs?: number;
   /** Upper bound on reconnect delay in ms. Default 30 000. */
   maxReconnectDelayMs?: number;
+  /**
+   * Called with the full config from a `config_update` broadcast. Config lives
+   * in the TanStack Query cache (not the Zustand store), so the host wires this
+   * to `queryClient.setQueryData` — applying the broadcast directly instead of
+   * re-fetching (per FRONTEND_API_GUIDE.md).
+   */
+  onConfigUpdate?: (config: SystemConfig) => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -58,6 +67,7 @@ export class NovaSocket {
   private readonly baseDelay: number;
   private readonly maxDelay: number;
   private readonly freshnessWindows: Partial<FreshnessWindows>;
+  private readonly onConfigUpdate?: (config: SystemConfig) => void;
 
   private ws: WebSocket | null = null;
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
@@ -83,6 +93,7 @@ export class NovaSocket {
     this.baseDelay = options.baseReconnectDelayMs ?? 1_000;
     this.maxDelay = options.maxReconnectDelayMs ?? 30_000;
     this.freshnessWindows = options.freshnessWindows ?? {};
+    this.onConfigUpdate = options.onConfigUpdate;
   }
 
   // ---- Public API ----------------------------------------------------------
@@ -265,6 +276,8 @@ export class NovaSocket {
       case "error": {
         const { detail } = m as unknown as ErrorMessage;
         store.setSocketError(typeof detail === "string" ? detail : "Unknown server error");
+        // Also surface it in the console / events log.
+        store.ingestConsoleMessage(m);
         break;
       }
 
@@ -275,9 +288,21 @@ export class NovaSocket {
         break;
       }
 
+      case "config_update": {
+        // Apply the broadcast config directly into the REST cache instead of
+        // re-fetching (config lives in TanStack Query, wired via the host).
+        const { config } = m as unknown as ConfigUpdateMessage;
+        if (config && typeof config === "object" && !Array.isArray(config)) {
+          this.onConfigUpdate?.(config);
+        }
+        break;
+      }
+
       default:
-        // Console passthrough or unrecognised message.
-        // These will be routed to the Console store slice in Phase 3.
+        // Console passthrough (nova/console rebroadcast), FAS console output
+        // (fas_frame / console_tx / console_ports / console_config / console_status),
+        // or any unrecognised message — all land in the console / events log.
+        store.ingestConsoleMessage(m);
         break;
     }
   }

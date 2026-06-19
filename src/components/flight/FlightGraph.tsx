@@ -7,8 +7,10 @@ import {
   useCallback,
 } from "react";
 import { Box, Flex, Text, Separator } from "@chakra-ui/react";
+import { useToken } from "@chakra-ui/react";
 import { Card, Mono } from "@/components/primitives";
 import type { FlightTelemetry, FlightEvent } from "@/lib/flight/types";
+require("uplot/dist/uPlot.min.css");
 
 // ---------------------------------------------------------------------------
 // Types
@@ -70,6 +72,7 @@ function normalise(arr: (number | null | undefined)[]): (number | null)[] {
 // ---------------------------------------------------------------------------
 
 export function FlightGraph({ currentTelemetry, events }: FlightGraphProps) {
+
   // History buffer — mutated in place
   const historyRef = useRef<FlightTelemetryPoint[]>([]);
   const [, forceRender] = useState(0);
@@ -311,6 +314,8 @@ interface UplotChartProps {
 
 function UplotChart({ history, activeSeries, events, enabledEvents }: UplotChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const axisProbeRef = useRef<HTMLDivElement>(null);
+  const gridProbeRef = useRef<HTMLDivElement>(null);
   // uPlot is a CJS module — the constructor IS the module export
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const uplotRef = useRef<any>(null);
@@ -319,6 +324,13 @@ function UplotChart({ history, activeSeries, events, enabledEvents }: UplotChart
 
   const buildChart = useCallback(() => {
     if (!containerRef.current || history.length === 0) return;
+
+    // uPlot paints to canvas and can't read CSS vars — resolve theme tokens
+    // to concrete colours from hidden probes so axis/ticks/grid follow the theme.
+    const readColor = (el: HTMLElement | null, fallback: string) =>
+      (el && getComputedStyle(el).color) || fallback;
+    const axisColor = readColor(axisProbeRef.current, "#94a0b3");
+    const gridColor = readColor(gridProbeRef.current, "#26303f");
 
     // Lazily import uPlot (CJS module — the module itself is the constructor)
     import("uplot").then((mod) => {
@@ -377,16 +389,17 @@ function UplotChart({ history, activeSeries, events, enabledEvents }: UplotChart
                 const ss = String(abs % 60).padStart(2, "0");
                 return `T${sign}${mm}:${ss}`;
               }),
-            stroke: "var(--chakra-colors-text-muted)",
-            ticks: { stroke: "var(--chakra-colors-border-default)", width: 1 },
-            grid: { stroke: "var(--chakra-colors-border-default)", width: 1, dash: [3, 4] },
+            stroke: axisColor,
+            ticks: { stroke: gridColor, width: 1 },
+            grid: { stroke: gridColor, width: 1, dash: [3, 4] },
           },
           {
             // Y axis: normalised 0–100%
+            label: "% of range",
             values: (_u, vals) => vals.map((v) => `${v?.toFixed(0)}%`),
-            stroke: "var(--chakra-colors-text-muted)",
-            ticks: { stroke: "var(--chakra-colors-border-default)", width: 1 },
-            grid: { stroke: "var(--chakra-colors-border-default)", width: 1, dash: [3, 4] },
+            stroke: axisColor,
+            ticks: { stroke: gridColor, width: 1 },
+            grid: { stroke: gridColor, width: 1, dash: [3, 4] },
           },
         ],
         series: [
@@ -485,13 +498,20 @@ function UplotChart({ history, activeSeries, events, enabledEvents }: UplotChart
   }, []);
 
   return (
-    <Box
-      ref={containerRef}
-      w="100%"
-      css={{
-        "& .u-wrap": { width: "100% !important" },
-        "& .u-over": { position: "relative" },
-      }}
-    />
+    <Box position="relative" w="100%">
+      <Box
+        ref={containerRef}
+        w="100%"
+        css={{
+          "& .u-wrap": { width: "100% !important" },
+          "& .u-over": { position: "relative" },
+        }}
+      />
+      {/* Hidden probes — let Chakra resolve theme tokens for the canvas axes. */}
+      <Box position="absolute" w="0" h="0" overflow="hidden" aria-hidden>
+        <Box ref={axisProbeRef} color="text.muted" />
+        <Box ref={gridProbeRef} color="border.default" />
+      </Box>
+    </Box>
   );
 }

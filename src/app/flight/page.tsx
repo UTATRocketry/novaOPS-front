@@ -7,16 +7,23 @@ import { PillTabs } from "@/components/primitives";
 import type { TabItem } from "@/components/primitives";
 import { useNovaStore } from "@/lib/store/store";
 import { sel } from "@/lib/store/selectors";
+import { useFlightKinematics } from "@/hooks/useFlightKinematics";
+import { useConfig } from "@/hooks/useConfig";
+import type { DeviceEntry, DeviceRange } from "@/lib/types";
 import {
   FlightKpiStrip,
   FlightStatusCard,
   IncomingPacketCard,
-  AxisChart,
   EnvironmentCard,
-  AltitudeTrendPlaceholder,
   FlightGraph,
+  FmcHealthStrip,
+  GpsReadout,
+  FmcAuxCard,
+  LiveChartCard,
+  AXIS3_SERIES,
+  axis3Values,
 } from "@/components/flight";
-import type { FlightMilestones } from "@/lib/flight/types";
+import type { FlightMilestones, FmcStatus } from "@/lib/flight/types";
 
 // ---------------------------------------------------------------------------
 // Tab config
@@ -31,13 +38,20 @@ const VIEW_TABS: TabItem[] = [
 ];
 
 const EMPTY_MILESTONES: FlightMilestones = {
-  launchDetected: false,
-  motorCutoff:    false,
-  apogee:         false,
-  drogueDeployed: false,
-  mainDeployed:   false,
-  landed:         false,
+  launchDetected:  false,
+  motorBurnout:    false,
+  apogeeDetected:  false,
+  drogueDeployed:  false,
+  mainDeployed:    false,
+  landingDetected: false,
 };
+
+/** First FMC board's status block (single FMC in the current fleet). */
+function firstFmc(fmc: Record<string, FmcStatus> | undefined): FmcStatus | undefined {
+  if (!fmc) return undefined;
+  for (const value of Object.values(fmc)) return value;
+  return undefined;
+}
 
 // ---------------------------------------------------------------------------
 // Page
@@ -56,7 +70,22 @@ export default function FlightPage() {
   const milestones    = flightEvents?.milestones   ?? EMPTY_MILESTONES;
   const launchEpochMs = flightEvents?.launchEpochMs ?? null;
   const phase         = telemetry?.phase ?? flightEvents?.phase;
-  const state         = telemetry?.state ?? flightEvents?.state;
+  const fsmState      = telemetry?.fsm?.state ?? telemetry?.state ?? flightEvents?.state;
+
+  // Velocity + inclination are not transmitted; estimate them UI-side.
+  const { velocity, inclination } = useFlightKinematics(telemetry);
+
+  const fmc = firstFmc(telemetry?.fmc);
+
+  // FMC chart Y-ranges from config.Devices (match the live FMC board key, else
+  // any device whose key starts with "FMC"). Absent metrics autoscale.
+  const { data: config } = useConfig();
+  const fmcKey = telemetry?.fmc ? Object.keys(telemetry.fmc)[0] : undefined;
+  const devices = (config?.Devices ?? []) as DeviceEntry[];
+  const fmcDev =
+    devices.find((d) => d.key === fmcKey) ??
+    devices.find((d) => d.key?.toUpperCase().startsWith("FMC"));
+  const r: Record<string, DeviceRange> = fmcDev?.ranges ?? {};
 
   return (
     <Box>
@@ -73,38 +102,70 @@ export default function FlightPage() {
       />
 
       {/* KPI strip — always visible, above tab content */}
-      <FlightKpiStrip telemetry={telemetry} launchEpochMs={launchEpochMs} />
+      <FlightKpiStrip
+        telemetry={telemetry}
+        launchEpochMs={launchEpochMs}
+        velocity={velocity}
+        inclination={inclination}
+        fsmState={fsmState}
+      />
 
       {/* ------------------------------------------------------------------ */}
       {/* Dashboard tab                                                        */}
       {/* ------------------------------------------------------------------ */}
       {view === "dashboard" && (
         <Flex gap={4} p={4} align="flex-start" flexWrap="wrap">
-          {/* Left column ~60% */}
+          {/* Left column ~60% — live rolling charts; window resets at launch. */}
           <Flex direction="column" gap={4} flex="3" minW="280px">
-            <AltitudeTrendPlaceholder altitude={telemetry?.altitude} />
-            <AxisChart
+            <LiveChartCard
+              title="Altitude"
+              series={[{ label: "Alt", colorToken: "info" }]}
+              values={[telemetry?.altitude]}
+              unit="m"
+              yMin={r.altitude?.[0]}
+              yMax={r.altitude?.[1]}
+              resetKey={launchEpochMs}
+              height={220}
+              noDataLabel="No barometer data"
+            />
+            <LiveChartCard
               title="Linear Acceleration"
-              data={telemetry?.accel}
-              unit="m/s²"
+              series={AXIS3_SERIES}
+              values={axis3Values(telemetry?.accel)}
+              unit="g"
+              yMin={r.accel?.[0]}
+              yMax={r.accel?.[1]}
+              resetKey={launchEpochMs}
               noDataLabel="No IMU data"
             />
-            <AxisChart
+            <LiveChartCard
               title="Angular Velocity"
-              data={telemetry?.gyro}
-              unit="deg/s"
+              series={AXIS3_SERIES}
+              values={axis3Values(telemetry?.gyro)}
+              unit="dps"
+              yMin={r.gyro?.[0]}
+              yMax={r.gyro?.[1]}
+              resetKey={launchEpochMs}
               noDataLabel="No gyro data"
             />
-            <AxisChart
+            <LiveChartCard
               title="Magnetic Field"
-              data={telemetry?.mag}
+              series={AXIS3_SERIES}
+              values={axis3Values(telemetry?.mag)}
               unit="µT"
+              yMin={r.mag?.[0]}
+              yMax={r.mag?.[1]}
+              resetKey={launchEpochMs}
               noDataLabel="No magnetometer data"
             />
-            <AxisChart
+            <LiveChartCard
               title="High-G Acceleration"
-              data={telemetry?.accelHi}
+              series={AXIS3_SERIES}
+              values={axis3Values(telemetry?.accelHi)}
               unit="g"
+              yMin={r.accelHi?.[0]}
+              yMax={r.accelHi?.[1]}
+              resetKey={launchEpochMs}
               noDataLabel="No high-G data"
             />
           </Flex>
@@ -114,15 +175,18 @@ export default function FlightPage() {
             <FlightStatusCard
               milestones={milestones}
               phase={phase}
-              state={state}
+              state={fsmState}
             />
-            <IncomingPacketCard
-              rawPacket={telemetry?.rawPacket}
-              live={isLive}
-            />
+            <FmcHealthStrip health={fmc?.health} />
+            <GpsReadout gps={telemetry?.gps} />
             <EnvironmentCard
               pressure={telemetry?.pressure}
               temperature={telemetry?.temperature}
+            />
+            <FmcAuxCard fmc={fmc} />
+            <IncomingPacketCard
+              rawPacket={telemetry?.rawPacket}
+              live={isLive}
             />
           </Flex>
         </Flex>

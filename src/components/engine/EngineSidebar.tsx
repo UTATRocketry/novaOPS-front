@@ -1,10 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { Box, Flex } from "@chakra-ui/react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Box, Flex, chakra } from "@chakra-ui/react";
 import { Card, Chip, Icon, Mono } from "@/components/primitives";
 import { useNovaStore } from "@/lib/store/store";
 import { sel } from "@/lib/store/selectors";
+import { useConfig } from "@/hooks/useConfig";
+import type { ProcedureEntry } from "@/lib/types";
 import {
   startRecording,
   stopRecording,
@@ -31,6 +33,8 @@ interface Step {
   label: string;
 }
 
+const NativeSelect = chakra("select");
+
 const DEFAULT_STEPS: Step[] = [
   { label: "Verify all valves closed" },
   { label: "Pressurize pressurant line" },
@@ -45,8 +49,26 @@ interface ProcedureCardProps {
   steps?: Step[];
 }
 
-function ProcedureCard({ steps = DEFAULT_STEPS }: ProcedureCardProps) {
+/**
+ * Procedure checklist. Sourced from the backend config `Procedures` section
+ * (authored on the Config page) when present, else the built-in default.
+ */
+function ProcedureCard({ steps: stepsOverride }: ProcedureCardProps) {
+  const { data: config } = useConfig();
+  const procedures: ProcedureEntry[] = config?.Procedures ?? [];
+  const [procIdx, setProcIdx] = useState(0);
   const [active, setActive] = useState(0);
+
+  // Reset progress when switching procedures or when config first arrives.
+  useEffect(() => { setActive(0); }, [procIdx, procedures.length]);
+
+  const steps = useMemo<Step[]>(() => {
+    if (stepsOverride) return stepsOverride;
+    const proc = procedures[procIdx];
+    if (proc) return proc.steps.map((label) => ({ label }));
+    return DEFAULT_STEPS;
+  }, [stepsOverride, procedures, procIdx]);
+
   const done = active >= steps.length;
 
   return (
@@ -58,6 +80,26 @@ function ProcedureCard({ steps = DEFAULT_STEPS }: ProcedureCardProps) {
         </Chip>
       }
     >
+      {procedures.length > 1 && !stepsOverride && (
+        <NativeSelect
+          value={String(procIdx)}
+          onChange={(e) => setProcIdx(Number(e.target.value))}
+          mb={3}
+          w="100%"
+          bg="bg.canvas"
+          borderWidth="1px"
+          borderColor="border.default"
+          borderRadius="control"
+          fontSize="xs"
+          fontFamily="mono"
+          px={2}
+          py={1}
+          color="text.primary"
+          cursor="pointer"
+        >
+          {procedures.map((p, i) => <option key={i} value={i}>{p.name || `Procedure ${i + 1}`}</option>)}
+        </NativeSelect>
+      )}
       <Flex direction="column" gap={1.5}>
         {steps.map((step, idx) => {
           const isCompleted = idx < active;
@@ -219,7 +261,7 @@ function ActionButton({
   );
 }
 
-function ActionsCard() {
+export function ActionsCard() {
   const clientId = useNovaStore(sel.clientId);
 
   const [recording, setRecording] = useState(false);

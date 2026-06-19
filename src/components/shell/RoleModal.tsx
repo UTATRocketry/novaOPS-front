@@ -197,11 +197,11 @@ export function RoleModal({ isOpen, onClose }: RoleModalProps) {
                     onChange={(e) =>
                       handleRoleChange(e.target.value as ClientRole)
                     }
-                    bg="bg.surface"
+                    bg="bg.canvas"
                     borderColor="border.default"
                     color="text.primary"
                     fontSize="sm"
-                    _focus={{ borderColor: "accent.solid", boxShadow: "none" }}
+                    _focus={{ borderColor: "accent.solid", boxShadow: "inset 0 1px 2px rgba(0,0,0,0.28)" }}
                   >
                     <option value="viewer">Viewer</option>
                     <option value="pad">Pad</option>

@@ -83,4 +83,9 @@ export const sel = {
 
   /** Most-recently-received P&ID layout; null = none received yet → use DEFAULT_LAYOUT. */
   pidLayout: (s: NovaStore) => s.pidLayout,
+
+  // ---- Console / event log ----
+
+  /** The rolling console / event log buffer. */
+  consoleMessages: (s: NovaStore) => s.consoleMessages,
 } as const;

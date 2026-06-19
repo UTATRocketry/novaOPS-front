@@ -18,3 +18,15 @@ export type { AltitudeTrendPlaceholderProps } from "./AltitudeTrendPlaceholder";
 
 export { FlightGraph } from "./FlightGraph";
 export type { FlightGraphProps } from "./FlightGraph";
+
+export { FmcHealthStrip } from "./FmcHealthStrip";
+export type { FmcHealthStripProps } from "./FmcHealthStrip";
+
+export { GpsReadout } from "./GpsReadout";
+export type { GpsReadoutProps } from "./GpsReadout";
+
+export { FmcAuxCard } from "./FmcAuxCard";
+export type { FmcAuxCardProps } from "./FmcAuxCard";
+
+export { LiveChartCard, AXIS3_SERIES, axis3Values } from "./LiveChartCard";
+export type { LiveChartCardProps } from "./LiveChartCard";

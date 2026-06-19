@@ -73,6 +73,8 @@ export function PidCanvas({
   const graphRef     = useRef<dia.Graph | null>(null);
   const paperRef     = useRef<dia.Paper | null>(null);
   const bridgeRef    = useRef<PidBridgeType | null>(null);
+  // Zoom-to-fit only once, on first layout load.
+  const didFitRef    = useRef(false);
 
   // Stable callback refs so effects don't re-run on re-render
   const onReadyRef      = useRef(onReady);
@@ -260,6 +262,12 @@ export function PidCanvas({
     bridge.indexLayout(sensors, actuators, activeLayout.systems, missingIds);
     bridge.setSafetyRules(safetyRules);
     bridge.setMode(mode);
+
+    // Zoom to fit once on first load, after the paper has its real size.
+    if (!didFitRef.current && (activeLayout.graph?.cells?.length ?? 0) > 0) {
+      didFitRef.current = true;
+      requestAnimationFrame(() => bridgeRef.current?.fitContent());
+    }
   }, [layout, sensors, actuators, safetyRules, mode]);
 
   // Keep the bridge's safety rules current if they load after the layout.

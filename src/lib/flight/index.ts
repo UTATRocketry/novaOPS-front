@@ -1,65 +1,46 @@
 import type {
   AdaptedFlightEvents,
   Axis3,
+  FasActuatorChannel,
+  FasBoard,
+  FasBoardPower,
+  FasSensorMasks,
   FlightEvent,
   FlightMilestones,
   FlightTelemetry,
+  FmcStatus,
   GpsData,
+  ImcStatus,
+  PmbStatus,
 } from "./types";
 
-export type { AdaptedFlightEvents, FlightEvent, FlightMilestones, FlightTelemetry, GpsData, Axis3 };
+export type {
+  AdaptedFlightEvents,
+  FasActuatorChannel,
+  FasBoard,
+  FasBoardPower,
+  FasSensorMasks,
+  FlightEvent,
+  FlightMilestones,
+  FlightTelemetry,
+  FmcStatus,
+  GpsData,
+  ImcStatus,
+  PmbStatus,
+  Axis3,
+};
 
-// ---------------------------------------------------------------------------
-// Backend key map
-//
-// The exact flight_data.data keys are unsettled (SPEC.md open question).
-// Each entry lists candidates in priority order — first finite-number match wins.
-// Update this map once the backend schema is finalized; no component code changes.
-// ---------------------------------------------------------------------------
-
-const K = {
-  altitude:    ["fmc.altitude",    "fmc.baro_alt",   "fmc.baro.alt",  "altitude"],
-  pressure:    ["fmc.pressure",    "fmc.baro_press",  "fmc.baro.press", "pressure"],
-  temperature: ["fmc.tempH7",      "fmc.temperature", "fmc.temp",      "temperature"],
-  velocity:    ["fmc.velocity",    "fmc.vel",         "velocity"],
-  inclination: ["fmc.inclination", "fmc.incl",        "inclination"],
-
-  accelX:   ["fmc.accel_x",  "fmc.accelX",  "fmc.imu.accelX"],
-  accelY:   ["fmc.accel_y",  "fmc.accelY",  "fmc.imu.accelY"],
-  accelZ:   ["fmc.accel_z",  "fmc.accelZ",  "fmc.imu.accelZ"],
-
-  accelHiX: ["fmc.hiG_x",   "fmc.hiGX",    "fmc.high_g_x"],
-  accelHiY: ["fmc.hiG_y",   "fmc.hiGY",    "fmc.high_g_y"],
-  accelHiZ: ["fmc.hiG_z",   "fmc.hiGZ",    "fmc.high_g_z"],
-
-  gyroX:    ["fmc.gyro_x",  "fmc.gyroX",   "fmc.imu.gyroX"],
-  gyroY:    ["fmc.gyro_y",  "fmc.gyroY",   "fmc.imu.gyroY"],
-  gyroZ:    ["fmc.gyro_z",  "fmc.gyroZ",   "fmc.imu.gyroZ"],
-
-  magX:     ["fmc.mag_x",   "fmc.magX",    "fmc.imu.magX"],
-  magY:     ["fmc.mag_y",   "fmc.magY",    "fmc.imu.magY"],
-  magZ:     ["fmc.mag_z",   "fmc.magZ",    "fmc.imu.magZ"],
-
-  gpsLat:   ["fmc.gps_lat", "fmc.gpsLat",  "fmc.gps.lat",  "lat"],
-  gpsLon:   ["fmc.gps_lon", "fmc.gpsLon",  "fmc.gps.lon",  "lon"],
-  gpsAlt:   ["fmc.gps_alt", "fmc.gpsAlt",  "fmc.gps.alt"],
-  gpsFix:   ["fmc.gps_fix", "fmc.gpsFix",  "fmc.gps.fix"],
-  gpsSats:  ["fmc.gps_sats","fmc.gpsSats", "fmc.gps.sats"],
-
-  phase:    ["fmc.flight_phase", "fmc.phase", "phase"],
-  state:    ["fmc.flight_state", "fmc.state", "state"],
-  rawPkt:   ["fmc.raw_packet",   "raw_packet", "rawPacket"],
-  ts:       ["fmc.timestamp",    "timestamp"],
-} satisfies Record<string, string[]>;
+// The backend reports engineering units directly (V / A / °C / hPa / g / dps /
+// µT), so the adapter reads values through unchanged — no rescaling here.
 
 // Milestone names for each FlightMilestone key (lowercase, case-insensitive match)
 const MILESTONE_NAMES: Record<keyof FlightMilestones, string[]> = {
   launchDetected: ["launch", "liftoff", "ignition", "launch_detected"],
-  motorCutoff:    ["burnout", "motor_burnout", "motor_cutoff", "meco"],
-  apogee:         ["apogee", "apogee_detected"],
+  motorBurnout:    ["burnout", "motor_burnout", "motor_cutoff", "meco"],
+  apogeeDetected:         ["apogee", "apogee_detected"],
   drogueDeployed: ["drogue", "drogue_deploy", "drogue_deployed"],
   mainDeployed:   ["main", "main_deploy", "main_deployed", "main_chute", "chute_deploy"],
-  landed:         ["landing", "landed", "touchdown", "touch_down"],
+  landingDetected:         ["landing", "landed", "touchdown", "touch_down"],
 };
 
 // ---------------------------------------------------------------------------
@@ -85,50 +66,268 @@ export function getMissionStartMs(): number | null {
 // Read helpers
 // ---------------------------------------------------------------------------
 
-function readNum(data: Record<string, unknown>, keys: string[]): number | undefined {
-  for (const key of keys) {
-    const v = data[key];
-    if (typeof v === "number" && isFinite(v)) return v;
-    // Accept { value: number } wrapper objects some backends emit
-    if (typeof v === "object" && v !== null) {
-      const inner = (v as Record<string, unknown>)["value"];
-      if (typeof inner === "number" && isFinite(inner)) return inner;
-    }
-  }
+function num(v: unknown): number | undefined {
+  return typeof v === "number" && isFinite(v) ? v : undefined;
+}
+
+function bool(v: unknown): boolean | undefined {
+  if (typeof v === "boolean") return v;
+  if (v === 1 || v === "1") return true;
+  if (v === 0 || v === "0") return false;
   return undefined;
 }
 
-function readStr(data: Record<string, unknown>, keys: string[]): string | undefined {
-  for (const key of keys) {
-    const v = data[key];
-    if (typeof v === "string" && v.length > 0) return v;
-  }
-  return undefined;
+function obj(v: unknown): Record<string, unknown> | undefined {
+  return typeof v === "object" && v !== null && !Array.isArray(v)
+    ? (v as Record<string, unknown>)
+    : undefined;
 }
 
-function readBool(data: Record<string, unknown>, keys: string[]): boolean | undefined {
-  for (const key of keys) {
-    const v = data[key];
-    if (typeof v === "boolean") return v;
-    if (v === 1 || v === "true"  || v === "1") return true;
-    if (v === 0 || v === "false" || v === "0") return false;
-  }
-  return undefined;
-}
-
-function readAxis3(
-  data: Record<string, unknown>,
-  xK: string[],
-  yK: string[],
-  zK: string[],
-): Axis3 | undefined {
-  const x = readNum(data, xK);
-  const y = readNum(data, yK);
-  const z = readNum(data, zK);
-  // Require all three axes — a partial reading would fabricate zeros for the
-  // absent components, violating the no-fabricated-value safety rule.
+/** Build an Axis3 from a `{ axes: [x, y, z] }` block. Requires all three axes. */
+function axis3(block: unknown): Axis3 | undefined {
+  const o = obj(block);
+  if (!o) return undefined;
+  const axes = o["axes"];
+  if (!Array.isArray(axes) || axes.length < 3) return undefined;
+  const x = num(axes[0]);
+  const y = num(axes[1]);
+  const z = num(axes[2]);
   if (x === undefined || y === undefined || z === undefined) return undefined;
   return { x, y, z, magnitude: Math.sqrt(x * x + y * y + z * z) };
+}
+
+/** Assign `out[key] = value` only when value is defined. */
+function put<T extends object, K extends keyof T>(out: T, key: K, value: T[K] | undefined): void {
+  if (value !== undefined) out[key] = value;
+}
+
+// ---------------------------------------------------------------------------
+// FAS block parsers
+// ---------------------------------------------------------------------------
+
+function parseBoards(raw: unknown): FasBoard[] | undefined {
+  if (!Array.isArray(raw)) return undefined;
+  const boards: FasBoard[] = [];
+  for (const entry of raw) {
+    const o = obj(entry);
+    if (!o) continue;
+    const key = typeof o["key"] === "string" ? o["key"] : undefined;
+    const kind = typeof o["kind"] === "string" ? o["kind"] : undefined;
+    const boardId = num(o["board_id"]);
+    if (key === undefined || kind === undefined || boardId === undefined) continue;
+    const board: FasBoard = { key, kind, boardId, online: bool(o["online"]) ?? false };
+    put(board, "uptimeMs", num(o["uptime_ms"]));
+    put(board, "numChannels", num(o["num_channels"]));
+    put(board, "numSensors", num(o["num_sensors"]));
+    put(board, "capsMask", num(o["caps_mask"]));
+    put(board, "fwVersion", num(o["fw_version"]));
+    boards.push(board);
+  }
+  return boards.length > 0 ? boards : undefined;
+}
+
+function parseActuators(raw: unknown): Record<string, FasActuatorChannel[]> | undefined {
+  const map = obj(raw);
+  if (!map) return undefined;
+  const out: Record<string, FasActuatorChannel[]> = {};
+  for (const [key, list] of Object.entries(map)) {
+    if (!Array.isArray(list)) continue;
+    const channels: FasActuatorChannel[] = [];
+    for (const entry of list) {
+      const o = obj(entry);
+      if (!o) continue;
+      const channelIdx = num(o["channel_idx"]);
+      if (channelIdx === undefined) continue;
+      const ch: FasActuatorChannel = {
+        channelIdx,
+        loadSwOn: bool(o["load_sw_on"]) ?? false,
+        faultBits: num(o["fault_bits"]) ?? 0,
+      };
+      put(ch, "pulseUs", num(o["pulse_us"]));
+      put(ch, "periodUs", num(o["period_us"]));
+      channels.push(ch);
+    }
+    if (channels.length > 0) out[key] = channels;
+  }
+  return Object.keys(out).length > 0 ? out : undefined;
+}
+
+function parseSensorMasks(raw: unknown): Record<string, FasSensorMasks> | undefined {
+  const map = obj(raw);
+  if (!map) return undefined;
+  const out: Record<string, FasSensorMasks> = {};
+  for (const [key, value] of Object.entries(map)) {
+    const o = obj(value);
+    if (!o) continue;
+    out[key] = {
+      connectedMask: num(o["connected_mask"]) ?? 0,
+      saturatedMask: num(o["saturated_mask"]) ?? 0,
+      errorMask: num(o["error_mask"]) ?? 0,
+    };
+  }
+  return Object.keys(out).length > 0 ? out : undefined;
+}
+
+function parseBoardPower(raw: unknown): Record<string, FasBoardPower> | undefined {
+  const map = obj(raw);
+  if (!map) return undefined;
+  const out: Record<string, FasBoardPower> = {};
+  for (const [key, value] of Object.entries(map)) {
+    const o = obj(value);
+    if (!o) continue;
+    const power: FasBoardPower = {};
+    put(power, "v8v4", num(o["v_8v4"]));
+    put(power, "v24v", num(o["v_24v0"]));
+    put(power, "i8v4", num(o["i_8v4"]));
+    put(power, "i24v", num(o["i_24v0"]));
+    out[key] = power;
+  }
+  return Object.keys(out).length > 0 ? out : undefined;
+}
+
+function parsePmb(raw: unknown): Record<string, PmbStatus> | undefined {
+  const map = obj(raw);
+  if (!map) return undefined;
+  const out: Record<string, PmbStatus> = {};
+  for (const [key, value] of Object.entries(map)) {
+    const o = obj(value);
+    if (!o) continue;
+    const status: PmbStatus = {};
+
+    const pwr = obj(o["pwr"]);
+    if (pwr) {
+      const block: NonNullable<PmbStatus["pwr"]> = {};
+      put(block, "v8v4", num(pwr["v_8v4"]));
+      put(block, "i8v4", num(pwr["i_8v4"]));
+      put(block, "v24v0", num(pwr["v_24v0"]));
+      put(block, "i24v0", num(pwr["i_24v0"]));
+      put(block, "p8v4", num(pwr["p_8v4"]));
+      put(block, "p24v0", num(pwr["p_24v0"]));
+      status.pwr = block;
+    }
+
+    const vmon = obj(o["vmon"]);
+    if (vmon) {
+      const block: NonNullable<PmbStatus["vmon"]> = {};
+      put(block, "vMain", num(vmon["v_main"]));
+      put(block, "vBatt", num(vmon["v_batt"]));
+      put(block, "vGse", num(vmon["v_gse"]));
+      put(block, "buckOn", bool(vmon["buck_on"]));
+      put(block, "boostOn", bool(vmon["boost_on"]));
+      put(block, "pg3v3", bool(vmon["pg_3v3"]));
+      put(block, "pg8v4", bool(vmon["pg_8v4"]));
+      put(block, "pg24v0", bool(vmon["pg_24v0"]));
+      put(block, "charger", bool(vmon["charger"]));
+      put(block, "battSrc", bool(vmon["batt_src"]));
+      status.vmon = block;
+    }
+
+    const temp = obj(o["temp"]);
+    if (temp) {
+      const block: NonNullable<PmbStatus["temp"]> = {};
+      put(block, "ambient", num(temp["temp_amb"]));
+      put(block, "buck", num(temp["temp_buck"]));
+      put(block, "boost", num(temp["temp_boost"]));
+      status.temp = block;
+    }
+
+    const charger = obj(o["charger"]);
+    if (charger) {
+      const block: NonNullable<PmbStatus["charger"]> = {};
+      put(block, "iChg", num(charger["i_chg_a"]));
+      put(block, "vBat", num(charger["v_bat"]));
+      put(block, "present", bool(charger["present"]));
+      put(block, "enabled", bool(charger["enabled"]));
+      put(block, "vinGood", bool(charger["vin_good"]));
+      put(block, "charging", bool(charger["charging"]));
+      put(block, "state", typeof charger["state"] === "string" ? (charger["state"] as string) : undefined);
+      put(block, "status", typeof charger["status"] === "string" ? (charger["status"] as string) : undefined);
+      put(block, "cells", num(charger["cells"]));
+      status.charger = block;
+    }
+
+    out[key] = status;
+  }
+  return Object.keys(out).length > 0 ? out : undefined;
+}
+
+function parseFmc(raw: unknown): Record<string, FmcStatus> | undefined {
+  const map = obj(raw);
+  if (!map) return undefined;
+  const out: Record<string, FmcStatus> = {};
+  for (const [key, value] of Object.entries(map)) {
+    const o = obj(value);
+    if (!o) continue;
+    const status: FmcStatus = {};
+
+    const health = obj(o["health"]);
+    if (health) {
+      const block: NonNullable<FmcStatus["health"]> = {};
+      put(block, "imuOk", bool(health["imu_ok"]));
+      put(block, "accelOk", bool(health["accel_ok"]));
+      put(block, "magOk", bool(health["mag_ok"]));
+      put(block, "baroOk", bool(health["baro_ok"]));
+      put(block, "gpsPresent", bool(health["gps_present"]));
+      status.health = block;
+    }
+
+    const sd = obj(o["sd"]);
+    if (sd) {
+      const block: NonNullable<FmcStatus["sd"]> = {};
+      put(block, "state", num(sd["state"]));
+      put(block, "stateName", typeof sd["state_name"] === "string" ? (sd["state_name"] as string) : undefined);
+      put(block, "err", num(sd["err"]));
+      put(block, "freeMb", num(sd["free_mb"]));
+      put(block, "writtenKb", num(sd["written_kb"]));
+      status.sd = block;
+    }
+
+    const radio = obj(o["radio"]);
+    if (radio) {
+      const block: NonNullable<FmcStatus["radio"]> = {};
+      put(block, "powered", bool(radio["powered"]));
+      put(block, "enabled", bool(radio["enabled"]));
+      put(block, "everyN", num(radio["every_n"]));
+      put(block, "txFrames", num(radio["tx_frames"]));
+      put(block, "txBytes", num(radio["tx_bytes"]));
+      status.radio = block;
+    }
+
+    const temp = obj(o["temp"]);
+    if (temp) {
+      const block: NonNullable<FmcStatus["temp"]> = {};
+      put(block, "h7", num(temp["temp_h7"]));
+      put(block, "pwr", num(temp["temp_pwr"]));
+      status.temp = block;
+    }
+
+    out[key] = status;
+  }
+  return Object.keys(out).length > 0 ? out : undefined;
+}
+
+function parseImc(raw: unknown): ImcStatus | undefined {
+  const o = obj(raw);
+  if (!o) return undefined;
+  const imc: ImcStatus = {
+    armed: bool(o["armed"]) ?? false,
+    armLine: bool(o["arm_line"]) ?? false,
+    disarmLine: bool(o["disarm_line"]) ?? false,
+  };
+  put(imc, "boardId", num(o["board_id"]));
+  put(imc, "flags", num(o["flags"]));
+  return imc;
+}
+
+/** First entry of `fas_fmc` — the active flight computer for lifted kinematics. */
+function firstFmcRaw(fasFmc: unknown): Record<string, unknown> | undefined {
+  const map = obj(fasFmc);
+  if (!map) return undefined;
+  for (const value of Object.values(map)) {
+    const o = obj(value);
+    if (o) return o;
+  }
+  return undefined;
 }
 
 // ---------------------------------------------------------------------------
@@ -136,65 +335,74 @@ function readAxis3(
 // ---------------------------------------------------------------------------
 
 /**
- * Map raw `flight_data.data` → typed `FlightTelemetry`.
+ * Map raw `flight_data.data` (the FAS structure) → typed `FlightTelemetry`.
  *
- * Returns only the fields that are present and parseable. Unknown keys in
- * `raw` are silently ignored — the component layer never sees raw backend keys.
+ * Lifts the active FMC's inertial + barometer readings to the top level for the
+ * dashboard components, and carries the full board fleet under the FAS blocks.
+ * Only present, parseable fields are set — absent data stays `undefined` so the
+ * UI renders `—` rather than a fabricated value.
  */
 export function adaptFlightData(raw: Record<string, unknown>): FlightTelemetry {
   const out: FlightTelemetry = {};
 
-  const altitude = readNum(raw, K.altitude);
-  if (altitude !== undefined) out.altitude = altitude;
+  // --- Lifted FMC kinematics ------------------------------------------------
+  const fmc = firstFmcRaw(raw["fas_fmc"]);
+  if (fmc) {
+    put(out, "accel", axis3(fmc["imu_accel"]));
+    put(out, "gyro", axis3(fmc["imu_gyro"]));
+    put(out, "accelHi", axis3(fmc["accel_hg"]));
+    put(out, "mag", axis3(fmc["mag"]));
 
-  const pressure = readNum(raw, K.pressure);
-  if (pressure !== undefined) out.pressure = pressure;
+    const baro = obj(fmc["baro"]);
+    if (baro) {
+      put(out, "pressure", num(baro["pressure_hpa"]));
+      put(out, "temperature", num(baro["temp_c"]));
+      put(out, "altitude", num(baro["altitude_m"]));
+    }
 
-  const temperature = readNum(raw, K.temperature);
-  if (temperature !== undefined) out.temperature = temperature;
+    // GPS — only present once the FMC has a position fix.
+    const pos = obj(fmc["gps_pos"]);
+    const info = obj(fmc["gps_info"]);
+    const lat = pos ? num(pos["lat"]) : undefined;
+    const lon = pos ? num(pos["lon"]) : undefined;
+    if (lat !== undefined && lon !== undefined) {
+      const gps: GpsData = { lat, lon };
+      if (info) {
+        put(gps, "alt", num(info["alt_m"]));
+        const fix = num(info["fix"]);
+        if (fix !== undefined) gps.fix = fix > 0;
+        put(gps, "satellites", num(info["sats"]));
+        const hdop = num(info["hdop"]);
+        // hdop is transmitted ×10 (integer); normalize back to a real value.
+        if (hdop !== undefined) gps.hdop = hdop / 10;
+        put(gps, "speed", num(info["speed_mps"]));
+      }
+      out.gps = gps;
+    }
 
-  const velocity = readNum(raw, K.velocity);
-  if (velocity !== undefined) out.velocity = velocity;
-
-  const inclination = readNum(raw, K.inclination);
-  if (inclination !== undefined) out.inclination = inclination;
-
-  const accel = readAxis3(raw, K.accelX, K.accelY, K.accelZ);
-  if (accel) out.accel = accel;
-
-  const accelHi = readAxis3(raw, K.accelHiX, K.accelHiY, K.accelHiZ);
-  if (accelHi) out.accelHi = accelHi;
-
-  const gyro = readAxis3(raw, K.gyroX, K.gyroY, K.gyroZ);
-  if (gyro) out.gyro = gyro;
-
-  const mag = readAxis3(raw, K.magX, K.magY, K.magZ);
-  if (mag) out.mag = mag;
-
-  const lat = readNum(raw, K.gpsLat);
-  const lon = readNum(raw, K.gpsLon);
-  if (lat !== undefined && lon !== undefined) {
-    const gps: GpsData = { lat, lon };
-    const alt = readNum(raw, K.gpsAlt);
-    if (alt !== undefined) gps.alt = alt;
-    const fix = readBool(raw, K.gpsFix);
-    if (fix !== undefined) gps.fix = fix;
-    const sats = readNum(raw, K.gpsSats);
-    if (sats !== undefined) gps.satellites = sats;
-    out.gps = gps;
+    // Representative timestamp from the IMU sample clock.
+    const accelBlock = obj(fmc["imu_accel"]);
+    if (accelBlock) put(out, "timestamp", num(accelBlock["t_ms"]));
   }
 
-  const phase = readStr(raw, K.phase);
-  if (phase) out.phase = phase;
+  // --- FAS fleet ------------------------------------------------------------
+  put(out, "boards", parseBoards(raw["fas_boards"]));
+  put(out, "actuators", parseActuators(raw["fas_actuators"]));
+  put(out, "sensorMasks", parseSensorMasks(raw["fas_sensors"]));
+  put(out, "boardPower", parseBoardPower(raw["fas_board_status"]));
+  put(out, "pmb", parsePmb(raw["fas_pmb"]));
+  put(out, "fmc", parseFmc(raw["fas_fmc"]));
+  put(out, "imc", parseImc(raw["fas_imc"]));
 
-  const state = readStr(raw, K.state);
-  if (state) out.state = state;
-
-  const rawPacket = readStr(raw, K.rawPkt);
-  if (rawPacket) out.rawPacket = rawPacket;
-
-  const ts = readNum(raw, K.ts);
-  if (ts !== undefined) out.timestamp = ts;
+  // --- Flight state machine -------------------------------------------------
+  const fsm = obj(raw["fas_fsm"]);
+  if (fsm) {
+    const state = typeof fsm["state"] === "string" ? fsm["state"] : undefined;
+    if (state) {
+      out.fsm = { state };
+      out.state = state;
+    }
+  }
 
   return out;
 }
@@ -221,11 +429,11 @@ export function adaptFlightEvents(
 
   const milestones: FlightMilestones = {
     launchDetected: false,
-    motorCutoff:    false,
-    apogee:         false,
+    motorBurnout:    false,
+    apogeeDetected:         false,
     drogueDeployed: false,
     mainDeployed:   false,
-    landed:         false,
+    landingDetected:         false,
   };
 
   let phase: string | undefined;
@@ -234,12 +442,12 @@ export function adaptFlightEvents(
   for (const e of events) {
     const lower = e.name.toLowerCase();
 
-    if (MILESTONE_NAMES.launchDetected.includes(lower))  milestones.launchDetected = true;
-    if (MILESTONE_NAMES.motorCutoff.includes(lower))     milestones.motorCutoff    = true;
-    if (MILESTONE_NAMES.apogee.includes(lower))          milestones.apogee         = true;
-    if (MILESTONE_NAMES.drogueDeployed.includes(lower))  milestones.drogueDeployed = true;
-    if (MILESTONE_NAMES.mainDeployed.includes(lower))    milestones.mainDeployed   = true;
-    if (MILESTONE_NAMES.landed.includes(lower))          milestones.landed         = true;
+    if (MILESTONE_NAMES.launchDetected.includes(lower))   milestones.launchDetected = true;
+    if (MILESTONE_NAMES.motorBurnout.includes(lower))     milestones.motorBurnout    = true;
+    if (MILESTONE_NAMES.apogeeDetected.includes(lower))   milestones.apogeeDetected         = true;
+    if (MILESTONE_NAMES.drogueDeployed.includes(lower))   milestones.drogueDeployed = true;
+    if (MILESTONE_NAMES.mainDeployed.includes(lower))     milestones.mainDeployed   = true;
+    if (MILESTONE_NAMES.landingDetected.includes(lower))  milestones.landingDetected         = true;
 
     if (typeof e["phase"] === "string") phase = e["phase"];
     if (typeof e["state"] === "string") state = e["state"];

@@ -79,11 +79,68 @@ export interface SafetyRules {
   hazardous?: Array<Record<string, string | string[]>>;
 }
 
+/**
+ * Connected board/device roster. Optional backend-config section consumed by
+ * the Devices page (alongside the live FAS board fleet).
+ */
+/** [min, max] axis range for a device's chart. */
+export type DeviceRange = [number, number];
+
+/**
+ * Per-board display config for the Devices + Flight pages. Keyed by board key
+ * (e.g. "EPB:0", "PMB:0", "FMC:0"). `ranges` pins chart Y-axes by metric name:
+ *  - EPB:  v8v4 | v24v | i8v4 | i24v
+ *  - PMB:  vMain | vBatt | vGse | tempAmbient | tempBuck | tempBoost
+ *  - FMC:  accel | gyro | mag | accelHi | altitude | pressure | temperature
+ * Absent metrics autoscale (no fabricated bounds).
+ */
+export interface DeviceEntry {
+  key: string;
+  label?: string;
+  ranges?: Record<string, DeviceRange>;
+}
+
+export type PacketFieldType = "number" | "bool";
+
+/** One parameter of a FAS TX packet. */
+export interface PacketFieldDef {
+  key: string;
+  label?: string;
+  type: PacketFieldType;
+  default?: number | boolean;
+}
+
+/**
+ * A composable FAS transmit packet, consumed by the Console → Transmit Packet
+ * card (the available packet types are config-driven, like Commands).
+ * `op` is the FAS bridge op (e.g. "pwm_set"); `fields` are its parameters.
+ */
+export interface PacketEntry {
+  name: string;
+  op: string;
+  fields: PacketFieldDef[];
+}
+
+/**
+ * Operating procedure (numbered checklist). Optional backend-config section
+ * consumed by the Engine procedure card.
+ */
+export interface ProcedureEntry {
+  name: string;
+  steps: string[];
+}
+
 export interface SystemConfig {
   Sensors?: SensorEntry[];
   Actuators?: ActuatorEntry[];
   Commands?: Record<string, CommandEntry>;
   safetyRules?: SafetyRules;
+  /** Optional roster of connected boards → Devices page. */
+  Devices?: DeviceEntry[];
+  /** Optional packet definitions → Console Channels. */
+  Packets?: PacketEntry[];
+  /** Optional operating procedures → Engine procedure card. */
+  Procedures?: ProcedureEntry[];
 }
 
 // ---------------------------------------------------------------------------
@@ -204,6 +261,15 @@ export interface PidLayoutMessage {
   layout: Record<string, unknown> | null;
 }
 
+/**
+ * Broadcast after any config mutation (load/upload/PUT/PATCH/reload). Carries
+ * the full updated config — apply it directly instead of re-fetching.
+ */
+export interface ConfigUpdateMessage {
+  type: "config_update";
+  config: SystemConfig;
+}
+
 export type ServerMessage =
   | SessionMessage
   | SnapshotMessage
@@ -214,6 +280,7 @@ export type ServerMessage =
   | FlightEventsMessage
   | PhysicalLockoutMessage
   | PidLayoutMessage
+  | ConfigUpdateMessage
   | ErrorMessage
   | UnknownMessage;
 

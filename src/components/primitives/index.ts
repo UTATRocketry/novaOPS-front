@@ -12,4 +12,6 @@ export { Gauge } from "./Gauge";
 export type { GaugeProps, GaugeZone } from "./Gauge";
 export { PillTabs, Terminal } from "./Tabs";
 export type { TabItem, PillTabsProps, TerminalLine, TerminalProps } from "./Tabs";
+export { Plot } from "./Plot";
+export type { PlotProps, PlotSeriesDef } from "./Plot";
 export { UnderConstruction } from "./UnderConstruction";

@@ -236,7 +236,7 @@ function ActuatorRow({ entry }: ActuatorRowProps) {
   }
 
   return (
-    <Table.Row>
+    <Table.Row transition="background-color 0.12s" _hover={{ bg: "bg.surfaceRaised" }}>
       <Table.Cell><Mono fontSize="xs">{entry.name}</Mono></Table.Cell>
       <Table.Cell><Chip status="neutral">{entry.type}</Chip></Table.Cell>
       <Table.Cell>
@@ -271,7 +271,11 @@ function InstrumentRow({ sensor, isStale }: InstrumentRowProps) {
   const unit = entry?.unit ?? sensor.unit ?? "";
 
   return (
-    <Table.Row opacity={isStale ? 0.55 : 1} transition="opacity 0.3s">
+    <Table.Row
+      opacity={isStale ? 0.55 : 1}
+      transition="opacity 0.3s, background-color 0.12s"
+      _hover={{ bg: "bg.surfaceRaised" }}
+    >
       <Table.Cell>
         <Mono fontSize="xs">{sensor.name}</Mono>
       </Table.Cell>
@@ -290,9 +294,9 @@ function InstrumentRow({ sensor, isStale }: InstrumentRowProps) {
       </Table.Cell>
       <Table.Cell>
         <StatusDot
-          status={hasValue ? "nominal" : "neutral"}
+          status={!hasValue ? "neutral" : isStale ? "warn" : "nominal"}
           size={8}
-          glow={hasValue}
+          glow={hasValue && !isStale}
         />
       </Table.Cell>
     </Table.Row>
@@ -306,7 +310,10 @@ function InstrumentRow({ sensor, isStale }: InstrumentRowProps) {
 
 export function EngineTable({ sensors, actuators }: EngineTableProps) {
   const engineStatus = useNovaStore(sel.engineDataStatus);
-  const isStale = engineStatus === "stale";
+  // Anything that isn't actively "live" (stale, disconnected, connecting, error)
+  // must read as not-current — otherwise a backend drop leaves the last values
+  // looking live. Mirrors the Console Channels liveness treatment.
+  const isStale = engineStatus !== "live";
 
   return (
     <Box display="flex" flexDir="column" gap={4} overflowY="auto">

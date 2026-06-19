@@ -8,6 +8,12 @@ import type { FlightTelemetry } from "@/lib/flight/types";
 export interface FlightKpiStripProps {
   telemetry: FlightTelemetry | null;
   launchEpochMs: number | null;
+  /** Derived vertical velocity, m/s (estimated UI-side). */
+  velocity?: number;
+  /** Derived inclination from vertical, degrees (estimated UI-side). */
+  inclination?: number;
+  /** Flight state machine state (fas_fsm). */
+  fsmState?: string;
 }
 
 function formatMissionTime(launchEpochMs: number | null, nowMs: number): string {
@@ -20,7 +26,13 @@ function formatMissionTime(launchEpochMs: number | null, nowMs: number): string 
   return `T+${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}:${String(ss).padStart(2, "0")}`;
 }
 
-export function FlightKpiStrip({ telemetry, launchEpochMs }: FlightKpiStripProps) {
+export function FlightKpiStrip({
+  telemetry,
+  launchEpochMs,
+  velocity,
+  inclination,
+  fsmState,
+}: FlightKpiStripProps) {
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
@@ -32,19 +44,17 @@ export function FlightKpiStrip({ telemetry, launchEpochMs }: FlightKpiStripProps
   const missionTime = formatMissionTime(launchEpochMs, now);
 
   const altitude =
-    telemetry?.altitude !== undefined
-      ? telemetry.altitude.toFixed(1)
-      : undefined;
+    telemetry?.altitude !== undefined ? telemetry.altitude.toFixed(1) : undefined;
 
-  const velocity =
-    telemetry?.velocity !== undefined
-      ? telemetry.velocity.toFixed(1)
-      : undefined;
+  // Prefer the explicitly-passed derived value; fall back to any backend field.
+  const velocityVal = velocity ?? telemetry?.velocity;
+  const velocityStr = velocityVal !== undefined ? velocityVal.toFixed(1) : undefined;
 
-  const inclination =
-    telemetry?.inclination !== undefined
-      ? telemetry.inclination.toFixed(1)
-      : undefined;
+  const inclinationVal = inclination ?? telemetry?.inclination;
+  const inclinationStr =
+    inclinationVal !== undefined ? inclinationVal.toFixed(1) : undefined;
+
+  const state = fsmState ?? telemetry?.state;
 
   return (
     <Flex
@@ -57,9 +67,10 @@ export function FlightKpiStrip({ telemetry, launchEpochMs }: FlightKpiStripProps
       flexWrap="wrap"
     >
       <KpiTile label="Mission Time" value={missionTime} />
+      <KpiTile label="State" value={state} />
       <KpiTile label="Altitude" value={altitude} unit="m" />
-      <KpiTile label="Velocity" value={velocity} unit="m/s" />
-      <KpiTile label="Inclination" value={inclination} unit="°" />
+      <KpiTile label="Velocity" value={velocityStr} unit="m/s" />
+      <KpiTile label="Inclination" value={inclinationStr} unit="°" />
     </Flex>
   );
 }

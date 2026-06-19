@@ -1,0 +1,149 @@
+{
+  "schemaVersion": 1,
+  "meta": { "name": "Default", "savedAt": "2026-06-01T00:00:00.000Z", "app": "novaops" },
+  "systems": {
+    "pressurant": { "label": "Pressurant", "colorToken": "info" },
+    "fuel": { "label": "Fuel", "colorToken": "fault" },
+    "oxidizer": { "label": "Oxidizer", "colorToken": "nominal" }
+  },
+  "graph": {
+    "cells": [
+      {
+        "id": "vessel-pressurant",
+        "type": "nova.Bottle",
+        "position": { "x": 60, "y": 160 },
+        "size": { "width": 56, "height": 130 },
+        "label": "PRESS",
+        "contentsLabel": "N₂",
+        "colorToken": "info"
+      },
+      {
+        "id": "vessel-fuel",
+        "type": "nova.Vessel",
+        "position": { "x": 300, "y": 60 },
+        "size": { "width": 96, "height": 130 },
+        "label": "FUEL",
+        "contentsLabel": "IPA",
+        "colorToken": "fault"
+      },
+      {
+        "id": "vessel-oxidizer",
+        "type": "nova.Vessel",
+        "position": { "x": 300, "y": 290 },
+        "size": { "width": 96, "height": 130 },
+        "label": "OX",
+        "contentsLabel": "N₂O",
+        "colorToken": "nominal"
+      },
+      {
+        "id": "instr-pgso",
+        "type": "nova.Instrument",
+        "position": { "x": 180, "y": 185 },
+        "size": { "width": 188, "height": 76 },
+        "binding": { "name": "PGSO" },
+        "instrumentType": "PT",
+        "label": "PGSO",
+        "hint": { "unit": "psi", "range": [0, 800] },
+        "colorToken": "info"
+      },
+      {
+        "id": "instr-pft",
+        "type": "nova.Instrument",
+        "position": { "x": 440, "y": 80 },
+        "size": { "width": 188, "height": 76 },
+        "binding": { "name": "PFT" },
+        "instrumentType": "PT",
+        "label": "PFT",
+        "hint": { "unit": "psi", "range": [0, 500] },
+        "colorToken": "fault"
+      },
+      {
+        "id": "instr-pox",
+        "type": "nova.Instrument",
+        "position": { "x": 440, "y": 300 },
+        "size": { "width": 188, "height": 76 },
+        "binding": { "name": "POX" },
+        "instrumentType": "PT",
+        "label": "POX",
+        "hint": { "unit": "psi", "range": [0, 500] },
+        "colorToken": "nominal"
+      },
+      {
+        "id": "valve-bvpress",
+        "type": "nova.Valve",
+        "position": { "x": 170, "y": 185 },
+        "size": { "width": 80, "height": 96 },
+        "binding": { "name": "BVPRESS" },
+        "symbolVariant": "ball2",
+        "controllable": true,
+        "label": "BV-PRESS",
+        "colorToken": "info",
+        "controlId": "ctrl-bvpress"
+      },
+      {
+        "id": "valve-svftv",
+        "type": "nova.Valve",
+        "position": { "x": 650, "y": 80 },
+        "size": { "width": 80, "height": 96 },
+        "binding": { "name": "SVFTV" },
+        "symbolVariant": "solenoid",
+        "controllable": true,
+        "label": "SVFTV",
+        "colorToken": "fault",
+        "controlId": "ctrl-svftv"
+      },
+      {
+        "id": "valve-bvftp",
+        "type": "nova.Valve",
+        "position": { "x": 650, "y": 300 },
+        "size": { "width": 80, "height": 96 },
+        "binding": { "name": "BVFTP" },
+        "symbolVariant": "solenoid",
+        "controllable": true,
+        "label": "BVFTP",
+        "colorToken": "nominal",
+        "controlId": "ctrl-bvftp"
+      },
+      {
+        "id": "ctrl-bvpress",
+        "type": "nova.ActuatorControl",
+        "position": { "x": 150, "y": 285 },
+        "binding": { "name": "BVPRESS" },
+        "showName": false
+      },
+      {
+        "id": "ctrl-svftv",
+        "type": "nova.ActuatorControl",
+        "position": { "x": 630, "y": 180 },
+        "binding": { "name": "SVFTV" },
+        "showName": false
+      },
+      {
+        "id": "ctrl-bvftp",
+        "type": "nova.ActuatorControl",
+        "position": { "x": 630, "y": 400 },
+        "binding": { "name": "BVFTP" },
+        "showName": false
+      },
+      {
+        "id": "chamber-engine",
+        "type": "nova.Chamber",
+        "position": { "x": 770, "y": 150 },
+        "size": { "width": 80, "height": 124 },
+        "label": "ENGINE",
+        "contentsLabel": "",
+        "colorToken": "warn"
+      },
+      { "id": "lnk-press-bv", "type": "nova.SystemLink", "systemId": "pressurant", "source": { "id": "vessel-pressurant" }, "target": { "id": "valve-bvpress" } },
+      { "id": "lnk-bv-pgso", "type": "nova.SystemLink", "systemId": "pressurant", "source": { "id": "valve-bvpress" }, "target": { "id": "instr-pgso" } },
+      { "id": "lnk-press-fuel", "type": "nova.SystemLink", "systemId": "pressurant", "source": { "id": "instr-pgso" }, "target": { "id": "vessel-fuel" } },
+      { "id": "lnk-press-ox", "type": "nova.SystemLink", "systemId": "pressurant", "source": { "id": "instr-pgso" }, "target": { "id": "vessel-oxidizer" } },
+      { "id": "lnk-fuel-pft", "type": "nova.SystemLink", "systemId": "fuel", "source": { "id": "vessel-fuel" }, "target": { "id": "instr-pft" } },
+      { "id": "lnk-pft-svftv", "type": "nova.SystemLink", "systemId": "fuel", "source": { "id": "instr-pft" }, "target": { "id": "valve-svftv" } },
+      { "id": "lnk-ox-pox", "type": "nova.SystemLink", "systemId": "oxidizer", "source": { "id": "vessel-oxidizer" }, "target": { "id": "instr-pox" } },
+      { "id": "lnk-pox-bvftp", "type": "nova.SystemLink", "systemId": "oxidizer", "source": { "id": "instr-pox" }, "target": { "id": "valve-bvftp" } },
+      { "id": "lnk-svftv-eng", "type": "nova.SystemLink", "systemId": "fuel", "source": { "id": "valve-svftv" }, "target": { "id": "chamber-engine" } },
+      { "id": "lnk-bvftp-eng", "type": "nova.SystemLink", "systemId": "oxidizer", "source": { "id": "valve-bvftp" }, "target": { "id": "chamber-engine" } }
+    ]
+  }
+}

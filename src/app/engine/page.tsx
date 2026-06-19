@@ -8,6 +8,7 @@ import {
   EngineTable,
   GaugeStrip,
   EngineSidebar,
+  ActionsCard,
   PidEditor,
   type PidEditorHandle,
 } from "@/components/engine";
@@ -160,11 +161,25 @@ export default function EnginePage() {
       )}
 
       {view === "plots" && !isEditing && (
-        <EnginePlots sensors={sensors} />
+        <Flex gap={4} align="flex-start">
+          <Box flex={1} minW={0}>
+            <EnginePlots sensors={sensors} />
+          </Box>
+          <Box w="280px" flexShrink={0}>
+            <ActionsCard />
+          </Box>
+        </Flex>
       )}
 
       {view === "table" && !isEditing && (
-        <EngineTable sensors={sensors} actuators={actuators} />
+        <Flex gap={4} align="flex-start">
+          <Box flex={1} minW={0}>
+            <EngineTable sensors={sensors} actuators={actuators} />
+          </Box>
+          <Box w="280px" flexShrink={0}>
+            <ActionsCard />
+          </Box>
+        </Flex>
       )}
     </Box>
   );

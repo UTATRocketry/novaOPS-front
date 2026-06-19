@@ -1,0 +1,4719 @@
+{
+  "schemaVersion": 1,
+  "meta": {
+    "name": "P&ID Layout",
+    "savedAt": "2026-06-19T05:20:58.321Z",
+    "app": "novaops"
+  },
+  "systems": {
+    "pressurant": {
+      "label": "Pressurant",
+      "colorToken": "info"
+    },
+    "fuel": {
+      "label": "Fuel",
+      "colorToken": "fault"
+    },
+    "oxidizer": {
+      "label": "Oxidizer",
+      "colorToken": "nominal"
+    }
+  },
+  "graph": {
+    "cells": [
+      {
+        "type": "nova.Zone",
+        "size": {
+          "width": 964,
+          "height": 482
+        },
+        "label": "OX SYSTEM",
+        "colorToken": "nominal",
+        "attrs": {
+          "box": {
+            "stroke": "#22c55e"
+          },
+          "zoneLabel": {
+            "text": "OX SYSTEM",
+            "fill": "#22c55e"
+          }
+        },
+        "id": "63e87400-8532-44ee-9c3a-b0eff113e121",
+        "position": {
+          "x": 890,
+          "y": 1000
+        },
+        "z": -18
+      },
+      {
+        "type": "nova.Zone",
+        "size": {
+          "width": 1158,
+          "height": 403
+        },
+        "label": "FUEL SYSTEM",
+        "colorToken": "fault",
+        "attrs": {
+          "box": {
+            "stroke": "#ef4444"
+          },
+          "zoneLabel": {
+            "text": "FUEL SYSTEM",
+            "fill": "#ef4444"
+          }
+        },
+        "id": "a8639c8a-45c6-4a12-b7f0-2a97d3d5cfbc",
+        "position": {
+          "x": 890,
+          "y": 590
+        },
+        "z": -17
+      },
+      {
+        "type": "nova.Zone",
+        "size": {
+          "width": 1037,
+          "height": 558
+        },
+        "label": "GROUND SYSTEM",
+        "colorToken": "neutral",
+        "attrs": {
+          "box": {
+            "stroke": "#94a0b3"
+          },
+          "zoneLabel": {
+            "text": "GROUND SYSTEM",
+            "fill": "#94a0b3"
+          }
+        },
+        "id": "2f60f901-223e-469e-ad7f-bb63ddba8f27",
+        "position": {
+          "x": -210,
+          "y": 810
+        },
+        "z": -16
+      },
+      {
+        "type": "nova.Vessel",
+        "size": {
+          "width": 86,
+          "height": 136
+        },
+        "label": "FT",
+        "contentsLabel": "",
+        "colorToken": "fault",
+        "fillBinding": null,
+        "ports": {
+          "groups": {
+            "flow": {
+              "position": {
+                "name": "absolute"
+              },
+              "markup": [
+                {
+                  "tagName": "circle",
+                  "selector": "portBody"
+                }
+              ],
+              "attrs": {
+                "portBody": {
+                  "r": 4,
+                  "fill": "var(--chakra-colors-bg\\.surface)",
+                  "stroke": "var(--chakra-colors-border\\.default)",
+                  "strokeWidth": 1.5,
+                  "magnet": true,
+                  "cursor": "crosshair"
+                }
+              }
+            }
+          },
+          "items": [
+            {
+              "id": "top",
+              "group": "flow",
+              "args": {
+                "x": "50%",
+                "y": 0
+              }
+            },
+            {
+              "id": "bottom",
+              "group": "flow",
+              "args": {
+                "x": "50%",
+                "y": "100%"
+              }
+            },
+            {
+              "id": "left",
+              "group": "flow",
+              "args": {
+                "x": 0,
+                "y": "50%"
+              }
+            },
+            {
+              "id": "right",
+              "group": "flow",
+              "args": {
+                "x": "100%",
+                "y": "50%"
+              }
+            }
+          ]
+        },
+        "attrs": {
+          "tank": {
+            "strokeWidth": 2.5,
+            "stroke": "#ef4444"
+          },
+          "capTop": {
+            "stroke": "#ef4444"
+          },
+          "capBottom": {
+            "stroke": "#ef4444"
+          },
+          "vesselName": {
+            "text": "FT",
+            "fill": "#ef4444"
+          }
+        },
+        "id": "05966005-2344-484c-a251-abd1b30d2d38",
+        "position": {
+          "x": 1250,
+          "y": 730
+        },
+        "z": 1
+      },
+      {
+        "type": "nova.Vessel",
+        "size": {
+          "width": 86,
+          "height": 136
+        },
+        "label": "OT",
+        "contentsLabel": "",
+        "colorToken": "nominal",
+        "fillBinding": null,
+        "ports": {
+          "groups": {
+            "flow": {
+              "position": {
+                "name": "absolute"
+              },
+              "markup": [
+                {
+                  "tagName": "circle",
+                  "selector": "portBody"
+                }
+              ],
+              "attrs": {
+                "portBody": {
+                  "r": 4,
+                  "fill": "var(--chakra-colors-bg\\.surface)",
+                  "stroke": "var(--chakra-colors-border\\.default)",
+                  "strokeWidth": 1.5,
+                  "magnet": true,
+                  "cursor": "crosshair"
+                }
+              }
+            }
+          },
+          "items": [
+            {
+              "id": "top",
+              "group": "flow",
+              "args": {
+                "x": "50%",
+                "y": 0
+              }
+            },
+            {
+              "id": "bottom",
+              "group": "flow",
+              "args": {
+                "x": "50%",
+                "y": "100%"
+              }
+            },
+            {
+              "id": "left",
+              "group": "flow",
+              "args": {
+                "x": 0,
+                "y": "50%"
+              }
+            },
+            {
+              "id": "right",
+              "group": "flow",
+              "args": {
+                "x": "100%",
+                "y": "50%"
+              }
+            }
+          ]
+        },
+        "attrs": {
+          "tank": {
+            "strokeWidth": 2.5,
+            "stroke": "#22c55e"
+          },
+          "capTop": {
+            "stroke": "#22c55e"
+          },
+          "capBottom": {
+            "stroke": "#22c55e"
+          },
+          "vesselName": {
+            "text": "OT",
+            "fill": "#22c55e"
+          }
+        },
+        "id": "novaVessel-1781798481025-5652",
+        "position": {
+          "x": 1270,
+          "y": 1110
+        },
+        "z": 1,
+        "controlId": null
+      },
+      {
+        "type": "nova.Valve",
+        "size": {
+          "width": 80,
+          "height": 96
+        },
+        "binding": {
+          "name": "SVFTV"
+        },
+        "symbolVariant": "ball2",
+        "controllable": true,
+        "label": "SVFTV",
+        "colorToken": "fault",
+        "ports": {
+          "groups": {
+            "flow": {
+              "position": {
+                "name": "absolute"
+              },
+              "markup": [
+                {
+                  "tagName": "circle",
+                  "selector": "portBody"
+                }
+              ],
+              "attrs": {
+                "portBody": {
+                  "r": 4,
+                  "fill": "var(--chakra-colors-bg\\.surface)",
+                  "stroke": "var(--chakra-colors-border\\.default)",
+                  "strokeWidth": 1.5,
+                  "magnet": true,
+                  "cursor": "crosshair"
+                }
+              }
+            }
+          },
+          "items": [
+            {
+              "id": "left",
+              "group": "flow",
+              "args": {
+                "x": 0,
+                "y": "50%"
+              }
+            },
+            {
+              "id": "right",
+              "group": "flow",
+              "args": {
+                "x": "100%",
+                "y": "50%"
+              }
+            },
+            {
+              "id": "top",
+              "group": "flow",
+              "args": {
+                "x": "50%",
+                "y": 0
+              }
+            }
+          ]
+        },
+        "attrs": {
+          "body": {},
+          "valveLabel": {
+            "text": "SVFTV",
+            "fill": "#ef4444"
+          },
+          "symbol": {
+            "stroke": "#ef4444"
+          },
+          "actuatorCap": {
+            "stroke": "#ef4444"
+          },
+          "capLine": {
+            "stroke": "#ef4444"
+          },
+          "badgeBg": {
+            "fill": "var(--chakra-colors-bg\\.surfaceRaised)",
+            "opacity": 0
+          },
+          "badgeText": {
+            "opacity": 0
+          }
+        },
+        "id": "bf2e8587-fff8-48fa-aaad-b60dd1caf895",
+        "position": {
+          "x": 1160,
+          "y": 620
+        },
+        "z": 2,
+        "controlId": "1e3c02b5-abd9-4d52-b434-64049a1580ed"
+      },
+      {
+        "type": "nova.Valve",
+        "size": {
+          "width": 80,
+          "height": 96
+        },
+        "binding": {
+          "name": "SVOTV"
+        },
+        "symbolVariant": "ball2",
+        "controllable": true,
+        "label": "SVOTV",
+        "colorToken": "nominal",
+        "ports": {
+          "groups": {
+            "flow": {
+              "position": {
+                "name": "absolute"
+              },
+              "markup": [
+                {
+                  "tagName": "circle",
+                  "selector": "portBody"
+                }
+              ],
+              "attrs": {
+                "portBody": {
+                  "r": 4,
+                  "fill": "var(--chakra-colors-bg\\.surface)",
+                  "stroke": "var(--chakra-colors-border\\.default)",
+                  "strokeWidth": 1.5,
+                  "magnet": true,
+                  "cursor": "crosshair"
+                }
+              }
+            }
+          },
+          "items": [
+            {
+              "id": "left",
+              "group": "flow",
+              "args": {
+                "x": 0,
+                "y": "50%"
+              }
+            },
+            {
+              "id": "right",
+              "group": "flow",
+              "args": {
+                "x": "100%",
+                "y": "50%"
+              }
+            },
+            {
+              "id": "top",
+              "group": "flow",
+              "args": {
+                "x": "50%",
+                "y": 0
+              }
+            }
+          ]
+        },
+        "attrs": {
+          "body": {},
+          "valveLabel": {
+            "text": "SVOTV",
+            "fill": "#22c55e"
+          },
+          "symbol": {
+            "stroke": "#22c55e"
+          },
+          "actuatorCap": {
+            "stroke": "#22c55e"
+          },
+          "capLine": {
+            "stroke": "#22c55e"
+          },
+          "badgeBg": {
+            "fill": "var(--chakra-colors-bg\\.surfaceRaised)",
+            "opacity": 0
+          },
+          "badgeText": {
+            "opacity": 0
+          }
+        },
+        "id": "novaValve-1781798481026-4584",
+        "position": {
+          "x": 1170,
+          "y": 1010
+        },
+        "z": 2,
+        "controlId": "c1307009-11b7-4e72-a25b-21564097a913"
+      },
+      {
+        "type": "nova.Valve",
+        "size": {
+          "width": 80,
+          "height": 96
+        },
+        "binding": {
+          "name": "BVFTP"
+        },
+        "symbolVariant": "ball2",
+        "controllable": true,
+        "label": "BVFTP",
+        "colorToken": "info",
+        "ports": {
+          "groups": {
+            "flow": {
+              "position": {
+                "name": "absolute"
+              },
+              "markup": [
+                {
+                  "tagName": "circle",
+                  "selector": "portBody"
+                }
+              ],
+              "attrs": {
+                "portBody": {
+                  "r": 4,
+                  "fill": "var(--chakra-colors-bg\\.surface)",
+                  "stroke": "var(--chakra-colors-border\\.default)",
+                  "strokeWidth": 1.5,
+                  "magnet": true,
+                  "cursor": "crosshair"
+                }
+              }
+            }
+          },
+          "items": [
+            {
+              "id": "left",
+              "group": "flow",
+              "args": {
+                "x": 0,
+                "y": "50%"
+              }
+            },
+            {
+              "id": "right",
+              "group": "flow",
+              "args": {
+                "x": "100%",
+                "y": "50%"
+              }
+            },
+            {
+              "id": "top",
+              "group": "flow",
+              "args": {
+                "x": "50%",
+                "y": 0
+              }
+            }
+          ]
+        },
+        "attrs": {
+          "body": {},
+          "valveLabel": {
+            "text": "BVFTP",
+            "fill": "#3b82f6"
+          },
+          "symbol": {
+            "stroke": "#3b82f6"
+          },
+          "actuatorCap": {
+            "stroke": "#3b82f6"
+          },
+          "capLine": {
+            "stroke": "#3b82f6"
+          },
+          "badgeBg": {
+            "fill": "var(--chakra-colors-bg\\.surfaceRaised)",
+            "opacity": 0
+          },
+          "badgeText": {
+            "opacity": 0
+          }
+        },
+        "id": "2f03d581-d8b2-426c-8f3b-da27f7b9aeb2",
+        "position": {
+          "x": 1050,
+          "y": 750
+        },
+        "z": 3,
+        "angle": 0,
+        "controlId": "1e303f25-238e-4a42-a139-9d71f64d7a20"
+      },
+      {
+        "type": "nova.Valve",
+        "size": {
+          "width": 80,
+          "height": 96
+        },
+        "binding": null,
+        "symbolVariant": "ball2",
+        "controllable": false,
+        "label": "BVOTP",
+        "colorToken": "info",
+        "ports": {
+          "groups": {
+            "flow": {
+              "position": {
+                "name": "absolute"
+              },
+              "markup": [
+                {
+                  "tagName": "circle",
+                  "selector": "portBody"
+                }
+              ],
+              "attrs": {
+                "portBody": {
+                  "r": 4,
+                  "fill": "var(--chakra-colors-bg\\.surface)",
+                  "stroke": "var(--chakra-colors-border\\.default)",
+                  "strokeWidth": 1.5,
+                  "magnet": true,
+                  "cursor": "crosshair"
+                }
+              }
+            }
+          },
+          "items": [
+            {
+              "id": "left",
+              "group": "flow",
+              "args": {
+                "x": 0,
+                "y": "50%"
+              }
+            },
+            {
+              "id": "right",
+              "group": "flow",
+              "args": {
+                "x": "100%",
+                "y": "50%"
+              }
+            },
+            {
+              "id": "top",
+              "group": "flow",
+              "args": {
+                "x": "50%",
+                "y": 0
+              }
+            }
+          ]
+        },
+        "attrs": {
+          "valveLabel": {
+            "text": "BVOTP",
+            "fill": "#3b82f6"
+          },
+          "symbol": {
+            "stroke": "#3b82f6"
+          },
+          "actuatorCap": {
+            "stroke": "#3b82f6"
+          },
+          "capLine": {
+            "stroke": "#3b82f6"
+          },
+          "badgeBg": {
+            "opacity": 1
+          },
+          "badgeText": {
+            "opacity": 1
+          }
+        },
+        "id": "novaValve-1781798481027-6630",
+        "position": {
+          "x": 1060,
+          "y": 1130
+        },
+        "z": 3,
+        "angle": 0,
+        "controlId": null
+      },
+      {
+        "type": "nova.Instrument",
+        "size": {
+          "width": 188,
+          "height": 76
+        },
+        "binding": {
+          "name": "PFT"
+        },
+        "instrumentType": "PT",
+        "label": "PFT",
+        "hint": {
+          "unit": "psi",
+          "range": [
+            0,
+            1000
+          ]
+        },
+        "colorToken": "fault",
+        "ports": {
+          "groups": {
+            "flow": {
+              "position": {
+                "name": "absolute"
+              },
+              "markup": [
+                {
+                  "tagName": "circle",
+                  "selector": "portBody"
+                }
+              ],
+              "attrs": {
+                "portBody": {
+                  "r": 4,
+                  "fill": "var(--chakra-colors-bg\\.surface)",
+                  "stroke": "var(--chakra-colors-border\\.default)",
+                  "strokeWidth": 1.5,
+                  "magnet": true,
+                  "cursor": "crosshair"
+                }
+              }
+            }
+          },
+          "items": [
+            {
+              "id": "left",
+              "group": "flow",
+              "args": {
+                "x": 8,
+                "y": 38
+              }
+            },
+            {
+              "id": "right",
+              "group": "flow",
+              "args": {
+                "x": 68,
+                "y": 38
+              }
+            },
+            {
+              "id": "top",
+              "group": "flow",
+              "args": {
+                "x": 38,
+                "y": 8
+              }
+            },
+            {
+              "id": "bottom",
+              "group": "flow",
+              "args": {
+                "x": 38,
+                "y": 68
+              }
+            }
+          ]
+        },
+        "attrs": {
+          "body": {},
+          "bubble": {
+            "stroke": "#ef4444"
+          },
+          "typeCode": {
+            "fill": "#ef4444"
+          },
+          "sensorName": {
+            "text": "PFT"
+          },
+          "tapLine": {
+            "stroke": "#ef4444"
+          },
+          "readoutBox": {
+            "stroke": "#ef4444"
+          }
+        },
+        "id": "36365a89-f9ac-4bf3-a576-e33c225e1646",
+        "position": {
+          "x": 1350,
+          "y": 630
+        },
+        "z": 4
+      },
+      {
+        "type": "nova.Instrument",
+        "size": {
+          "width": 188,
+          "height": 76
+        },
+        "binding": {
+          "name": "POT"
+        },
+        "instrumentType": "PT",
+        "label": "POT",
+        "hint": {
+          "unit": "psi",
+          "range": [
+            0,
+            1000
+          ]
+        },
+        "colorToken": "nominal",
+        "ports": {
+          "groups": {
+            "flow": {
+              "position": {
+                "name": "absolute"
+              },
+              "markup": [
+                {
+                  "tagName": "circle",
+                  "selector": "portBody"
+                }
+              ],
+              "attrs": {
+                "portBody": {
+                  "r": 4,
+                  "fill": "var(--chakra-colors-bg\\.surface)",
+                  "stroke": "var(--chakra-colors-border\\.default)",
+                  "strokeWidth": 1.5,
+                  "magnet": true,
+                  "cursor": "crosshair"
+                }
+              }
+            }
+          },
+          "items": [
+            {
+              "id": "left",
+              "group": "flow",
+              "args": {
+                "x": 8,
+                "y": 38
+              }
+            },
+            {
+              "id": "right",
+              "group": "flow",
+              "args": {
+                "x": 68,
+                "y": 38
+              }
+            },
+            {
+              "id": "top",
+              "group": "flow",
+              "args": {
+                "x": 38,
+                "y": 8
+              }
+            },
+            {
+              "id": "bottom",
+              "group": "flow",
+              "args": {
+                "x": 38,
+                "y": 68
+              }
+            }
+          ]
+        },
+        "attrs": {
+          "body": {},
+          "bubble": {
+            "stroke": "#22c55e"
+          },
+          "typeCode": {
+            "fill": "#22c55e"
+          },
+          "sensorName": {
+            "text": "POT"
+          },
+          "tapLine": {
+            "stroke": "#22c55e"
+          },
+          "readoutBox": {
+            "stroke": "#22c55e"
+          }
+        },
+        "id": "novaInstrument-1781798481027-7143",
+        "position": {
+          "x": 1350,
+          "y": 1020
+        },
+        "z": 4,
+        "controlId": null
+      },
+      {
+        "type": "nova.Instrument",
+        "size": {
+          "width": 188,
+          "height": 76
+        },
+        "binding": {
+          "name": "MFT"
+        },
+        "instrumentType": "LC",
+        "label": "MFT",
+        "hint": {
+          "unit": "kg",
+          "range": [
+            0,
+            10
+          ]
+        },
+        "colorToken": "fault",
+        "ports": {
+          "groups": {
+            "flow": {
+              "position": {
+                "name": "absolute"
+              },
+              "markup": [
+                {
+                  "tagName": "circle",
+                  "selector": "portBody"
+                }
+              ],
+              "attrs": {
+                "portBody": {
+                  "r": 4,
+                  "fill": "var(--chakra-colors-bg\\.surface)",
+                  "stroke": "var(--chakra-colors-border\\.default)",
+                  "strokeWidth": 1.5,
+                  "magnet": true,
+                  "cursor": "crosshair"
+                }
+              }
+            }
+          },
+          "items": [
+            {
+              "id": "left",
+              "group": "flow",
+              "args": {
+                "x": 8,
+                "y": 38
+              }
+            },
+            {
+              "id": "right",
+              "group": "flow",
+              "args": {
+                "x": 68,
+                "y": 38
+              }
+            },
+            {
+              "id": "top",
+              "group": "flow",
+              "args": {
+                "x": 38,
+                "y": 8
+              }
+            },
+            {
+              "id": "bottom",
+              "group": "flow",
+              "args": {
+                "x": 38,
+                "y": 68
+              }
+            }
+          ]
+        },
+        "attrs": {
+          "body": {},
+          "bubble": {
+            "stroke": "#ef4444"
+          },
+          "typeCode": {
+            "text": "LC",
+            "fill": "#ef4444"
+          },
+          "sensorName": {
+            "text": "MFT"
+          },
+          "tapLine": {
+            "stroke": "#ef4444"
+          },
+          "readoutBox": {
+            "stroke": "#ef4444"
+          }
+        },
+        "id": "5fa07647-a03f-428c-8775-e851798154d5",
+        "position": {
+          "x": 1350,
+          "y": 870
+        },
+        "z": 5
+      },
+      {
+        "type": "nova.Instrument",
+        "size": {
+          "width": 188,
+          "height": 76
+        },
+        "binding": {
+          "name": "MOT"
+        },
+        "instrumentType": "LC",
+        "label": "MOT",
+        "hint": {
+          "unit": "kg",
+          "range": [
+            0,
+            10
+          ]
+        },
+        "colorToken": "nominal",
+        "ports": {
+          "groups": {
+            "flow": {
+              "position": {
+                "name": "absolute"
+              },
+              "markup": [
+                {
+                  "tagName": "circle",
+                  "selector": "portBody"
+                }
+              ],
+              "attrs": {
+                "portBody": {
+                  "r": 4,
+                  "fill": "var(--chakra-colors-bg\\.surface)",
+                  "stroke": "var(--chakra-colors-border\\.default)",
+                  "strokeWidth": 1.5,
+                  "magnet": true,
+                  "cursor": "crosshair"
+                }
+              }
+            }
+          },
+          "items": [
+            {
+              "id": "left",
+              "group": "flow",
+              "args": {
+                "x": 8,
+                "y": 38
+              }
+            },
+            {
+              "id": "right",
+              "group": "flow",
+              "args": {
+                "x": 68,
+                "y": 38
+              }
+            },
+            {
+              "id": "top",
+              "group": "flow",
+              "args": {
+                "x": 38,
+                "y": 8
+              }
+            },
+            {
+              "id": "bottom",
+              "group": "flow",
+              "args": {
+                "x": 38,
+                "y": 68
+              }
+            }
+          ]
+        },
+        "attrs": {
+          "body": {},
+          "bubble": {
+            "stroke": "#22c55e"
+          },
+          "typeCode": {
+            "text": "LC",
+            "fill": "#22c55e"
+          },
+          "sensorName": {
+            "text": "MOT"
+          },
+          "tapLine": {
+            "stroke": "#22c55e"
+          },
+          "readoutBox": {
+            "stroke": "#22c55e"
+          }
+        },
+        "id": "novaInstrument-1781798481028-1888",
+        "position": {
+          "x": 1360,
+          "y": 1240
+        },
+        "z": 5,
+        "controlId": null
+      },
+      {
+        "type": "nova.Bottle",
+        "size": {
+          "width": 56,
+          "height": 130
+        },
+        "label": "GFN2",
+        "contentsLabel": "",
+        "colorToken": "info",
+        "ports": {
+          "groups": {
+            "flow": {
+              "position": {
+                "name": "absolute"
+              },
+              "markup": [
+                {
+                  "tagName": "circle",
+                  "selector": "portBody"
+                }
+              ],
+              "attrs": {
+                "portBody": {
+                  "r": 4,
+                  "fill": "var(--chakra-colors-bg\\.surface)",
+                  "stroke": "var(--chakra-colors-border\\.default)",
+                  "strokeWidth": 1.5,
+                  "magnet": true,
+                  "cursor": "crosshair"
+                }
+              }
+            }
+          },
+          "items": [
+            {
+              "id": "top",
+              "group": "flow",
+              "args": {
+                "x": "50%",
+                "y": 0
+              }
+            },
+            {
+              "id": "bottom",
+              "group": "flow",
+              "args": {
+                "x": "50%",
+                "y": "100%"
+              }
+            },
+            {
+              "id": "left",
+              "group": "flow",
+              "args": {
+                "x": 0,
+                "y": "70%"
+              }
+            },
+            {
+              "id": "right",
+              "group": "flow",
+              "args": {
+                "x": "100%",
+                "y": "70%"
+              }
+            }
+          ]
+        },
+        "attrs": {
+          "symbol": {
+            "stroke": "#3b82f6",
+            "strokeWidth": 2.5,
+            "transform": "scale(1,1)"
+          },
+          "vesselName": {
+            "text": "GFN2",
+            "fill": "#3b82f6"
+          }
+        },
+        "id": "f85e5410-0669-4dd8-ac6b-329f0dd474e6",
+        "position": {
+          "x": 920,
+          "y": 830
+        },
+        "z": 6
+      },
+      {
+        "type": "nova.Bottle",
+        "size": {
+          "width": 56,
+          "height": 130
+        },
+        "label": "GON2",
+        "contentsLabel": "",
+        "colorToken": "info",
+        "ports": {
+          "groups": {
+            "flow": {
+              "position": {
+                "name": "absolute"
+              },
+              "markup": [
+                {
+                  "tagName": "circle",
+                  "selector": "portBody"
+                }
+              ],
+              "attrs": {
+                "portBody": {
+                  "r": 4,
+                  "fill": "var(--chakra-colors-bg\\.surface)",
+                  "stroke": "var(--chakra-colors-border\\.default)",
+                  "strokeWidth": 1.5,
+                  "magnet": true,
+                  "cursor": "crosshair"
+                }
+              }
+            }
+          },
+          "items": [
+            {
+              "id": "top",
+              "group": "flow",
+              "args": {
+                "x": "50%",
+                "y": 0
+              }
+            },
+            {
+              "id": "bottom",
+              "group": "flow",
+              "args": {
+                "x": "50%",
+                "y": "100%"
+              }
+            },
+            {
+              "id": "left",
+              "group": "flow",
+              "args": {
+                "x": 0,
+                "y": "70%"
+              }
+            },
+            {
+              "id": "right",
+              "group": "flow",
+              "args": {
+                "x": "100%",
+                "y": "70%"
+              }
+            }
+          ]
+        },
+        "attrs": {
+          "symbol": {
+            "stroke": "#3b82f6",
+            "strokeWidth": 2.5,
+            "transform": "scale(1,1)"
+          },
+          "vesselName": {
+            "text": "GON2",
+            "fill": "#3b82f6"
+          }
+        },
+        "id": "novaBottle-1781798481029-9242",
+        "position": {
+          "x": 950,
+          "y": 1220
+        },
+        "z": 6,
+        "controlId": null
+      },
+      {
+        "type": "nova.SystemLink",
+        "systemId": "fuel",
+        "colorToken": "fault",
+        "attrs": {
+          "line": {
+            "stroke": "#ef4444"
+          }
+        },
+        "router": {
+          "name": "orthogonal"
+        },
+        "connector": {
+          "name": "rounded",
+          "args": {
+            "radius": 8
+          }
+        },
+        "id": "a89491c5-c1a4-4107-a641-2b2c88b14c66",
+        "source": {
+          "id": "bf2e8587-fff8-48fa-aaad-b60dd1caf895",
+          "magnet": "portBody",
+          "port": "right"
+        },
+        "target": {
+          "id": "05966005-2344-484c-a251-abd1b30d2d38",
+          "magnet": "portBody",
+          "port": "top"
+        },
+        "z": 7
+      },
+      {
+        "type": "nova.SystemLink",
+        "systemId": "fuel",
+        "colorToken": "fault",
+        "attrs": {
+          "line": {
+            "stroke": "#ef4444"
+          }
+        },
+        "router": {
+          "name": "orthogonal"
+        },
+        "connector": {
+          "name": "rounded",
+          "args": {
+            "radius": 8
+          }
+        },
+        "id": "c361f706-039a-4b36-a6c4-08444e6dd05a",
+        "source": {
+          "id": "36365a89-f9ac-4bf3-a576-e33c225e1646",
+          "magnet": "portBody",
+          "port": "left"
+        },
+        "target": {
+          "id": "05966005-2344-484c-a251-abd1b30d2d38",
+          "magnet": "portBody",
+          "port": "top"
+        },
+        "z": 8
+      },
+      {
+        "type": "nova.SystemLink",
+        "systemId": "pressurant",
+        "colorToken": "accent",
+        "attrs": {
+          "line": {
+            "stroke": "#4d8bff"
+          }
+        },
+        "router": {
+          "name": "orthogonal"
+        },
+        "connector": {
+          "name": "rounded",
+          "args": {
+            "radius": 8
+          }
+        },
+        "id": "cc3b0586-312e-4a04-ba6b-69b3b3e91525",
+        "source": {
+          "id": "2f03d581-d8b2-426c-8f3b-da27f7b9aeb2",
+          "magnet": "portBody",
+          "port": "right"
+        },
+        "target": {
+          "id": "05966005-2344-484c-a251-abd1b30d2d38",
+          "magnet": "portBody",
+          "port": "left"
+        },
+        "z": 10,
+        "vertices": []
+      },
+      {
+        "type": "nova.Valve",
+        "size": {
+          "width": 80,
+          "height": 96
+        },
+        "binding": null,
+        "symbolVariant": "ball2",
+        "controllable": false,
+        "label": "MFV",
+        "colorToken": "fault",
+        "ports": {
+          "groups": {
+            "flow": {
+              "position": {
+                "name": "absolute"
+              },
+              "markup": [
+                {
+                  "tagName": "circle",
+                  "selector": "portBody"
+                }
+              ],
+              "attrs": {
+                "portBody": {
+                  "r": 4,
+                  "fill": "var(--chakra-colors-bg\\.surface)",
+                  "stroke": "var(--chakra-colors-border\\.default)",
+                  "strokeWidth": 1.5,
+                  "magnet": true,
+                  "cursor": "crosshair"
+                }
+              }
+            }
+          },
+          "items": [
+            {
+              "id": "left",
+              "group": "flow",
+              "args": {
+                "x": 0,
+                "y": "50%"
+              }
+            },
+            {
+              "id": "right",
+              "group": "flow",
+              "args": {
+                "x": "100%",
+                "y": "50%"
+              }
+            },
+            {
+              "id": "top",
+              "group": "flow",
+              "args": {
+                "x": "50%",
+                "y": 0
+              }
+            }
+          ]
+        },
+        "attrs": {
+          "valveLabel": {
+            "text": "MFV",
+            "fill": "#ef4444"
+          },
+          "symbol": {
+            "stroke": "#ef4444"
+          },
+          "actuatorCap": {
+            "stroke": "#ef4444"
+          },
+          "capLine": {
+            "stroke": "#ef4444"
+          },
+          "badgeBg": {
+            "opacity": 1
+          },
+          "badgeText": {
+            "opacity": 1
+          }
+        },
+        "id": "833a74a3-6f04-4905-9a17-466e8cebf99c",
+        "position": {
+          "x": 1720,
+          "y": 750
+        },
+        "z": 12
+      },
+      {
+        "type": "nova.Instrument",
+        "size": {
+          "width": 188,
+          "height": 76
+        },
+        "binding": {
+          "name": "PVO"
+        },
+        "instrumentType": "PT",
+        "label": "PVO",
+        "hint": {
+          "unit": "psi",
+          "range": [
+            0,
+            1000
+          ]
+        },
+        "colorToken": "fault",
+        "ports": {
+          "groups": {
+            "flow": {
+              "position": {
+                "name": "absolute"
+              },
+              "markup": [
+                {
+                  "tagName": "circle",
+                  "selector": "portBody"
+                }
+              ],
+              "attrs": {
+                "portBody": {
+                  "r": 4,
+                  "fill": "var(--chakra-colors-bg\\.surface)",
+                  "stroke": "var(--chakra-colors-border\\.default)",
+                  "strokeWidth": 1.5,
+                  "magnet": true,
+                  "cursor": "crosshair"
+                }
+              }
+            }
+          },
+          "items": [
+            {
+              "id": "left",
+              "group": "flow",
+              "args": {
+                "x": 8,
+                "y": 38
+              }
+            },
+            {
+              "id": "right",
+              "group": "flow",
+              "args": {
+                "x": 68,
+                "y": 38
+              }
+            },
+            {
+              "id": "top",
+              "group": "flow",
+              "args": {
+                "x": 38,
+                "y": 8
+              }
+            },
+            {
+              "id": "bottom",
+              "group": "flow",
+              "args": {
+                "x": 38,
+                "y": 68
+              }
+            }
+          ]
+        },
+        "attrs": {
+          "body": {},
+          "bubble": {
+            "stroke": "#ef4444"
+          },
+          "typeCode": {
+            "fill": "#ef4444"
+          },
+          "sensorName": {
+            "text": "PVO"
+          },
+          "tapLine": {
+            "stroke": "#ef4444"
+          },
+          "readoutBox": {
+            "stroke": "#ef4444"
+          }
+        },
+        "id": "f2380f8f-8c51-485c-8b60-3d0f1aec6d7c",
+        "position": {
+          "x": 1590,
+          "y": 630
+        },
+        "z": 13
+      },
+      {
+        "type": "nova.Instrument",
+        "size": {
+          "width": 188,
+          "height": 76
+        },
+        "binding": {
+          "name": "PFM"
+        },
+        "instrumentType": "PT",
+        "label": "PFM",
+        "hint": {
+          "unit": "psi",
+          "range": [
+            0,
+            1000
+          ]
+        },
+        "colorToken": "fault",
+        "ports": {
+          "groups": {
+            "flow": {
+              "position": {
+                "name": "absolute"
+              },
+              "markup": [
+                {
+                  "tagName": "circle",
+                  "selector": "portBody"
+                }
+              ],
+              "attrs": {
+                "portBody": {
+                  "r": 4,
+                  "fill": "var(--chakra-colors-bg\\.surface)",
+                  "stroke": "var(--chakra-colors-border\\.default)",
+                  "strokeWidth": 1.5,
+                  "magnet": true,
+                  "cursor": "crosshair"
+                }
+              }
+            }
+          },
+          "items": [
+            {
+              "id": "left",
+              "group": "flow",
+              "args": {
+                "x": 8,
+                "y": 38
+              }
+            },
+            {
+              "id": "right",
+              "group": "flow",
+              "args": {
+                "x": 68,
+                "y": 38
+              }
+            },
+            {
+              "id": "top",
+              "group": "flow",
+              "args": {
+                "x": 38,
+                "y": 8
+              }
+            },
+            {
+              "id": "bottom",
+              "group": "flow",
+              "args": {
+                "x": 38,
+                "y": 68
+              }
+            }
+          ]
+        },
+        "attrs": {
+          "body": {},
+          "bubble": {
+            "stroke": "#ef4444"
+          },
+          "typeCode": {
+            "fill": "#ef4444"
+          },
+          "sensorName": {
+            "text": "PFM"
+          },
+          "tapLine": {
+            "stroke": "#ef4444"
+          },
+          "readoutBox": {
+            "stroke": "#ef4444"
+          }
+        },
+        "id": "6d33a773-14ee-4813-8643-4c28fb5ef226",
+        "position": {
+          "x": 1840,
+          "y": 640
+        },
+        "z": 14
+      },
+      {
+        "type": "nova.Chamber",
+        "size": {
+          "width": 170,
+          "height": 312
+        },
+        "label": "ENGINE",
+        "contentsLabel": "",
+        "colorToken": "neutral",
+        "ports": {
+          "groups": {
+            "flow": {
+              "position": {
+                "name": "absolute"
+              },
+              "markup": [
+                {
+                  "tagName": "circle",
+                  "selector": "portBody"
+                }
+              ],
+              "attrs": {
+                "portBody": {
+                  "r": 4,
+                  "fill": "var(--chakra-colors-bg\\.surface)",
+                  "stroke": "var(--chakra-colors-border\\.default)",
+                  "strokeWidth": 1.5,
+                  "magnet": true,
+                  "cursor": "crosshair"
+                }
+              }
+            }
+          },
+          "items": [
+            {
+              "id": "top",
+              "group": "flow",
+              "args": {
+                "x": "50%",
+                "y": 0
+              }
+            },
+            {
+              "id": "left",
+              "group": "flow",
+              "args": {
+                "x": "17%",
+                "y": "30%"
+              }
+            },
+            {
+              "id": "right",
+              "group": "flow",
+              "args": {
+                "x": "83%",
+                "y": "30%"
+              }
+            },
+            {
+              "id": "bottom",
+              "group": "flow",
+              "args": {
+                "x": "50%",
+                "y": "100%"
+              }
+            }
+          ]
+        },
+        "attrs": {
+          "symbol": {
+            "stroke": "#94a0b3",
+            "transform": "scale(2.125,2.5161290322580645)"
+          },
+          "vesselName": {
+            "text": "ENGINE",
+            "fill": "#94a0b3"
+          }
+        },
+        "id": "ee9f3663-77eb-4a3e-b622-4996083b4496",
+        "position": {
+          "x": 1860,
+          "y": 990
+        },
+        "z": 15
+      },
+      {
+        "type": "nova.Instrument",
+        "size": {
+          "width": 188,
+          "height": 76
+        },
+        "binding": {
+          "name": "PCC"
+        },
+        "instrumentType": "PT",
+        "label": "PCC",
+        "hint": {
+          "unit": "psi",
+          "range": [
+            0,
+            1000
+          ]
+        },
+        "colorToken": "neutral",
+        "ports": {
+          "groups": {
+            "flow": {
+              "position": {
+                "name": "absolute"
+              },
+              "markup": [
+                {
+                  "tagName": "circle",
+                  "selector": "portBody"
+                }
+              ],
+              "attrs": {
+                "portBody": {
+                  "r": 4,
+                  "fill": "var(--chakra-colors-bg\\.surface)",
+                  "stroke": "var(--chakra-colors-border\\.default)",
+                  "strokeWidth": 1.5,
+                  "magnet": true,
+                  "cursor": "crosshair"
+                }
+              }
+            }
+          },
+          "items": [
+            {
+              "id": "left",
+              "group": "flow",
+              "args": {
+                "x": 8,
+                "y": 38
+              }
+            },
+            {
+              "id": "right",
+              "group": "flow",
+              "args": {
+                "x": 68,
+                "y": 38
+              }
+            },
+            {
+              "id": "top",
+              "group": "flow",
+              "args": {
+                "x": 38,
+                "y": 8
+              }
+            },
+            {
+              "id": "bottom",
+              "group": "flow",
+              "args": {
+                "x": 38,
+                "y": 68
+              }
+            }
+          ]
+        },
+        "attrs": {
+          "body": {},
+          "bubble": {
+            "stroke": "#94a0b3"
+          },
+          "typeCode": {
+            "fill": "#94a0b3"
+          },
+          "sensorName": {
+            "text": "PCC"
+          },
+          "tapLine": {
+            "stroke": "#94a0b3"
+          },
+          "readoutBox": {
+            "stroke": "#94a0b3"
+          }
+        },
+        "id": "395ecee6-e10c-4925-a641-a40c7278e8af",
+        "position": {
+          "x": 2050,
+          "y": 990
+        },
+        "z": 16
+      },
+      {
+        "type": "nova.Instrument",
+        "size": {
+          "width": 188,
+          "height": 76
+        },
+        "binding": {
+          "name": "CC-LC"
+        },
+        "instrumentType": "LC",
+        "label": "CC-LC",
+        "hint": {
+          "unit": "kg",
+          "range": [
+            0,
+            500
+          ]
+        },
+        "colorToken": "neutral",
+        "ports": {
+          "groups": {
+            "flow": {
+              "position": {
+                "name": "absolute"
+              },
+              "markup": [
+                {
+                  "tagName": "circle",
+                  "selector": "portBody"
+                }
+              ],
+              "attrs": {
+                "portBody": {
+                  "r": 4,
+                  "fill": "var(--chakra-colors-bg\\.surface)",
+                  "stroke": "var(--chakra-colors-border\\.default)",
+                  "strokeWidth": 1.5,
+                  "magnet": true,
+                  "cursor": "crosshair"
+                }
+              }
+            }
+          },
+          "items": [
+            {
+              "id": "left",
+              "group": "flow",
+              "args": {
+                "x": 8,
+                "y": 38
+              }
+            },
+            {
+              "id": "right",
+              "group": "flow",
+              "args": {
+                "x": 68,
+                "y": 38
+              }
+            },
+            {
+              "id": "top",
+              "group": "flow",
+              "args": {
+                "x": 38,
+                "y": 8
+              }
+            },
+            {
+              "id": "bottom",
+              "group": "flow",
+              "args": {
+                "x": 38,
+                "y": 68
+              }
+            }
+          ]
+        },
+        "attrs": {
+          "body": {},
+          "bubble": {
+            "stroke": "#94a0b3"
+          },
+          "typeCode": {
+            "text": "LC",
+            "fill": "#94a0b3"
+          },
+          "sensorName": {
+            "text": "CC-LC"
+          },
+          "tapLine": {
+            "stroke": "#94a0b3"
+          },
+          "readoutBox": {
+            "stroke": "#94a0b3"
+          }
+        },
+        "id": "c41b0644-01ad-4fae-87ef-81233517a650",
+        "position": {
+          "x": 2050,
+          "y": 1290
+        },
+        "z": 17
+      },
+      {
+        "type": "nova.SystemLink",
+        "systemId": "",
+        "colorToken": "neutral",
+        "attrs": {
+          "line": {
+            "stroke": "#94a0b3"
+          }
+        },
+        "router": {
+          "name": "orthogonal"
+        },
+        "connector": {
+          "name": "rounded",
+          "args": {
+            "radius": 8
+          }
+        },
+        "id": "1d5650a0-126b-46b1-885d-fd1fd07c200f",
+        "source": {
+          "id": "ee9f3663-77eb-4a3e-b622-4996083b4496",
+          "magnet": "portBody",
+          "port": "right"
+        },
+        "target": {
+          "id": "395ecee6-e10c-4925-a641-a40c7278e8af",
+          "magnet": "portBody",
+          "port": "bottom"
+        },
+        "z": 19
+      },
+      {
+        "type": "nova.SystemLink",
+        "systemId": "fuel",
+        "colorToken": "fault",
+        "attrs": {
+          "line": {
+            "stroke": "#ef4444"
+          }
+        },
+        "router": {
+          "name": "orthogonal"
+        },
+        "connector": {
+          "name": "rounded",
+          "args": {
+            "radius": 8
+          }
+        },
+        "id": "3d32a221-a5e3-4a23-8d1d-f4fff749139d",
+        "source": {
+          "id": "833a74a3-6f04-4905-9a17-466e8cebf99c",
+          "magnet": "portBody",
+          "port": "left"
+        },
+        "target": {
+          "id": "05966005-2344-484c-a251-abd1b30d2d38",
+          "magnet": "portBody",
+          "port": "right"
+        },
+        "z": 20
+      },
+      {
+        "type": "nova.SystemLink",
+        "systemId": "pressurant",
+        "colorToken": "info",
+        "attrs": {
+          "line": {
+            "stroke": "#3b82f6"
+          }
+        },
+        "router": {
+          "name": "orthogonal"
+        },
+        "connector": {
+          "name": "rounded",
+          "args": {
+            "radius": 8
+          }
+        },
+        "id": "ea3b377f-7fd2-486f-b7c2-7445c6494a77",
+        "source": {
+          "id": "2f03d581-d8b2-426c-8f3b-da27f7b9aeb2",
+          "magnet": "portBody",
+          "port": "left"
+        },
+        "target": {
+          "id": "f85e5410-0669-4dd8-ac6b-329f0dd474e6",
+          "magnet": "portBody",
+          "port": "top"
+        },
+        "z": 24
+      },
+      {
+        "type": "nova.SystemLink",
+        "systemId": "fuel",
+        "colorToken": "fault",
+        "attrs": {
+          "line": {
+            "stroke": "#ef4444"
+          }
+        },
+        "router": {
+          "name": "orthogonal"
+        },
+        "connector": {
+          "name": "rounded",
+          "args": {
+            "radius": 8
+          }
+        },
+        "id": "152d809a-a30b-4271-8646-fab0d323173d",
+        "source": {
+          "id": "833a74a3-6f04-4905-9a17-466e8cebf99c",
+          "magnet": "portBody",
+          "port": "left"
+        },
+        "target": {
+          "id": "f2380f8f-8c51-485c-8b60-3d0f1aec6d7c",
+          "magnet": "portBody",
+          "port": "bottom"
+        },
+        "z": 25
+      },
+      {
+        "type": "nova.SystemLink",
+        "systemId": "fuel",
+        "colorToken": "fault",
+        "attrs": {
+          "line": {
+            "stroke": "#ef4444"
+          }
+        },
+        "router": {
+          "name": "orthogonal"
+        },
+        "connector": {
+          "name": "rounded",
+          "args": {
+            "radius": 8
+          }
+        },
+        "id": "b4abcff5-6123-4055-b888-57aa48a47f6a",
+        "source": {
+          "id": "833a74a3-6f04-4905-9a17-466e8cebf99c",
+          "magnet": "portBody",
+          "port": "right"
+        },
+        "target": {
+          "id": "6d33a773-14ee-4813-8643-4c28fb5ef226",
+          "magnet": "portBody",
+          "port": "bottom"
+        },
+        "z": 26
+      },
+      {
+        "type": "nova.SystemLink",
+        "systemId": "oxidizer",
+        "colorToken": "nominal",
+        "attrs": {
+          "line": {
+            "stroke": "#22c55e"
+          }
+        },
+        "router": {
+          "name": "orthogonal"
+        },
+        "connector": {
+          "name": "rounded",
+          "args": {
+            "radius": 8
+          }
+        },
+        "id": "3086b167-e0be-44ba-8bc8-aa47ebfac8cb",
+        "source": {
+          "id": "novaValve-1781798481026-4584",
+          "magnet": "portBody",
+          "port": "right"
+        },
+        "target": {
+          "id": "novaVessel-1781798481025-5652",
+          "magnet": "portBody",
+          "port": "top"
+        },
+        "z": 28
+      },
+      {
+        "type": "nova.SystemLink",
+        "systemId": "oxidizer",
+        "colorToken": "nominal",
+        "attrs": {
+          "line": {
+            "stroke": "#22c55e"
+          }
+        },
+        "router": {
+          "name": "orthogonal"
+        },
+        "connector": {
+          "name": "rounded",
+          "args": {
+            "radius": 8
+          }
+        },
+        "id": "12058d16-0a3c-4904-9718-fa2df7ec27cd",
+        "source": {
+          "id": "novaInstrument-1781798481027-7143",
+          "magnet": "portBody",
+          "port": "left"
+        },
+        "target": {
+          "id": "novaVessel-1781798481025-5652",
+          "magnet": "portBody",
+          "port": "top"
+        },
+        "z": 29
+      },
+      {
+        "type": "nova.SystemLink",
+        "systemId": "pressurant",
+        "colorToken": "info",
+        "attrs": {
+          "line": {
+            "stroke": "#3b82f6"
+          }
+        },
+        "router": {
+          "name": "orthogonal"
+        },
+        "connector": {
+          "name": "rounded",
+          "args": {
+            "radius": 8
+          }
+        },
+        "id": "c74369c6-10ea-4297-9374-ff0c7e1bea9b",
+        "source": {
+          "id": "novaValve-1781798481027-6630",
+          "magnet": "portBody",
+          "port": "right"
+        },
+        "target": {
+          "id": "novaVessel-1781798481025-5652",
+          "magnet": "portBody",
+          "port": "left"
+        },
+        "z": 30
+      },
+      {
+        "type": "nova.Bottle",
+        "size": {
+          "width": 69,
+          "height": 191
+        },
+        "label": "GOT",
+        "contentsLabel": "",
+        "colorToken": "nominal",
+        "ports": {
+          "groups": {
+            "flow": {
+              "position": {
+                "name": "absolute"
+              },
+              "markup": [
+                {
+                  "tagName": "circle",
+                  "selector": "portBody"
+                }
+              ],
+              "attrs": {
+                "portBody": {
+                  "r": 4,
+                  "fill": "var(--chakra-colors-bg\\.surface)",
+                  "stroke": "var(--chakra-colors-border\\.default)",
+                  "strokeWidth": 1.5,
+                  "magnet": true,
+                  "cursor": "crosshair"
+                }
+              }
+            }
+          },
+          "items": [
+            {
+              "id": "top",
+              "group": "flow",
+              "args": {
+                "x": "50%",
+                "y": 0
+              }
+            },
+            {
+              "id": "bottom",
+              "group": "flow",
+              "args": {
+                "x": "50%",
+                "y": "100%"
+              }
+            },
+            {
+              "id": "left",
+              "group": "flow",
+              "args": {
+                "x": 0,
+                "y": "70%"
+              }
+            },
+            {
+              "id": "right",
+              "group": "flow",
+              "args": {
+                "x": "100%",
+                "y": "70%"
+              }
+            }
+          ]
+        },
+        "attrs": {
+          "symbol": {
+            "stroke": "#22c55e",
+            "strokeWidth": 2.5,
+            "transform": "scale(1.2321428571428572,1.4692307692307693)"
+          },
+          "vesselName": {
+            "text": "GOT",
+            "fill": "#22c55e"
+          }
+        },
+        "id": "c2a630b1-bf35-4da0-9931-23362266487c",
+        "position": {
+          "x": -40,
+          "y": 1080
+        },
+        "z": 34
+      },
+      {
+        "type": "nova.Bottle",
+        "size": {
+          "width": 69,
+          "height": 191
+        },
+        "label": "GOT",
+        "contentsLabel": "",
+        "colorToken": "nominal",
+        "ports": {
+          "groups": {
+            "flow": {
+              "position": {
+                "name": "absolute"
+              },
+              "markup": [
+                {
+                  "tagName": "circle",
+                  "selector": "portBody"
+                }
+              ],
+              "attrs": {
+                "portBody": {
+                  "r": 4,
+                  "fill": "var(--chakra-colors-bg\\.surface)",
+                  "stroke": "var(--chakra-colors-border\\.default)",
+                  "strokeWidth": 1.5,
+                  "magnet": true,
+                  "cursor": "crosshair"
+                }
+              }
+            }
+          },
+          "items": [
+            {
+              "id": "top",
+              "group": "flow",
+              "args": {
+                "x": "50%",
+                "y": 0
+              }
+            },
+            {
+              "id": "bottom",
+              "group": "flow",
+              "args": {
+                "x": "50%",
+                "y": "100%"
+              }
+            },
+            {
+              "id": "left",
+              "group": "flow",
+              "args": {
+                "x": 0,
+                "y": "70%"
+              }
+            },
+            {
+              "id": "right",
+              "group": "flow",
+              "args": {
+                "x": "100%",
+                "y": "70%"
+              }
+            }
+          ]
+        },
+        "attrs": {
+          "symbol": {
+            "stroke": "#22c55e",
+            "strokeWidth": 2.5,
+            "transform": "scale(1.2321428571428572,1.4692307692307693)"
+          },
+          "vesselName": {
+            "text": "GOT",
+            "fill": "#22c55e"
+          }
+        },
+        "id": "novaBottle-1781799116523-6734",
+        "position": {
+          "x": -140,
+          "y": 1080
+        },
+        "z": 34,
+        "controlId": null
+      },
+      {
+        "type": "nova.Instrument",
+        "size": {
+          "width": 188,
+          "height": 76
+        },
+        "binding": {
+          "name": "PGSO"
+        },
+        "instrumentType": "PT",
+        "label": "PGSO",
+        "hint": {
+          "unit": "psi",
+          "range": [
+            0,
+            1000
+          ]
+        },
+        "colorToken": "nominal",
+        "ports": {
+          "groups": {
+            "flow": {
+              "position": {
+                "name": "absolute"
+              },
+              "markup": [
+                {
+                  "tagName": "circle",
+                  "selector": "portBody"
+                }
+              ],
+              "attrs": {
+                "portBody": {
+                  "r": 4,
+                  "fill": "var(--chakra-colors-bg\\.surface)",
+                  "stroke": "var(--chakra-colors-border\\.default)",
+                  "strokeWidth": 1.5,
+                  "magnet": true,
+                  "cursor": "crosshair"
+                }
+              }
+            }
+          },
+          "items": [
+            {
+              "id": "left",
+              "group": "flow",
+              "args": {
+                "x": 8,
+                "y": 38
+              }
+            },
+            {
+              "id": "right",
+              "group": "flow",
+              "args": {
+                "x": 68,
+                "y": 38
+              }
+            },
+            {
+              "id": "top",
+              "group": "flow",
+              "args": {
+                "x": 38,
+                "y": 8
+              }
+            },
+            {
+              "id": "bottom",
+              "group": "flow",
+              "args": {
+                "x": 38,
+                "y": 68
+              }
+            }
+          ]
+        },
+        "attrs": {
+          "body": {},
+          "bubble": {
+            "stroke": "#22c55e"
+          },
+          "typeCode": {
+            "fill": "#22c55e"
+          },
+          "sensorName": {
+            "text": "PGSO"
+          },
+          "tapLine": {
+            "stroke": "#22c55e"
+          },
+          "readoutBox": {
+            "stroke": "#22c55e"
+          }
+        },
+        "id": "f886bc7a-95ff-4dc4-8395-c5b9c32cee4d",
+        "position": {
+          "x": 90,
+          "y": 850
+        },
+        "z": 35
+      },
+      {
+        "type": "nova.Instrument",
+        "size": {
+          "width": 188,
+          "height": 76
+        },
+        "binding": {
+          "name": "PGS"
+        },
+        "instrumentType": "PT",
+        "label": "PGS",
+        "hint": {
+          "unit": "psi",
+          "range": [
+            0,
+            1000
+          ]
+        },
+        "colorToken": "warn",
+        "ports": {
+          "groups": {
+            "flow": {
+              "position": {
+                "name": "absolute"
+              },
+              "markup": [
+                {
+                  "tagName": "circle",
+                  "selector": "portBody"
+                }
+              ],
+              "attrs": {
+                "portBody": {
+                  "r": 4,
+                  "fill": "var(--chakra-colors-bg\\.surface)",
+                  "stroke": "var(--chakra-colors-border\\.default)",
+                  "strokeWidth": 1.5,
+                  "magnet": true,
+                  "cursor": "crosshair"
+                }
+              }
+            }
+          },
+          "items": [
+            {
+              "id": "left",
+              "group": "flow",
+              "args": {
+                "x": 8,
+                "y": 38
+              }
+            },
+            {
+              "id": "right",
+              "group": "flow",
+              "args": {
+                "x": 68,
+                "y": 38
+              }
+            },
+            {
+              "id": "top",
+              "group": "flow",
+              "args": {
+                "x": 38,
+                "y": 8
+              }
+            },
+            {
+              "id": "bottom",
+              "group": "flow",
+              "args": {
+                "x": 38,
+                "y": 68
+              }
+            }
+          ]
+        },
+        "attrs": {
+          "body": {},
+          "bubble": {
+            "stroke": "#f59e0b"
+          },
+          "typeCode": {
+            "fill": "#f59e0b"
+          },
+          "sensorName": {
+            "text": "PGS"
+          },
+          "tapLine": {
+            "stroke": "#f59e0b"
+          },
+          "readoutBox": {
+            "stroke": "#f59e0b"
+          }
+        },
+        "id": "bdbcb5d3-c32a-4bdc-9d6b-c7688b518b07",
+        "position": {
+          "x": 470,
+          "y": 1050
+        },
+        "z": 36
+      },
+      {
+        "type": "nova.Valve",
+        "size": {
+          "width": 80,
+          "height": 96
+        },
+        "binding": {
+          "name": "BVGSD"
+        },
+        "symbolVariant": "ball2",
+        "controllable": true,
+        "label": "BVGSD",
+        "colorToken": "warn",
+        "ports": {
+          "groups": {
+            "flow": {
+              "position": {
+                "name": "absolute"
+              },
+              "markup": [
+                {
+                  "tagName": "circle",
+                  "selector": "portBody"
+                }
+              ],
+              "attrs": {
+                "portBody": {
+                  "r": 4,
+                  "fill": "var(--chakra-colors-bg\\.surface)",
+                  "stroke": "var(--chakra-colors-border\\.default)",
+                  "strokeWidth": 1.5,
+                  "magnet": true,
+                  "cursor": "crosshair"
+                }
+              }
+            }
+          },
+          "items": [
+            {
+              "id": "left",
+              "group": "flow",
+              "args": {
+                "x": 0,
+                "y": "50%"
+              }
+            },
+            {
+              "id": "right",
+              "group": "flow",
+              "args": {
+                "x": "100%",
+                "y": "50%"
+              }
+            },
+            {
+              "id": "top",
+              "group": "flow",
+              "args": {
+                "x": "50%",
+                "y": 0
+              }
+            }
+          ]
+        },
+        "attrs": {
+          "body": {},
+          "valveLabel": {
+            "text": "BVGSD",
+            "fill": "#f59e0b"
+          },
+          "symbol": {
+            "stroke": "#f59e0b"
+          },
+          "actuatorCap": {
+            "stroke": "#f59e0b"
+          },
+          "capLine": {
+            "stroke": "#f59e0b"
+          },
+          "badgeBg": {
+            "fill": "var(--chakra-colors-bg\\.surfaceRaised)",
+            "opacity": 0
+          },
+          "badgeText": {
+            "opacity": 0
+          }
+        },
+        "id": "ac27e415-aba8-4141-a742-347f10d51148",
+        "position": {
+          "x": 430,
+          "y": 830
+        },
+        "z": 37,
+        "angle": 270,
+        "controlId": "4e58efd0-b15c-4c96-a351-cdae78a95c23"
+      },
+      {
+        "type": "nova.Valve",
+        "size": {
+          "width": 80,
+          "height": 96
+        },
+        "binding": {
+          "name": "BVGSO"
+        },
+        "symbolVariant": "ball2",
+        "controllable": true,
+        "label": "BVGSO",
+        "colorToken": "nominal",
+        "ports": {
+          "groups": {
+            "flow": {
+              "position": {
+                "name": "absolute"
+              },
+              "markup": [
+                {
+                  "tagName": "circle",
+                  "selector": "portBody"
+                }
+              ],
+              "attrs": {
+                "portBody": {
+                  "r": 4,
+                  "fill": "var(--chakra-colors-bg\\.surface)",
+                  "stroke": "var(--chakra-colors-border\\.default)",
+                  "strokeWidth": 1.5,
+                  "magnet": true,
+                  "cursor": "crosshair"
+                }
+              }
+            }
+          },
+          "items": [
+            {
+              "id": "left",
+              "group": "flow",
+              "args": {
+                "x": 0,
+                "y": "50%"
+              }
+            },
+            {
+              "id": "right",
+              "group": "flow",
+              "args": {
+                "x": "100%",
+                "y": "50%"
+              }
+            },
+            {
+              "id": "top",
+              "group": "flow",
+              "args": {
+                "x": "50%",
+                "y": 0
+              }
+            }
+          ]
+        },
+        "attrs": {
+          "body": {},
+          "valveLabel": {
+            "text": "BVGSO",
+            "fill": "#22c55e"
+          },
+          "symbol": {
+            "stroke": "#22c55e"
+          },
+          "actuatorCap": {
+            "stroke": "#22c55e"
+          },
+          "capLine": {
+            "stroke": "#22c55e"
+          },
+          "badgeBg": {
+            "fill": "var(--chakra-colors-bg\\.surfaceRaised)",
+            "opacity": 0
+          },
+          "badgeText": {
+            "opacity": 0
+          }
+        },
+        "id": "19eff3b2-f430-46b1-af50-c5dfdf937036",
+        "position": {
+          "x": 260,
+          "y": 930
+        },
+        "z": 38,
+        "controlId": "edb854fc-ff9e-407b-9432-c734c64a30f3"
+      },
+      {
+        "type": "nova.SystemLink",
+        "systemId": "oxidizer",
+        "colorToken": "nominal",
+        "attrs": {
+          "line": {
+            "strokeWidth": 4.5,
+            "stroke": "#22c55e"
+          }
+        },
+        "router": {
+          "name": "orthogonal"
+        },
+        "connector": {
+          "name": "rounded",
+          "args": {
+            "radius": 8
+          }
+        },
+        "id": "48f683f5-e965-4247-89cf-d9b9bea41b69",
+        "source": {
+          "id": "19eff3b2-f430-46b1-af50-c5dfdf937036",
+          "magnet": "portBody",
+          "port": "left"
+        },
+        "target": {
+          "id": "f886bc7a-95ff-4dc4-8395-c5b9c32cee4d",
+          "magnet": "portBody",
+          "port": "bottom"
+        },
+        "z": 39,
+        "vertices": [
+          {
+            "x": 198,
+            "y": 978
+          }
+        ]
+      },
+      {
+        "type": "nova.SystemLink",
+        "systemId": "",
+        "colorToken": "warn",
+        "attrs": {
+          "line": {
+            "stroke": "#f59e0b"
+          }
+        },
+        "router": {
+          "name": "orthogonal"
+        },
+        "connector": {
+          "name": "rounded",
+          "args": {
+            "radius": 8
+          }
+        },
+        "id": "d5aa54f7-13c1-4b02-a8e9-9c6ee216469c",
+        "source": {
+          "id": "19eff3b2-f430-46b1-af50-c5dfdf937036",
+          "magnet": "portBody",
+          "port": "right"
+        },
+        "target": {
+          "id": "ac27e415-aba8-4141-a742-347f10d51148",
+          "magnet": "portBody",
+          "port": "left"
+        },
+        "z": 41
+      },
+      {
+        "type": "nova.Valve",
+        "size": {
+          "width": 80,
+          "height": 96
+        },
+        "binding": {
+          "name": "SVBVGS"
+        },
+        "symbolVariant": "ball2",
+        "controllable": true,
+        "label": "SVBVGS",
+        "colorToken": "warn",
+        "ports": {
+          "groups": {
+            "flow": {
+              "position": {
+                "name": "absolute"
+              },
+              "markup": [
+                {
+                  "tagName": "circle",
+                  "selector": "portBody"
+                }
+              ],
+              "attrs": {
+                "portBody": {
+                  "r": 4,
+                  "fill": "var(--chakra-colors-bg\\.surface)",
+                  "stroke": "var(--chakra-colors-border\\.default)",
+                  "strokeWidth": 1.5,
+                  "magnet": true,
+                  "cursor": "crosshair"
+                }
+              }
+            }
+          },
+          "items": [
+            {
+              "id": "left",
+              "group": "flow",
+              "args": {
+                "x": 0,
+                "y": "50%"
+              }
+            },
+            {
+              "id": "right",
+              "group": "flow",
+              "args": {
+                "x": "100%",
+                "y": "50%"
+              }
+            },
+            {
+              "id": "top",
+              "group": "flow",
+              "args": {
+                "x": "50%",
+                "y": 0
+              }
+            }
+          ]
+        },
+        "attrs": {
+          "body": {},
+          "valveLabel": {
+            "text": "SVBVGS",
+            "fill": "#f59e0b"
+          },
+          "symbol": {
+            "stroke": "#f59e0b"
+          },
+          "actuatorCap": {
+            "stroke": "#f59e0b"
+          },
+          "capLine": {
+            "stroke": "#f59e0b"
+          },
+          "badgeBg": {
+            "fill": "var(--chakra-colors-bg\\.surfaceRaised)",
+            "opacity": 0
+          },
+          "badgeText": {
+            "opacity": 0
+          }
+        },
+        "id": "523c57ea-a140-4835-9e11-40866102e233",
+        "position": {
+          "x": 590,
+          "y": 930
+        },
+        "z": 42,
+        "controlId": "4962fa54-bb7c-40b5-bda8-a978fe4be71b"
+      },
+      {
+        "type": "nova.SystemLink",
+        "systemId": "",
+        "colorToken": "warn",
+        "attrs": {
+          "line": {
+            "stroke": "#f59e0b"
+          }
+        },
+        "router": {
+          "name": "orthogonal"
+        },
+        "connector": {
+          "name": "rounded",
+          "args": {
+            "radius": 8
+          }
+        },
+        "id": "01bdae27-863b-4f16-97b3-a8fd4befe9f8",
+        "source": {
+          "id": "19eff3b2-f430-46b1-af50-c5dfdf937036",
+          "magnet": "portBody",
+          "port": "right"
+        },
+        "target": {
+          "id": "bdbcb5d3-c32a-4bdc-9d6b-c7688b518b07",
+          "magnet": "portBody",
+          "port": "top"
+        },
+        "z": 43
+      },
+      {
+        "type": "nova.Valve",
+        "size": {
+          "width": 80,
+          "height": 96
+        },
+        "binding": {
+          "name": "BVOTFD"
+        },
+        "symbolVariant": "ball2",
+        "controllable": true,
+        "label": "BVOTFD",
+        "colorToken": "nominal",
+        "ports": {
+          "groups": {
+            "flow": {
+              "position": {
+                "name": "absolute"
+              },
+              "markup": [
+                {
+                  "tagName": "circle",
+                  "selector": "portBody"
+                }
+              ],
+              "attrs": {
+                "portBody": {
+                  "r": 4,
+                  "fill": "var(--chakra-colors-bg\\.surface)",
+                  "stroke": "var(--chakra-colors-border\\.default)",
+                  "strokeWidth": 1.5,
+                  "magnet": true,
+                  "cursor": "crosshair"
+                }
+              }
+            }
+          },
+          "items": [
+            {
+              "id": "left",
+              "group": "flow",
+              "args": {
+                "x": 0,
+                "y": "50%"
+              }
+            },
+            {
+              "id": "right",
+              "group": "flow",
+              "args": {
+                "x": "100%",
+                "y": "50%"
+              }
+            },
+            {
+              "id": "top",
+              "group": "flow",
+              "args": {
+                "x": "50%",
+                "y": 0
+              }
+            }
+          ]
+        },
+        "attrs": {
+          "body": {},
+          "valveLabel": {
+            "text": "BVOTFD",
+            "fill": "#22c55e"
+          },
+          "symbol": {
+            "stroke": "#22c55e"
+          },
+          "actuatorCap": {
+            "stroke": "#22c55e"
+          },
+          "capLine": {
+            "stroke": "#22c55e"
+          },
+          "badgeBg": {
+            "fill": "var(--chakra-colors-bg\\.surfaceRaised)",
+            "opacity": 0
+          },
+          "badgeText": {
+            "opacity": 0
+          }
+        },
+        "id": "6d3f13e4-3c0f-4369-b27b-dd2ac127799f",
+        "position": {
+          "x": 1060,
+          "y": 1360
+        },
+        "z": 44,
+        "angle": 0,
+        "controlId": "60d6f10a-6224-4b65-ac27-bf0224016efe"
+      },
+      {
+        "type": "nova.SystemLink",
+        "systemId": "",
+        "colorToken": "warn",
+        "attrs": {
+          "line": {
+            "stroke": "#f59e0b"
+          }
+        },
+        "router": {
+          "name": "orthogonal"
+        },
+        "connector": {
+          "name": "rounded",
+          "args": {
+            "radius": 8
+          }
+        },
+        "id": "dca46e8d-1c90-4357-ae98-1d3d75c411a1",
+        "source": {
+          "id": "523c57ea-a140-4835-9e11-40866102e233",
+          "magnet": "portBody",
+          "port": "left"
+        },
+        "target": {
+          "id": "19eff3b2-f430-46b1-af50-c5dfdf937036",
+          "magnet": "portBody",
+          "port": "right"
+        },
+        "z": 45
+      },
+      {
+        "type": "nova.Valve",
+        "size": {
+          "width": 80,
+          "height": 96
+        },
+        "binding": {
+          "name": "SVPP"
+        },
+        "symbolVariant": "ball2",
+        "controllable": true,
+        "label": "SVPP",
+        "colorToken": "",
+        "ports": {
+          "groups": {
+            "flow": {
+              "position": {
+                "name": "absolute"
+              },
+              "markup": [
+                {
+                  "tagName": "circle",
+                  "selector": "portBody"
+                }
+              ],
+              "attrs": {
+                "portBody": {
+                  "r": 4,
+                  "fill": "var(--chakra-colors-bg\\.surface)",
+                  "stroke": "var(--chakra-colors-border\\.default)",
+                  "strokeWidth": 1.5,
+                  "magnet": true,
+                  "cursor": "crosshair"
+                }
+              }
+            }
+          },
+          "items": [
+            {
+              "id": "left",
+              "group": "flow",
+              "args": {
+                "x": 0,
+                "y": "50%"
+              }
+            },
+            {
+              "id": "right",
+              "group": "flow",
+              "args": {
+                "x": "100%",
+                "y": "50%"
+              }
+            },
+            {
+              "id": "top",
+              "group": "flow",
+              "args": {
+                "x": "50%",
+                "y": 0
+              }
+            }
+          ]
+        },
+        "attrs": {
+          "valveLabel": {
+            "text": "SVPP"
+          },
+          "symbol": {
+            "stroke": "#e5e9f0"
+          },
+          "badgeBg": {
+            "opacity": 0
+          },
+          "badgeText": {
+            "opacity": 0
+          }
+        },
+        "id": "7c41e0b6-6a74-4bcc-b827-04e2d6782d75",
+        "position": {
+          "x": 180,
+          "y": 1170
+        },
+        "z": 46,
+        "controlId": "cded259f-93f2-4b9a-987e-f36438c12973"
+      },
+      {
+        "type": "nova.SystemLink",
+        "systemId": "",
+        "colorToken": "nominal",
+        "attrs": {
+          "line": {
+            "stroke": "#22c55e"
+          }
+        },
+        "router": {
+          "name": "orthogonal"
+        },
+        "connector": {
+          "name": "rounded",
+          "args": {
+            "radius": 8
+          }
+        },
+        "id": "70cc27f1-54bc-4fa6-9040-86cfc60b37ae",
+        "source": {
+          "id": "19eff3b2-f430-46b1-af50-c5dfdf937036",
+          "magnet": "portBody",
+          "port": "left"
+        },
+        "target": {
+          "id": "novaBottle-1781799116523-6734",
+          "magnet": "portBody",
+          "port": "top"
+        },
+        "z": 48,
+        "vertices": [
+          {
+            "x": -20,
+            "y": 978
+          },
+          {
+            "x": -50,
+            "y": 1010
+          },
+          {
+            "x": -105,
+            "y": 1010
+          }
+        ]
+      },
+      {
+        "type": "nova.SystemLink",
+        "systemId": "oxidizer",
+        "colorToken": "nominal",
+        "attrs": {
+          "line": {
+            "stroke": "#22c55e"
+          }
+        },
+        "router": {
+          "name": "orthogonal"
+        },
+        "connector": {
+          "name": "rounded",
+          "args": {
+            "radius": 8
+          }
+        },
+        "id": "53957efb-836d-416c-b6d7-310df0d48fa3",
+        "source": {
+          "id": "19eff3b2-f430-46b1-af50-c5dfdf937036",
+          "magnet": "portBody",
+          "port": "left"
+        },
+        "target": {
+          "id": "c2a630b1-bf35-4da0-9931-23362266487c",
+          "magnet": "portBody",
+          "port": "top"
+        },
+        "z": 49,
+        "vertices": [
+          {
+            "x": -50,
+            "y": 1000
+          },
+          {
+            "x": -50,
+            "y": 1010
+          },
+          {
+            "x": -5,
+            "y": 1010
+          }
+        ]
+      },
+      {
+        "type": "nova.SystemLink",
+        "systemId": "oxidizer",
+        "colorToken": "nominal",
+        "attrs": {
+          "line": {
+            "stroke": "#22c55e"
+          }
+        },
+        "router": {
+          "name": "orthogonal"
+        },
+        "connector": {
+          "name": "rounded",
+          "args": {
+            "radius": 8
+          }
+        },
+        "id": "254fff3a-2c26-4bb6-8918-d30a684fba6b",
+        "source": {
+          "id": "c2a630b1-bf35-4da0-9931-23362266487c",
+          "magnet": "portBody",
+          "port": "top"
+        },
+        "target": {
+          "id": "novaBottle-1781799116523-6734",
+          "magnet": "portBody",
+          "port": "top"
+        },
+        "z": 50,
+        "vertices": [
+          {
+            "x": -30,
+            "y": 1010
+          }
+        ]
+      },
+      {
+        "type": "nova.SystemLink",
+        "systemId": "fuel",
+        "colorToken": "fault",
+        "attrs": {
+          "line": {
+            "stroke": "#ef4444"
+          }
+        },
+        "router": {
+          "name": "orthogonal"
+        },
+        "connector": {
+          "name": "rounded",
+          "args": {
+            "radius": 8
+          }
+        },
+        "id": "dc4b8a95-fd61-434d-80dc-46e012c543b7",
+        "source": {
+          "id": "833a74a3-6f04-4905-9a17-466e8cebf99c",
+          "magnet": "portBody",
+          "port": "right"
+        },
+        "target": {
+          "id": "ee9f3663-77eb-4a3e-b622-4996083b4496",
+          "magnet": "portBody",
+          "port": "top"
+        },
+        "z": 51
+      },
+      {
+        "type": "nova.Valve",
+        "size": {
+          "width": 80,
+          "height": 96
+        },
+        "binding": null,
+        "symbolVariant": "ball2",
+        "controllable": false,
+        "label": "MOV",
+        "colorToken": "nominal",
+        "ports": {
+          "groups": {
+            "flow": {
+              "position": {
+                "name": "absolute"
+              },
+              "markup": [
+                {
+                  "tagName": "circle",
+                  "selector": "portBody"
+                }
+              ],
+              "attrs": {
+                "portBody": {
+                  "r": 4,
+                  "fill": "var(--chakra-colors-bg\\.surface)",
+                  "stroke": "var(--chakra-colors-border\\.default)",
+                  "strokeWidth": 1.5,
+                  "magnet": true,
+                  "cursor": "crosshair"
+                }
+              }
+            }
+          },
+          "items": [
+            {
+              "id": "left",
+              "group": "flow",
+              "args": {
+                "x": 0,
+                "y": "50%"
+              }
+            },
+            {
+              "id": "right",
+              "group": "flow",
+              "args": {
+                "x": "100%",
+                "y": "50%"
+              }
+            },
+            {
+              "id": "top",
+              "group": "flow",
+              "args": {
+                "x": "50%",
+                "y": 0
+              }
+            }
+          ]
+        },
+        "attrs": {
+          "valveLabel": {
+            "text": "MOV",
+            "fill": "#22c55e"
+          },
+          "symbol": {
+            "stroke": "#22c55e"
+          },
+          "actuatorCap": {
+            "stroke": "#22c55e"
+          },
+          "capLine": {
+            "stroke": "#22c55e"
+          },
+          "badgeBg": {
+            "opacity": 1
+          },
+          "badgeText": {
+            "opacity": 1
+          }
+        },
+        "id": "2f02d502-e27b-4705-9aa4-9dfecccbe5a0",
+        "position": {
+          "x": 1600,
+          "y": 1130
+        },
+        "z": 52
+      },
+      {
+        "type": "nova.SystemLink",
+        "systemId": "oxidizer",
+        "colorToken": "nominal",
+        "attrs": {
+          "line": {
+            "stroke": "#22c55e"
+          }
+        },
+        "router": {
+          "name": "orthogonal"
+        },
+        "connector": {
+          "name": "rounded",
+          "args": {
+            "radius": 8
+          }
+        },
+        "id": "90985791-a0b7-4fbb-bfcf-9fcfb8555794",
+        "source": {
+          "id": "novaVessel-1781798481025-5652",
+          "magnet": "portBody",
+          "port": "right"
+        },
+        "target": {
+          "id": "2f02d502-e27b-4705-9aa4-9dfecccbe5a0",
+          "magnet": "portBody",
+          "port": "left"
+        },
+        "z": 53,
+        "vertices": [
+          {
+            "x": 1450,
+            "y": 1178
+          }
+        ]
+      },
+      {
+        "type": "nova.SystemLink",
+        "systemId": "",
+        "colorToken": "info",
+        "attrs": {
+          "line": {
+            "stroke": "#3b82f6"
+          }
+        },
+        "router": {
+          "name": "orthogonal"
+        },
+        "connector": {
+          "name": "rounded",
+          "args": {
+            "radius": 8
+          }
+        },
+        "id": "b635f1ae-a06a-467f-a326-1e4db3c9ba94",
+        "source": {
+          "id": "novaValve-1781798481027-6630",
+          "magnet": "portBody",
+          "port": "left"
+        },
+        "target": {
+          "id": "novaBottle-1781798481029-9242",
+          "magnet": "portBody",
+          "port": "top"
+        },
+        "z": 56
+      },
+      {
+        "type": "nova.SystemLink",
+        "systemId": "",
+        "colorToken": "warn",
+        "attrs": {
+          "line": {
+            "stroke": "#f59e0b"
+          }
+        },
+        "router": {
+          "name": "orthogonal"
+        },
+        "connector": {
+          "name": "rounded",
+          "args": {
+            "radius": 8
+          }
+        },
+        "id": "9f96ccc1-f592-4f5c-9ece-5c2af2a3ad39",
+        "source": {
+          "id": "523c57ea-a140-4835-9e11-40866102e233",
+          "magnet": "portBody",
+          "port": "right"
+        },
+        "target": {
+          "id": "6d3f13e4-3c0f-4369-b27b-dd2ac127799f",
+          "magnet": "portBody",
+          "port": "left"
+        },
+        "z": 57,
+        "vertices": [
+          {
+            "x": 870,
+            "y": 978
+          },
+          {
+            "x": 870,
+            "y": 1358
+          }
+        ]
+      },
+      {
+        "type": "nova.SystemLink",
+        "systemId": "",
+        "colorToken": "nominal",
+        "attrs": {
+          "line": {
+            "stroke": "#22c55e"
+          }
+        },
+        "router": {
+          "name": "orthogonal"
+        },
+        "connector": {
+          "name": "rounded",
+          "args": {
+            "radius": 8
+          }
+        },
+        "id": "8d2c42d7-dc1d-4744-8803-c278fe8c88ba",
+        "source": {
+          "id": "6d3f13e4-3c0f-4369-b27b-dd2ac127799f",
+          "magnet": "portBody",
+          "port": "right"
+        },
+        "target": {
+          "id": "novaVessel-1781798481025-5652",
+          "magnet": "portBody",
+          "port": "bottom"
+        },
+        "z": 58
+      },
+      {
+        "type": "nova.SystemLink",
+        "systemId": "",
+        "colorToken": "nominal",
+        "attrs": {
+          "line": {
+            "stroke": "#22c55e"
+          }
+        },
+        "router": {
+          "name": "orthogonal"
+        },
+        "connector": {
+          "name": "rounded",
+          "args": {
+            "radius": 8
+          }
+        },
+        "id": "6be2985c-925f-4425-9e5a-7daff8180435",
+        "source": {
+          "id": "ee9f3663-77eb-4a3e-b622-4996083b4496",
+          "magnet": "portBody",
+          "port": "left"
+        },
+        "target": {
+          "id": "2f02d502-e27b-4705-9aa4-9dfecccbe5a0",
+          "magnet": "portBody",
+          "port": "right"
+        },
+        "z": 59,
+        "vertices": [
+          {
+            "x": 1770,
+            "y": 1084
+          },
+          {
+            "x": 1770,
+            "y": 1178
+          }
+        ]
+      },
+      {
+        "type": "nova.ActuatorControl",
+        "size": {
+          "width": 138,
+          "height": 30
+        },
+        "binding": {
+          "name": "BVFTP"
+        },
+        "showName": false,
+        "buttonCount": 2,
+        "attrs": {
+          "body": {
+            "stroke": "#26303f",
+            "strokeWidth": 1
+          },
+          "nameLabel": {
+            "text": "BVFTP"
+          },
+          "btn0bg": {
+            "y": 2,
+            "width": 48,
+            "fill": "transparent",
+            "stroke": "rgba(148,160,179,0.30)",
+            "opacity": 1
+          },
+          "btn0txt": {
+            "x": 28,
+            "y": 15,
+            "text": "POS",
+            "fill": "#94a0b3",
+            "opacity": 1
+          },
+          "btn1bg": {
+            "x": 56,
+            "y": 2,
+            "width": 78,
+            "fill": "transparent",
+            "stroke": "rgba(148,160,179,0.30)",
+            "opacity": 1
+          },
+          "btn1txt": {
+            "x": 95,
+            "y": 15,
+            "text": "ENABLE",
+            "fill": "#94a0b3",
+            "opacity": 1
+          }
+        },
+        "id": "1e303f25-238e-4a42-a139-9d71f64d7a20",
+        "position": {
+          "x": 1020,
+          "y": 830
+        },
+        "z": 60
+      },
+      {
+        "type": "nova.ActuatorControl",
+        "size": {
+          "width": 56,
+          "height": 30
+        },
+        "binding": {
+          "name": "SVFTV"
+        },
+        "showName": false,
+        "buttonCount": 1,
+        "attrs": {
+          "body": {
+            "stroke": "#26303f",
+            "strokeWidth": 1
+          },
+          "nameLabel": {
+            "text": "SVFTV"
+          },
+          "btn0bg": {
+            "y": 2,
+            "width": 48,
+            "fill": "transparent",
+            "stroke": "rgba(148,160,179,0.30)",
+            "opacity": 1
+          },
+          "btn0txt": {
+            "x": 28,
+            "y": 15,
+            "text": "POS",
+            "fill": "#94a0b3",
+            "opacity": 1
+          }
+        },
+        "id": "1e3c02b5-abd9-4d52-b434-64049a1580ed",
+        "position": {
+          "x": 1170,
+          "y": 700
+        },
+        "z": 61
+      },
+      {
+        "type": "nova.SystemLink",
+        "systemId": "",
+        "colorToken": "fault",
+        "attrs": {
+          "line": {
+            "stroke": "#ef4444"
+          }
+        },
+        "router": {
+          "name": "orthogonal"
+        },
+        "connector": {
+          "name": "rounded",
+          "args": {
+            "radius": 8
+          }
+        },
+        "id": "e1ebd885-2cb9-4a6f-8280-cbd8dee459f4",
+        "source": {
+          "id": "5fa07647-a03f-428c-8775-e851798154d5",
+          "magnet": "portBody",
+          "port": "left"
+        },
+        "target": {
+          "id": "05966005-2344-484c-a251-abd1b30d2d38",
+          "magnet": "portBody",
+          "port": "bottom"
+        },
+        "z": 62
+      },
+      {
+        "type": "nova.SystemLink",
+        "systemId": "",
+        "colorToken": "nominal",
+        "attrs": {
+          "line": {
+            "stroke": "#22c55e"
+          }
+        },
+        "router": {
+          "name": "orthogonal"
+        },
+        "connector": {
+          "name": "rounded",
+          "args": {
+            "radius": 8
+          }
+        },
+        "id": "094c7ce0-b297-4d89-bd57-296004f08641",
+        "source": {
+          "id": "novaInstrument-1781798481028-1888",
+          "magnet": "portBody",
+          "port": "left"
+        },
+        "target": {
+          "id": "novaVessel-1781798481025-5652",
+          "magnet": "portBody",
+          "port": "bottom"
+        },
+        "z": 64
+      },
+      {
+        "type": "nova.ActuatorControl",
+        "size": {
+          "width": 56,
+          "height": 30
+        },
+        "binding": {
+          "name": "SVOTV"
+        },
+        "showName": false,
+        "buttonCount": 1,
+        "attrs": {
+          "body": {
+            "stroke": "#26303f",
+            "strokeWidth": 1
+          },
+          "nameLabel": {
+            "text": "SVOTV"
+          },
+          "btn0bg": {
+            "y": 2,
+            "width": 48,
+            "fill": "transparent",
+            "stroke": "rgba(148,160,179,0.30)",
+            "opacity": 1
+          },
+          "btn0txt": {
+            "x": 28,
+            "y": 15,
+            "text": "POS",
+            "fill": "#94a0b3",
+            "opacity": 1
+          }
+        },
+        "id": "c1307009-11b7-4e72-a25b-21564097a913",
+        "position": {
+          "x": 1180,
+          "y": 1070
+        },
+        "z": 65
+      },
+      {
+        "type": "nova.ActuatorControl",
+        "size": {
+          "width": 272,
+          "height": 30
+        },
+        "binding": {
+          "name": "BVOTFD"
+        },
+        "showName": false,
+        "buttonCount": 5,
+        "attrs": {
+          "body": {
+            "stroke": "#26303f",
+            "strokeWidth": 1
+          },
+          "nameLabel": {
+            "text": "BVOTFD"
+          },
+          "btn0bg": {
+            "y": 2,
+            "width": 34,
+            "fill": "transparent",
+            "stroke": "rgba(148,160,179,0.30)",
+            "opacity": 1
+          },
+          "btn0txt": {
+            "x": 21,
+            "y": 15,
+            "text": "F",
+            "fill": "#94a0b3",
+            "opacity": 1
+          },
+          "btn1bg": {
+            "x": 42,
+            "y": 2,
+            "width": 34,
+            "fill": "transparent",
+            "stroke": "rgba(148,160,179,0.30)",
+            "opacity": 1
+          },
+          "btn1txt": {
+            "x": 59,
+            "y": 15,
+            "text": "N",
+            "fill": "#94a0b3",
+            "opacity": 1
+          },
+          "btn2bg": {
+            "x": 80,
+            "y": 2,
+            "width": 34,
+            "fill": "transparent",
+            "stroke": "rgba(148,160,179,0.30)",
+            "opacity": 1
+          },
+          "btn2txt": {
+            "x": 97,
+            "y": 15,
+            "text": "D",
+            "fill": "#94a0b3",
+            "opacity": 1
+          },
+          "btn3bg": {
+            "x": 118,
+            "y": 2,
+            "width": 78,
+            "fill": "transparent",
+            "stroke": "rgba(148,160,179,0.30)",
+            "opacity": 1
+          },
+          "btn3txt": {
+            "x": 157,
+            "y": 15,
+            "text": "ENABLE",
+            "fill": "#94a0b3",
+            "opacity": 1
+          },
+          "btn4bg": {
+            "x": 200,
+            "y": 2,
+            "width": 68,
+            "fill": "transparent",
+            "stroke": "rgba(148,160,179,0.30)",
+            "opacity": 1
+          },
+          "btn4txt": {
+            "x": 234,
+            "y": 15,
+            "text": "POWER",
+            "fill": "#94a0b3",
+            "opacity": 1
+          }
+        },
+        "id": "60d6f10a-6224-4b65-ac27-bf0224016efe",
+        "position": {
+          "x": 960,
+          "y": 1430
+        },
+        "z": 66
+      },
+      {
+        "type": "nova.ActuatorControl",
+        "size": {
+          "width": 56,
+          "height": 30
+        },
+        "binding": {
+          "name": "SVBVGS"
+        },
+        "showName": false,
+        "buttonCount": 1,
+        "attrs": {
+          "body": {
+            "stroke": "#26303f",
+            "strokeWidth": 1
+          },
+          "nameLabel": {
+            "text": "SVBVGS"
+          },
+          "btn0bg": {
+            "y": 2,
+            "width": 48,
+            "fill": "transparent",
+            "stroke": "rgba(148,160,179,0.30)",
+            "opacity": 1
+          },
+          "btn0txt": {
+            "x": 28,
+            "y": 15,
+            "text": "POS",
+            "fill": "#94a0b3",
+            "opacity": 1
+          }
+        },
+        "id": "4962fa54-bb7c-40b5-bda8-a978fe4be71b",
+        "position": {
+          "x": 600,
+          "y": 1000
+        },
+        "z": 67
+      },
+      {
+        "type": "nova.ActuatorControl",
+        "size": {
+          "width": 210,
+          "height": 30
+        },
+        "binding": {
+          "name": "BVGSO"
+        },
+        "showName": false,
+        "buttonCount": 3,
+        "attrs": {
+          "body": {
+            "stroke": "#26303f",
+            "strokeWidth": 1
+          },
+          "nameLabel": {
+            "text": "BVGSO"
+          },
+          "btn0bg": {
+            "y": 2,
+            "width": 48,
+            "fill": "transparent",
+            "stroke": "rgba(148,160,179,0.30)",
+            "opacity": 1
+          },
+          "btn0txt": {
+            "x": 28,
+            "y": 15,
+            "text": "POS",
+            "fill": "#94a0b3",
+            "opacity": 1
+          },
+          "btn1bg": {
+            "x": 56,
+            "y": 2,
+            "width": 78,
+            "fill": "transparent",
+            "stroke": "rgba(148,160,179,0.30)",
+            "opacity": 1
+          },
+          "btn1txt": {
+            "x": 95,
+            "y": 15,
+            "text": "ENABLE",
+            "fill": "#94a0b3",
+            "opacity": 1
+          },
+          "btn2bg": {
+            "x": 138,
+            "y": 2,
+            "width": 68,
+            "fill": "transparent",
+            "stroke": "rgba(148,160,179,0.30)",
+            "opacity": 1
+          },
+          "btn2txt": {
+            "x": 172,
+            "y": 15,
+            "text": "POWER",
+            "fill": "#94a0b3",
+            "opacity": 1
+          }
+        },
+        "id": "edb854fc-ff9e-407b-9432-c734c64a30f3",
+        "position": {
+          "x": 200,
+          "y": 1010
+        },
+        "z": 71
+      },
+      {
+        "type": "nova.ActuatorControl",
+        "size": {
+          "width": 210,
+          "height": 30
+        },
+        "binding": {
+          "name": "BVGSD"
+        },
+        "showName": false,
+        "buttonCount": 3,
+        "attrs": {
+          "body": {
+            "stroke": "#26303f",
+            "strokeWidth": 1
+          },
+          "nameLabel": {
+            "text": "BVGSD"
+          },
+          "btn0bg": {
+            "y": 2,
+            "width": 48,
+            "fill": "transparent",
+            "stroke": "rgba(148,160,179,0.30)",
+            "opacity": 1
+          },
+          "btn0txt": {
+            "x": 28,
+            "y": 15,
+            "text": "POS",
+            "fill": "#94a0b3",
+            "opacity": 1
+          },
+          "btn1bg": {
+            "x": 56,
+            "y": 2,
+            "width": 78,
+            "fill": "transparent",
+            "stroke": "rgba(148,160,179,0.30)",
+            "opacity": 1
+          },
+          "btn1txt": {
+            "x": 95,
+            "y": 15,
+            "text": "ENABLE",
+            "fill": "#94a0b3",
+            "opacity": 1
+          },
+          "btn2bg": {
+            "x": 138,
+            "y": 2,
+            "width": 68,
+            "fill": "transparent",
+            "stroke": "rgba(148,160,179,0.30)",
+            "opacity": 1
+          },
+          "btn2txt": {
+            "x": 172,
+            "y": 15,
+            "text": "POWER",
+            "fill": "#94a0b3",
+            "opacity": 1
+          }
+        },
+        "id": "4e58efd0-b15c-4c96-a351-cdae78a95c23",
+        "position": {
+          "x": 500,
+          "y": 870
+        },
+        "z": 72
+      },
+      {
+        "type": "nova.ActuatorControl",
+        "size": {
+          "width": 76,
+          "height": 43
+        },
+        "binding": {
+          "name": "TANK_HEAT"
+        },
+        "showName": true,
+        "buttonCount": 1,
+        "attrs": {
+          "body": {
+            "stroke": "#26303f",
+            "strokeWidth": 1
+          },
+          "nameLabel": {
+            "text": "TANK_HEAT",
+            "opacity": 1
+          },
+          "btn0bg": {
+            "y": 15,
+            "width": 68,
+            "fill": "transparent",
+            "stroke": "rgba(148,160,179,0.30)",
+            "opacity": 1
+          },
+          "btn0txt": {
+            "x": 38,
+            "y": 28,
+            "text": "POWER",
+            "fill": "#94a0b3",
+            "opacity": 1
+          }
+        },
+        "id": "2aa905bd-29b5-4c67-b32d-63249bc96de4",
+        "position": {
+          "x": 1350,
+          "y": 1430
+        },
+        "z": 73
+      },
+      {
+        "type": "nova.ActuatorControl",
+        "size": {
+          "width": 76,
+          "height": 43
+        },
+        "binding": {
+          "name": "TANK_HEAT_PWR"
+        },
+        "showName": true,
+        "buttonCount": 1,
+        "attrs": {
+          "body": {
+            "stroke": "#26303f",
+            "strokeWidth": 1
+          },
+          "nameLabel": {
+            "text": "TANK_HEAT_PWR",
+            "opacity": 1
+          },
+          "btn0bg": {
+            "y": 15,
+            "width": 68,
+            "fill": "transparent",
+            "stroke": "rgba(148,160,179,0.30)",
+            "opacity": 1
+          },
+          "btn0txt": {
+            "x": 38,
+            "y": 28,
+            "text": "POWER",
+            "fill": "#94a0b3",
+            "opacity": 1
+          }
+        },
+        "id": "889733bb-c461-4004-b557-8ea7ec36ea3a",
+        "position": {
+          "x": 1470,
+          "y": 1430
+        },
+        "z": 75
+      },
+      {
+        "type": "nova.ActuatorControl",
+        "size": {
+          "width": 76,
+          "height": 43
+        },
+        "binding": {
+          "name": "IMC-G"
+        },
+        "showName": true,
+        "buttonCount": 1,
+        "attrs": {
+          "body": {
+            "stroke": "#26303f",
+            "strokeWidth": 1
+          },
+          "nameLabel": {
+            "text": "IMC-G",
+            "opacity": 1
+          },
+          "btn0bg": {
+            "y": 15,
+            "width": 68,
+            "fill": "transparent",
+            "stroke": "rgba(148,160,179,0.30)",
+            "opacity": 1
+          },
+          "btn0txt": {
+            "x": 38,
+            "y": 28,
+            "text": "POWER",
+            "fill": "#94a0b3",
+            "opacity": 1
+          }
+        },
+        "id": "6ad8f683-daf9-41ec-b068-6338034e9cd8",
+        "position": {
+          "x": 1610,
+          "y": 1240
+        },
+        "z": 76
+      },
+      {
+        "type": "nova.ActuatorControl",
+        "size": {
+          "width": 56,
+          "height": 43
+        },
+        "binding": {
+          "name": "IMC-V"
+        },
+        "showName": true,
+        "buttonCount": 1,
+        "attrs": {
+          "body": {
+            "stroke": "#26303f",
+            "strokeWidth": 1
+          },
+          "nameLabel": {
+            "text": "IMC-V",
+            "opacity": 1
+          },
+          "btn0bg": {
+            "y": 15,
+            "width": 48,
+            "fill": "transparent",
+            "stroke": "rgba(148,160,179,0.30)",
+            "opacity": 1
+          },
+          "btn0txt": {
+            "x": 28,
+            "y": 28,
+            "text": "ARM",
+            "fill": "#94a0b3",
+            "opacity": 1
+          }
+        },
+        "id": "ddf3badb-f198-4575-8b41-948b67005f4b",
+        "position": {
+          "x": 1730,
+          "y": 860
+        },
+        "z": 77
+      },
+      {
+        "type": "nova.ActuatorControl",
+        "size": {
+          "width": 76,
+          "height": 43
+        },
+        "binding": {
+          "name": "FAS_POWER"
+        },
+        "showName": true,
+        "buttonCount": 1,
+        "attrs": {
+          "body": {
+            "stroke": "#26303f",
+            "strokeWidth": 1
+          },
+          "nameLabel": {
+            "text": "FAS_POWER",
+            "opacity": 1
+          },
+          "btn0bg": {
+            "y": 15,
+            "width": 68,
+            "fill": "transparent",
+            "stroke": "rgba(148,160,179,0.30)",
+            "opacity": 1
+          },
+          "btn0txt": {
+            "x": 38,
+            "y": 28,
+            "text": "POWER",
+            "fill": "#94a0b3",
+            "opacity": 1
+          }
+        },
+        "id": "39e443f2-d7d1-4465-b26e-378e0b4c3df4",
+        "position": {
+          "x": 720,
+          "y": 1020
+        },
+        "z": 78
+      },
+      {
+        "type": "nova.Instrument",
+        "size": {
+          "width": 188,
+          "height": 76
+        },
+        "binding": {
+          "name": "TOT"
+        },
+        "instrumentType": "TC",
+        "label": "TOT",
+        "hint": {
+          "unit": "degC",
+          "range": [
+            -40,
+            125
+          ]
+        },
+        "colorToken": "neutral",
+        "ports": {
+          "groups": {
+            "flow": {
+              "position": {
+                "name": "absolute"
+              },
+              "markup": [
+                {
+                  "tagName": "circle",
+                  "selector": "portBody"
+                }
+              ],
+              "attrs": {
+                "portBody": {
+                  "r": 4,
+                  "fill": "var(--chakra-colors-bg\\.surface)",
+                  "stroke": "var(--chakra-colors-border\\.default)",
+                  "strokeWidth": 1.5,
+                  "magnet": true,
+                  "cursor": "crosshair"
+                }
+              }
+            }
+          },
+          "items": [
+            {
+              "id": "left",
+              "group": "flow",
+              "args": {
+                "x": 8,
+                "y": 38
+              }
+            },
+            {
+              "id": "right",
+              "group": "flow",
+              "args": {
+                "x": 68,
+                "y": 38
+              }
+            },
+            {
+              "id": "top",
+              "group": "flow",
+              "args": {
+                "x": 38,
+                "y": 8
+              }
+            },
+            {
+              "id": "bottom",
+              "group": "flow",
+              "args": {
+                "x": 38,
+                "y": 68
+              }
+            }
+          ]
+        },
+        "attrs": {
+          "body": {},
+          "bubble": {
+            "stroke": "#94a0b3"
+          },
+          "typeCode": {
+            "text": "TC",
+            "fill": "#94a0b3"
+          },
+          "sensorName": {
+            "text": "TOT"
+          },
+          "tapLine": {
+            "stroke": "#94a0b3"
+          },
+          "readoutBox": {
+            "stroke": "#94a0b3"
+          }
+        },
+        "id": "2dd1fad5-a859-4abd-a7c5-4fccfdecdaa8",
+        "position": {
+          "x": 1360,
+          "y": 1340
+        },
+        "z": 79
+      },
+      {
+        "type": "nova.Instrument",
+        "size": {
+          "width": 188,
+          "height": 76
+        },
+        "binding": {
+          "name": ""
+        },
+        "instrumentType": "TC",
+        "label": "TCC",
+        "hint": {
+          "unit": "",
+          "range": [
+            -40,
+            150
+          ]
+        },
+        "colorToken": "neutral",
+        "ports": {
+          "groups": {
+            "flow": {
+              "position": {
+                "name": "absolute"
+              },
+              "markup": [
+                {
+                  "tagName": "circle",
+                  "selector": "portBody"
+                }
+              ],
+              "attrs": {
+                "portBody": {
+                  "r": 4,
+                  "fill": "var(--chakra-colors-bg\\.surface)",
+                  "stroke": "var(--chakra-colors-border\\.default)",
+                  "strokeWidth": 1.5,
+                  "magnet": true,
+                  "cursor": "crosshair"
+                }
+              }
+            }
+          },
+          "items": [
+            {
+              "id": "left",
+              "group": "flow",
+              "args": {
+                "x": 8,
+                "y": 38
+              }
+            },
+            {
+              "id": "right",
+              "group": "flow",
+              "args": {
+                "x": 68,
+                "y": 38
+              }
+            },
+            {
+              "id": "top",
+              "group": "flow",
+              "args": {
+                "x": 38,
+                "y": 8
+              }
+            },
+            {
+              "id": "bottom",
+              "group": "flow",
+              "args": {
+                "x": 38,
+                "y": 68
+              }
+            }
+          ]
+        },
+        "attrs": {
+          "bubble": {
+            "stroke": "#94a0b3"
+          },
+          "typeCode": {
+            "text": "TC",
+            "fill": "#94a0b3"
+          },
+          "sensorName": {
+            "text": "TCC"
+          },
+          "tapLine": {
+            "stroke": "#94a0b3"
+          },
+          "readoutBox": {
+            "stroke": "#94a0b3"
+          }
+        },
+        "id": "eead13da-9c98-4c19-9ba7-91c08babdb11",
+        "position": {
+          "x": 2050,
+          "y": 1120
+        },
+        "z": 80
+      },
+      {
+        "type": "nova.SystemLink",
+        "systemId": "",
+        "colorToken": "neutral",
+        "attrs": {
+          "line": {
+            "stroke": "#94a0b3"
+          }
+        },
+        "router": {
+          "name": "orthogonal"
+        },
+        "connector": {
+          "name": "rounded",
+          "args": {
+            "radius": 8
+          }
+        },
+        "id": "fc8f2788-f15d-4a19-b830-53a4506b7d26",
+        "source": {
+          "id": "ee9f3663-77eb-4a3e-b622-4996083b4496",
+          "magnet": "portBody",
+          "port": "right"
+        },
+        "target": {
+          "id": "eead13da-9c98-4c19-9ba7-91c08babdb11",
+          "magnet": "portBody",
+          "port": "top"
+        },
+        "z": 81
+      },
+      {
+        "type": "nova.SystemLink",
+        "systemId": "",
+        "colorToken": "neutral",
+        "attrs": {
+          "line": {
+            "stroke": "#94a0b3"
+          }
+        },
+        "router": {
+          "name": "orthogonal"
+        },
+        "connector": {
+          "name": "rounded",
+          "args": {
+            "radius": 8
+          }
+        },
+        "id": "dcbbfdf4-93a9-41da-b56f-6de0395f7c9d",
+        "source": {
+          "id": "c41b0644-01ad-4fae-87ef-81233517a650",
+          "magnet": "portBody",
+          "port": "left"
+        },
+        "target": {
+          "id": "ee9f3663-77eb-4a3e-b622-4996083b4496",
+          "magnet": "portBody",
+          "port": "bottom"
+        },
+        "z": 82
+      },
+      {
+        "type": "nova.Valve",
+        "size": {
+          "width": 80,
+          "height": 96
+        },
+        "binding": {
+          "name": "SVGSD"
+        },
+        "symbolVariant": "ball2",
+        "controllable": true,
+        "label": "SVGSD",
+        "colorToken": "neutral",
+        "ports": {
+          "groups": {
+            "flow": {
+              "position": {
+                "name": "absolute"
+              },
+              "markup": [
+                {
+                  "tagName": "circle",
+                  "selector": "portBody"
+                }
+              ],
+              "attrs": {
+                "portBody": {
+                  "r": 4,
+                  "fill": "var(--chakra-colors-bg\\.surface)",
+                  "stroke": "var(--chakra-colors-border\\.default)",
+                  "strokeWidth": 1.5,
+                  "magnet": true,
+                  "cursor": "crosshair"
+                }
+              }
+            }
+          },
+          "items": [
+            {
+              "id": "left",
+              "group": "flow",
+              "args": {
+                "x": 0,
+                "y": "50%"
+              }
+            },
+            {
+              "id": "right",
+              "group": "flow",
+              "args": {
+                "x": "100%",
+                "y": "50%"
+              }
+            },
+            {
+              "id": "top",
+              "group": "flow",
+              "args": {
+                "x": "50%",
+                "y": 0
+              }
+            }
+          ]
+        },
+        "attrs": {
+          "valveLabel": {
+            "text": "SVGSD",
+            "fill": "#94a0b3"
+          },
+          "symbol": {
+            "stroke": "#e5e9f0"
+          },
+          "actuatorCap": {
+            "stroke": "#94a0b3"
+          },
+          "capLine": {
+            "stroke": "#94a0b3"
+          },
+          "badgeBg": {
+            "opacity": 0
+          },
+          "badgeText": {
+            "opacity": 0
+          }
+        },
+        "id": "aa2858c8-896e-43e2-992b-64fe2e667570",
+        "position": {
+          "x": 370,
+          "y": 1170
+        },
+        "z": 83,
+        "controlId": "099fcf4b-9dd8-4228-8b61-a2683e6d3d19"
+      },
+      {
+        "type": "nova.ActuatorControl",
+        "size": {
+          "width": 56,
+          "height": 30
+        },
+        "binding": {
+          "name": "SVPP"
+        },
+        "showName": false,
+        "buttonCount": 1,
+        "attrs": {
+          "body": {
+            "stroke": "#26303f",
+            "strokeWidth": 1
+          },
+          "btn0bg": {
+            "y": 2,
+            "width": 48,
+            "fill": "transparent",
+            "stroke": "rgba(148,160,179,0.30)",
+            "opacity": 1
+          },
+          "btn0txt": {
+            "x": 28,
+            "y": 15,
+            "text": "POS",
+            "fill": "#94a0b3",
+            "opacity": 1
+          }
+        },
+        "id": "cded259f-93f2-4b9a-987e-f36438c12973",
+        "position": {
+          "x": 190,
+          "y": 1240
+        },
+        "z": 84
+      },
+      {
+        "type": "nova.ActuatorControl",
+        "size": {
+          "width": 56,
+          "height": 30
+        },
+        "binding": {
+          "name": "SVGSD"
+        },
+        "showName": false,
+        "buttonCount": 1,
+        "attrs": {
+          "body": {
+            "stroke": "#26303f",
+            "strokeWidth": 1
+          },
+          "btn0bg": {
+            "y": 2,
+            "width": 48,
+            "fill": "transparent",
+            "stroke": "rgba(148,160,179,0.30)",
+            "opacity": 1
+          },
+          "btn0txt": {
+            "x": 28,
+            "y": 15,
+            "text": "POS",
+            "fill": "#94a0b3",
+            "opacity": 1
+          }
+        },
+        "id": "099fcf4b-9dd8-4228-8b61-a2683e6d3d19",
+        "position": {
+          "x": 380,
+          "y": 1250
+        },
+        "z": 85
+      }
+    ]
+  }
+}

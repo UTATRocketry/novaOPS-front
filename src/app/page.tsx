@@ -85,7 +85,7 @@ export default function Home() {
         </Card>
 
         <Card title="Gauges">
-          <Flex justify="space-around" wrap="wrap" gap={2}>
+          <Flex align="center" justify="space-around" wrap="wrap" gap={2}>
             <Gauge value={420} min={0} max={800} unit="psi" label="PGSO" />
             <Gauge value={null} min={0} max={800} unit="psi" label="No data" />
           </Flex>

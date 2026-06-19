@@ -9,6 +9,7 @@ import type {
 } from "../types";
 import type { AdaptedFlightEvents, FlightTelemetry as FlightTelemetryShape } from "../flight/types";
 import type { NovaPidLayout } from "../pid/serializer";
+import type { ConsoleLogEntry } from "../console/types";
 
 // ---------------------------------------------------------------------------
 // Core primitives
@@ -93,6 +94,13 @@ export interface NovaStoreState {
    * Intentionally NOT cleared on disconnect — the layout stays valid across reconnects.
    */
   pidLayout: NovaPidLayout | null;
+  /**
+   * Rolling buffer of console / event log lines (WS console passthrough,
+   * backend `error` frames, FAS frame echoes, and locally-issued commands).
+   * Not a LiveSlice — it is an append-only log, not a polled telemetry stream.
+   * Capped to the most recent CONSOLE_BUFFER_LIMIT entries.
+   */
+  consoleMessages: ConsoleLogEntry[];
 }
 
 export interface NovaStoreActions {
@@ -122,6 +130,15 @@ export interface NovaStoreActions {
   ingestPhysicalLockout: (state: PhysicalLockoutState) => void;
   /** Store a newly-received P&ID layout (from WS push or REST seed). */
   ingestPidLayout: (layout: NovaPidLayout | null) => void;
+
+  // --- Console / event log ---
+
+  /** Classify and append a raw inbound WS message to the console buffer. */
+  ingestConsoleMessage: (raw: Record<string, unknown>) => void;
+  /** Append a locally-originated console entry (sent command, send result). */
+  pushConsoleEntry: (entry: Omit<ConsoleLogEntry, "id" | "ts">) => void;
+  /** Clear the console buffer. */
+  clearConsole: () => void;
 
   // --- Staleness sweep (called by createStalenessTimer) ---
 

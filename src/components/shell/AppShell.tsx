@@ -2,7 +2,9 @@
 
 import { Box, Flex } from "@chakra-ui/react";
 import { useEffect, type ReactNode } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { NovaSocket } from "@/lib/ws";
+import { queryKeys } from "@/hooks/queryKeys";
 import { NavRail } from "./NavRail";
 import { TopStatusBar } from "./TopStatusBar";
 
@@ -11,11 +13,20 @@ interface AppShellProps {
 }
 
 export function AppShell({ children }: AppShellProps) {
+  const queryClient = useQueryClient();
+
   useEffect(() => {
-    const socket = new NovaSocket();
+    const socket = new NovaSocket({
+      // Apply config_update broadcasts straight into the REST cache (no re-fetch).
+      onConfigUpdate: (config) => {
+        queryClient.setQueryData(queryKeys.config, config);
+        queryClient.setQueryData(queryKeys.sensors, config.Sensors ?? []);
+        queryClient.setQueryData(queryKeys.actuators, config.Actuators ?? []);
+      },
+    });
     socket.connect();
     return () => socket.disconnect();
-  }, []);
+  }, [queryClient]);
 
   return (
     <Flex height="100vh" overflow="hidden">

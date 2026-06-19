@@ -11,12 +11,12 @@ export interface FlightStatusCardProps {
 }
 
 const MILESTONE_LABELS: { key: keyof FlightMilestones; label: string }[] = [
-  { key: "launchDetected", label: "Launch Detected" },
-  { key: "motorCutoff",    label: "Motor Cutoff"    },
-  { key: "apogee",         label: "Apogee"          },
-  { key: "drogueDeployed", label: "Drogue Deploy"   },
-  { key: "mainDeployed",   label: "Main Deploy"     },
-  { key: "landed",         label: "Landing"         },
+  { key: "launchDetected",   label: "Launch Detected" },
+  { key: "motorBurnout",     label: "Motor Burnout"    },
+  { key: "apogeeDetected",   label: "Apogee Detected"          },
+  { key: "drogueDeployed",   label: "Drogue Deploy"   },
+  { key: "mainDeployed",     label: "Main Deploy"     },
+  { key: "landingDetected",  label: "Landing Detected"         },
 ];
 
 export function FlightStatusCard({ milestones, phase, state }: FlightStatusCardProps) {

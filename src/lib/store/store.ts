@@ -6,6 +6,50 @@ import type {
   NovaStore,
   NovaStoreState,
 } from "./types";
+import type { ConsoleLogEntry } from "../console/types";
+import { classifyConsoleMessage } from "../console/classify";
+
+/** Hard cap on retained console lines — oldest are dropped past this. */
+const CONSOLE_BUFFER_LIMIT = 1000;
+
+/**
+ * Console ingest is BATCHED. A flood of inbound messages (e.g. mqtt_message
+ * passthrough) would otherwise cause one Zustand `set` — and therefore one
+ * re-render of every console subscriber — per message, saturating the main
+ * thread and starving UI interactions (the Stop button became unresponsive).
+ * Instead, entries accumulate in a module-level buffer and flush at most once
+ * per CONSOLE_FLUSH_MS, collapsing N messages into a single state update.
+ */
+const CONSOLE_FLUSH_MS = 120;
+
+/** Monotonic console entry id. Module-level so it never triggers re-renders. */
+let nextConsoleId = 0;
+/** Pending entries awaiting the next batched flush. */
+let pendingConsole: ConsoleLogEntry[] = [];
+let consoleFlushTimer: ReturnType<typeof setTimeout> | null = null;
+
+/** Apply all pending console entries in a single state update. */
+function flushConsole(): void {
+  consoleFlushTimer = null;
+  if (pendingConsole.length === 0) return;
+  const batch = pendingConsole;
+  pendingConsole = [];
+  useNovaStore.setState((s) => {
+    const merged = s.consoleMessages.concat(batch);
+    return {
+      consoleMessages:
+        merged.length > CONSOLE_BUFFER_LIMIT
+          ? merged.slice(merged.length - CONSOLE_BUFFER_LIMIT)
+          : merged,
+    };
+  });
+}
+
+/** Schedule a batched flush if one isn't already pending. */
+function scheduleConsoleFlush(): void {
+  if (consoleFlushTimer) return;
+  consoleFlushTimer = setTimeout(flushConsole, CONSOLE_FLUSH_MS);
+}
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -47,6 +91,7 @@ const INITIAL_STATE: NovaStoreState = {
   physicalLockout: disconnected(),
   session: { clientId: null, role: null },
   pidLayout: null,
+  consoleMessages: [],
 };
 
 // ---------------------------------------------------------------------------
@@ -146,6 +191,24 @@ export const useNovaStore = create<NovaStore>()((set, get) => ({
 
   ingestPidLayout: (layout) => {
     set({ pidLayout: layout });
+  },
+
+  // ---- Console / event log ----
+
+  ingestConsoleMessage: (raw) => {
+    pendingConsole.push({ ...classifyConsoleMessage(raw), id: nextConsoleId++, ts: Date.now() });
+    scheduleConsoleFlush();
+  },
+
+  pushConsoleEntry: (entry) => {
+    pendingConsole.push({ ...entry, id: nextConsoleId++, ts: Date.now() });
+    scheduleConsoleFlush();
+  },
+
+  clearConsole: () => {
+    pendingConsole = [];
+    if (consoleFlushTimer) { clearTimeout(consoleFlushTimer); consoleFlushTimer = null; }
+    set({ consoleMessages: [] });
   },
 
   // ---- Staleness sweep ----

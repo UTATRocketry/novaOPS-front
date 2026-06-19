@@ -41,14 +41,15 @@ export function Gauge({
   max = 100,
   unit,
   label,
-  size = 160,
+  size = 180,
   zones = DEFAULT_ZONES,
   stale = false,
 }: GaugeProps) {
-  const [muted] = useToken("colors", ["text.muted"]);
+  const [text, muted] = useToken("colors", ["text","text.muted"]);
 
   const w = size;
   const h = size * 0.62;
+  const margin = 15;
   const cx = w / 2;
   const cy = h - 6;
   const rw = 14; // rim width, for tick mark calculations
@@ -75,13 +76,13 @@ export function Gauge({
       y1: cy - r1 * Math.sin(a),
       x2: cx + r  * Math.cos(a),
       y2: cy - r  * Math.sin(a),
-      opacity: isMaj ? 0.9 : isMid ? 0.5 : 0.25,
+      opacity: isMaj ? 1 : isMid ? 0.75 : 0.5,
       strokeWidth: isMaj ? 2 : 1,
     };
   });
 
   // 5 scale labels outside the ring at 0/25/50/75/100%
-  const labelRadius = r + 13;
+  const labelRadius = r + 15;
   const scaleLabels = [0, 0.25, 0.5, 0.75, 1].map((f) => {
     const a = Math.PI * (1 - f);
     const lx = cx + Math.cos(a) * labelRadius;
@@ -95,15 +96,15 @@ export function Gauge({
           ? parseFloat(val.toFixed(1))
           : parseFloat(val.toFixed(2));
     return {
-      x: Math.max(10, Math.min(w - 10, lx)),
-      y: Math.max(8, Math.min(h + 4 - 3, ly)),
+      x:  Math.max(9, Math.min(w - 9, lx)),
+      y:  Math.max(9, Math.min(h - 3, ly)),
       label: String(disp),
     };
   });
 
   return (
     <Flex direction="column" align="center" opacity={stale ? 0.55 : 1} transition="opacity 0.2s">
-      <svg width={w} height={h + 4} viewBox={`0 0 ${w} ${h}`}>
+      <svg width={w} height={h + 4} viewBox={`${-margin} ${-margin} ${w + margin * 2} ${h + margin * 2}`}>
         {/* Track */}
         <path
           d={arcPath(cx, cy, rarc, 180, 0)}
@@ -135,7 +136,7 @@ export function Gauge({
             key={i}
             x1={x1.toFixed(1)} y1={y1.toFixed(1)}
             x2={x2.toFixed(1)} y2={y2.toFixed(1)}
-            stroke={muted}
+            stroke={`var(--chakra-colors-text\\.primary)`}//{muted}
             opacity={opacity}
             strokeWidth={strokeWidth}
           />
@@ -146,10 +147,16 @@ export function Gauge({
             key={i}
             x={x.toFixed(1)}
             y={y.toFixed(1)}
-            textAnchor="middle"
-            fill={"var(--chakra-colors-text\\.muted)"}
-            fontSize={"var(--chakra-fontSizes-xs)"}
-            fontFamily={"var(--chakra-fonts-mono)"}
+            //dominantBaseline="middle"
+            textAnchor={ 
+              i === 0 ? "end" :
+              i === scaleLabels.length - 1 ? "start" : "middle"
+             }
+            style={{
+              fill: "var(--chakra-colors-text\\.muted)",
+              fontSize: "var(--chakra-fontSizes-xs)",
+              fontFamily: "var(--chakra-fonts-mono)",
+            }}
           >
             {lbl}
           </text>
