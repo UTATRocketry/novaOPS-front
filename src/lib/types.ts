@@ -141,6 +141,8 @@ export interface SystemConfig {
   Packets?: PacketEntry[];
   /** Optional operating procedures → Engine procedure card. */
   Procedures?: ProcedureEntry[];
+  /** Predefined buzzer melodies. Each is an array of [freq_hz, dur_ms] or [freq_hz, dur_ms, vol] tuples. */
+  BuzzerMelodies?: Record<string, Array<[number, number] | [number, number, number]>>;
 }
 
 // ---------------------------------------------------------------------------

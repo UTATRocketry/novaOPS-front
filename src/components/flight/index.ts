@@ -30,3 +30,6 @@ export type { FmcAuxCardProps } from "./FmcAuxCard";
 
 export { LiveChartCard, AXIS3_SERIES, axis3Values } from "./LiveChartCard";
 export type { LiveChartCardProps } from "./LiveChartCard";
+
+export { SdCard } from "./SdCard";
+export type { SdCardProps } from "./SdCard";

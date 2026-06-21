@@ -129,7 +129,6 @@ function TypeDetail({ entry, setBinding, setActions, usedRelay, usedServo }: Det
             <SelectCell value={(act.solenoid_type as string) ?? ""} options={SOLENOID_TYPES} onChange={(v) => setActions({ solenoid_type: v || null })} />
           </Field>
           {relayChannelField(entry, setBinding, usedRelay)}
-          {aliasesField(entry, setActions)}
         </Flex>
       );
     case "powered_device":
@@ -163,6 +162,31 @@ function TypeDetail({ entry, setBinding, setActions, usedRelay, usedServo }: Det
 }
 
 // ---------------------------------------------------------------------------
+// Channel collision helper — scoped by (target, node)
+// ---------------------------------------------------------------------------
+
+function usedChannels(
+  actuators: ActuatorEntry[],
+  excludeIdx: number,
+  target: SourceTarget,
+  node: string | null | undefined,
+): { relay: ReadonlySet<number>; servo: ReadonlySet<number> } {
+  const relay = new Set<number>();
+  const servo = new Set<number>();
+  for (let j = 0; j < actuators.length; j++) {
+    if (j === excludeIdx) continue;
+    const a = actuators[j];
+    if (a.binding.target !== target) continue;
+    const aNode = a.binding.node ?? null;
+    const myNode = node ?? null;
+    if (aNode !== myNode) continue;
+    if (a.binding.relay_channel != null) relay.add(a.binding.relay_channel);
+    if (a.binding.servo_channel != null) servo.add(a.binding.servo_channel);
+  }
+  return { relay, servo };
+}
+
+// ---------------------------------------------------------------------------
 // ActuatorsTable
 // ---------------------------------------------------------------------------
 
@@ -173,15 +197,6 @@ export interface ActuatorsTableProps {
 
 export function ActuatorsTable({ actuators, onChange }: ActuatorsTableProps) {
   const [expanded, setExpanded] = useState<number | null>(null);
-
-  // Channels already assigned anywhere — used to offer only remaining options
-  // (each row's own current value stays selectable, handled in ChannelSelectCell).
-  const usedRelay = new Set<number>();
-  const usedServo = new Set<number>();
-  for (const a of actuators) {
-    if (a.binding.relay_channel != null) usedRelay.add(a.binding.relay_channel);
-    if (a.binding.servo_channel != null) usedServo.add(a.binding.servo_channel);
-  }
 
   function update(i: number, patch: Partial<ActuatorEntry>) {
     onChange(actuators.map((a, idx) => (idx === i ? { ...a, ...patch } : a)));
@@ -258,13 +273,18 @@ export function ActuatorsTable({ actuators, onChange }: ActuatorsTableProps) {
                     <Table.Row>
                       <Table.Cell colSpan={6}>
                         <Box bg="bg.canvas" borderRadius="control" p={3} my={1}>
-                          <TypeDetail
-                            entry={a}
-                            setBinding={(patch) => setBinding(i, patch)}
-                            setActions={(patch) => setActions(i, patch)}
-                            usedRelay={usedRelay}
-                            usedServo={usedServo}
-                          />
+                          {(() => {
+                            const { relay: usedRelay, servo: usedServo } = usedChannels(actuators, i, a.binding.target, a.binding.node);
+                            return (
+                              <TypeDetail
+                                entry={a}
+                                setBinding={(patch) => setBinding(i, patch)}
+                                setActions={(patch) => setActions(i, patch)}
+                                usedRelay={usedRelay}
+                                usedServo={usedServo}
+                              />
+                            );
+                          })()}
                         </Box>
                       </Table.Cell>
                     </Table.Row>

@@ -63,7 +63,7 @@ function arcPath(fromUs: number, toUs: number): string {
   const y2 = CY - R_TRACK * Math.sin(toRad);
   const largeArc = Math.abs(toDeg - fromDeg) > 180 ? 1 : 0;
   // sweep=0 is counter-clockwise in SVG y-up sense → goes through top
-  const sweep = toDeg > fromDeg ? 0 : 1;
+  const sweep = toDeg > fromDeg ? 1 : 0;
   return `M ${x1} ${y1} A ${R_TRACK} ${R_TRACK} 0 ${largeArc} ${sweep} ${x2} ${y2}`;
 }
 

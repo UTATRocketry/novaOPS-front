@@ -37,3 +37,32 @@ export function sendDirectServo(
     clientId,
   );
 }
+
+export interface FasSdBody {
+  node?: string | null;
+  action: "set_rate" | "clear";
+  divisor?: number;
+}
+
+export function sendFasSd(body: FasSdBody, clientId: string): Promise<{ published_commands: unknown[] }> {
+  return novaFetch<{ published_commands: unknown[] }>(
+    "/api/fas/sd",
+    { method: "POST", body: JSON.stringify(body) },
+    clientId,
+  );
+}
+
+export interface FasBuzzerBody {
+  node?: string | null;
+  action: "play" | "stop";
+  melody?: string | null;
+  notes?: Array<[number, number] | [number, number, number]> | null;
+}
+
+export function sendFasBuzzer(body: FasBuzzerBody, clientId: string): Promise<{ published_commands: unknown[] }> {
+  return novaFetch<{ published_commands: unknown[] }>(
+    "/api/fas/buzzer",
+    { method: "POST", body: JSON.stringify(body) },
+    clientId,
+  );
+}

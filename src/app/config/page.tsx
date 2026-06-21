@@ -13,6 +13,7 @@ import {
   DevicesTable,
   PacketsTable,
   ProceduresTable,
+  BuzzerMelodiesTable,
 } from "@/components/config";
 import { useConfig, usePutConfig, useUploadConfig } from "@/hooks/useConfig";
 import { validateConfig } from "@/lib/config";
@@ -27,17 +28,18 @@ const EMPTY_CONFIG: SystemConfig = {
   Devices: [],
   Packets: [],
   Procedures: [],
+  BuzzerMelodies: {},
 };
 
-type ConfigView = "actuators" | "sensors" | "rules" | "devices" | "packets" | "procedures";
+type ConfigView = "actuators" | "sensors" | "devices" | "packets" | "procedures" | "other";
 
 const VIEW_TABS: TabItem[] = [
   { value: "actuators",  label: "Actuators"  },
   { value: "sensors",    label: "Sensors"    },
-  { value: "rules",      label: "Rules"      },
   { value: "devices",    label: "Devices"    },
   { value: "packets",    label: "Packets"    },
   { value: "procedures", label: "Procedures" },
+  { value: "other",      label: "Other"      },
 ];
 
 /** Structured deep clone of the config so edits never mutate the query cache. */
@@ -175,12 +177,6 @@ export default function ConfigPage() {
               onChange={(Sensors) => setBackend({ ...draft, Sensors })}
             />
           )}
-          {view === "rules" && (
-            <RulesTable
-              rules={draft.safetyRules ?? {}}
-              onChange={(safetyRules) => setBackend({ ...draft, safetyRules })}
-            />
-          )}
           {view === "devices" && (
             <DevicesTable
               devices={draft.Devices ?? []}
@@ -198,6 +194,20 @@ export default function ConfigPage() {
               procedures={draft.Procedures ?? []}
               onChange={(Procedures) => setBackend({ ...draft, Procedures })}
             />
+          )}
+          {view === "other" && (
+            <>
+              <RulesTable
+                rules={draft.safetyRules ?? {}}
+                onChange={(safetyRules) => setBackend({ ...draft, safetyRules })}
+              />
+              <Box mt={4}>
+                <BuzzerMelodiesTable
+                  melodies={draft.BuzzerMelodies ?? {}}
+                  onChange={(BuzzerMelodies) => setBackend({ ...draft, BuzzerMelodies })}
+                />
+              </Box>
+            </>
           )}
         </>
       )}

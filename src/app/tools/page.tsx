@@ -22,6 +22,12 @@ const TOOLS: ToolCard[] = [
     icon: "tune",
     href: "/tools/servo",
   },
+  {
+    label: "Buzzer / Melody",
+    description: "Play predefined or custom note sequences on the FMC buzzer.",
+    icon: "music_note",
+    href: "/tools/buzzer",
+  },
 ];
 
 export default function ToolsPage() {

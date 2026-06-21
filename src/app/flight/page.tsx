@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Box, Flex, Text } from "@chakra-ui/react";
+import { Box, Button, Flex, Text } from "@chakra-ui/react";
 import { PageHeader } from "@/components/shell";
-import { PillTabs } from "@/components/primitives";
+import { Icon, PillTabs } from "@/components/primitives";
 import type { TabItem } from "@/components/primitives";
 import { useNovaStore } from "@/lib/store/store";
 import { sel } from "@/lib/store/selectors";
@@ -20,9 +20,11 @@ import {
   GpsReadout,
   FmcAuxCard,
   LiveChartCard,
+  SdCard,
   AXIS3_SERIES,
   axis3Values,
 } from "@/components/flight";
+import { sendFasBuzzer } from "@/lib/api/direct";
 import type { FlightMilestones, FmcStatus } from "@/lib/flight/types";
 
 // ---------------------------------------------------------------------------
@@ -64,6 +66,7 @@ export default function FlightPage() {
   const telemetry      = useNovaStore(sel.flightData);
   const flightEvents   = useNovaStore(sel.flightEvents);
   const flightStatus   = useNovaStore(sel.flightDataStatus);
+  const clientId       = useNovaStore(sel.clientId);
 
   const isLive = flightStatus === "live";
 
@@ -93,11 +96,27 @@ export default function FlightPage() {
         title="Flight"
         subtitle="Telemetry · live"
         action={
-          <PillTabs
-            items={VIEW_TABS}
-            value={view}
-            onChange={(v) => setView(v as FlightView)}
-          />
+          <Flex align="center" gap={2}>
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={!clientId}
+              onClick={() => {
+                if (clientId) {
+                  sendFasBuzzer({ node: "FMC_0", action: "play", melody: "test_chime" }, clientId)
+                    .catch(console.error);
+                }
+              }}
+            >
+              <Icon name="music_note" size={14} />
+              Test Chime
+            </Button>
+            <PillTabs
+              items={VIEW_TABS}
+              value={view}
+              onChange={(v) => setView(v as FlightView)}
+            />
+          </Flex>
         }
       />
 
@@ -184,6 +203,10 @@ export default function FlightPage() {
               temperature={telemetry?.temperature}
             />
             <FmcAuxCard fmc={fmc} />
+            <SdCard
+              sd={fmc?.sd}
+              node={fmcKey ? fmcKey.replace(":", "_").toLowerCase() : "FMC_0"}
+            />
             <IncomingPacketCard
               rawPacket={telemetry?.rawPacket}
               live={isLive}
