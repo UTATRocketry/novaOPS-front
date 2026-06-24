@@ -119,8 +119,15 @@ export interface FmcSdStatus {
   state?: number;
   stateName?: string;
   err?: number;
+  pctUsed?: number;
   freeMb?: number;
-  writtenKb?: number;
+  totalMb?: number;
+  logging?: boolean;
+  nearFull?: boolean;
+  full?: boolean;
+  rateReduced?: boolean;
+  stalled?: boolean;
+  rateDiv?: number | null;
 }
 
 export interface FmcRadioStatus {

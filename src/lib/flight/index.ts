@@ -274,11 +274,19 @@ function parseFmc(raw: unknown): Record<string, FmcStatus> | undefined {
     const sd = obj(o["sd"]);
     if (sd) {
       const block: NonNullable<FmcStatus["sd"]> = {};
-      put(block, "state", num(sd["state"]));
-      put(block, "stateName", typeof sd["state_name"] === "string" ? (sd["state_name"] as string) : undefined);
-      put(block, "err", num(sd["err"]));
-      put(block, "freeMb", num(sd["free_mb"]));
-      put(block, "writtenKb", num(sd["written_kb"]));
+      put(block, "state",       num(sd["state"]));
+      put(block, "stateName",   typeof sd["state_name"] === "string" ? (sd["state_name"] as string) : undefined);
+      put(block, "err",         num(sd["err"]));
+      put(block, "pctUsed",     num(sd["pct_used"]));
+      put(block, "freeMb",      num(sd["free_mb"]));
+      put(block, "totalMb",     num(sd["total_mb"]));
+      put(block, "logging",     bool(sd["logging"]));
+      put(block, "nearFull",    bool(sd["near_full"]));
+      put(block, "full",        bool(sd["full"]));
+      put(block, "rateReduced", bool(sd["rate_reduced"]));
+      put(block, "stalled",     bool(sd["stalled"]));
+      // rate_div can be null (custom divisor outside standard set) or a number
+      if (sd["rate_div"] !== undefined) block.rateDiv = sd["rate_div"] === null ? null : num(sd["rate_div"]);
       status.sd = block;
     }
 

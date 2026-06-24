@@ -29,9 +29,9 @@ import { EnginePlots } from "@/components/engine/EnginePlots";
 type EngineView = "pid" | "plots" | "table";
 
 const VIEW_TABS: TabItem[] = [
+  { value: "table", label: "Table" },
   { value: "pid",   label: "P&ID"  },
   { value: "plots", label: "Plots" },
-  { value: "table", label: "Table" },
 ];
 
 // ---------------------------------------------------------------------------
@@ -40,7 +40,7 @@ const VIEW_TABS: TabItem[] = [
 
 export default function EnginePage() {
   const { data: config } = useConfig();
-  const [view, setView]           = useState<EngineView>("pid");
+  const [view, setView]           = useState<EngineView>("table");
   const [isEditing, setIsEditing] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 

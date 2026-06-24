@@ -20,7 +20,6 @@ import type { FmcSdStatus } from "@/lib/flight/types";
 // Constants
 // ---------------------------------------------------------------------------
 
-/** Preset decimation divisors shown in the dropdown. */
 const RATE_PRESETS = [
   { label: "Full rate (÷1)",   value: 1   },
   { label: "Half rate (÷2)",   value: 2   },
@@ -35,32 +34,38 @@ const RATE_PRESETS = [
 // Helpers
 // ---------------------------------------------------------------------------
 
-function sdStatusTone(sd: FmcSdStatus): "nominal" | "warn" | "fault" {
-  if (sd.err) return "fault";
+function sdTone(sd: FmcSdStatus): "nominal" | "warn" | "fault" {
+  if (sd.err || sd.full || sd.stalled) return "fault";
   const name = (sd.stateName ?? "").toLowerCase();
-  if (name.includes("full") || name.includes("error") || name.includes("stall")) return "fault";
-  if (name.includes("near") || name.includes("warn")) return "warn";
-  return "nominal";
+  if (name === "error" || name === "full") return "fault";
+  if (sd.nearFull || sd.rateReduced || name === "near_full") return "warn";
+  if (sd.logging || name === "logging") return "nominal";
+  return "neutral" as "nominal"; // absent / mounted / no-fs
 }
 
 function isFull(sd: FmcSdStatus | undefined): boolean {
   if (!sd) return false;
-  const name = (sd.stateName ?? "").toLowerCase();
-  return name === "full" || (sd.freeMb != null && sd.freeMb === 0);
+  return sd.full === true || (sd.stateName ?? "").toLowerCase() === "full";
+}
+
+function rateDivLabel(rateDiv: number | null | undefined): string {
+  if (rateDiv == null) return "—";
+  if (rateDiv === 0 || rateDiv === null) return "custom";
+  return `÷${rateDiv}${rateDiv === 1 ? " (full)" : ""}`;
 }
 
 // ---------------------------------------------------------------------------
 // Full-card warning dialog
 // ---------------------------------------------------------------------------
 
-interface FullDialogProps {
+function SdFullDialog({
+  open, onClear, onDismiss, clearing,
+}: {
   open: boolean;
   onClear: () => void;
   onDismiss: () => void;
   clearing: boolean;
-}
-
-function SdFullDialog({ open, onClear, onDismiss, clearing }: FullDialogProps) {
+}) {
   return (
     <Dialog.Root open={open} onOpenChange={({ open: o }) => { if (!o) onDismiss(); }}>
       <Portal>
@@ -73,38 +78,29 @@ function SdFullDialog({ open, onClear, onDismiss, clearing }: FullDialogProps) {
                 <Dialog.Title>SD Card Full</Dialog.Title>
               </Flex>
             </Dialog.Header>
-
             <Dialog.Body>
               <Text fontSize="sm" color="text.primary" mb={3}>
-                The FMC SD card is full. No new flight data will be logged until
+                The FMC SD card is full — no new flight data will be logged until
                 the card is cleared (reformatted).
               </Text>
               <Text fontSize="xs" color="text.muted">
-                Clearing is destructive — all data on the card will be erased.
-                Download any recordings you need before proceeding.
+                Clearing is destructive. Download any recordings you need before
+                proceeding.
               </Text>
             </Dialog.Body>
-
             <Dialog.Footer gap={2}>
               <Button variant="outline" size="sm" onClick={onDismiss} disabled={clearing}>
                 Leave Full
               </Button>
-              <Button
-                colorPalette="red"
-                size="sm"
-                onClick={onClear}
-                loading={clearing}
-              >
+              <Button colorPalette="red" size="sm" onClick={onClear} loading={clearing}>
                 Clear Card
               </Button>
             </Dialog.Footer>
-
             <Dialog.CloseTrigger asChild>
               <Box
                 as="button"
                 position="absolute"
-                top={3}
-                right={3}
+                top={3} right={3}
                 p={1}
                 borderRadius="control"
                 color="text.muted"
@@ -138,19 +134,17 @@ export function SdCard({ sd, node = "FMC_0" }: SdCardProps) {
   const role       = useNovaStore(sel.sessionRole);
   const canCommand = role === "operator" || role === "admin";
 
-  const [divisor, setDivisor]       = useState(1);
-  const [cmdStatus, setCmdStatus]   = useState<string | null>(null);
-  const [clearing, setClearing]     = useState(false);
-  const [showWarning, setShowWarning] = useState(false);
+  const [divisor, setDivisor]           = useState(1);
+  const [cmdStatus, setCmdStatus]       = useState<string | null>(null);
+  const [clearing, setClearing]         = useState(false);
+  const [showWarning, setShowWarning]   = useState(false);
   const [confirmClear, setConfirmClear] = useState(false);
 
-  // Auto-open the full-card warning once per full event.
+  // Auto-open the warning once per transition into the full state.
   const wasFullRef = useRef(false);
   useEffect(() => {
     const full = isFull(sd);
-    if (full && !wasFullRef.current) {
-      setShowWarning(true);
-    }
+    if (full && !wasFullRef.current) setShowWarning(true);
     wasFullRef.current = full;
   }, [sd]);
 
@@ -179,7 +173,11 @@ export function SdCard({ sd, node = "FMC_0" }: SdCardProps) {
     }
   }
 
-  const tone = sd ? sdStatusTone(sd) : "neutral";
+  const tone = sd ? sdTone(sd) : "neutral";
+
+  // Capacity bar (only when pct known)
+  const pct = sd?.pctUsed;
+  const barColor = (pct ?? 0) >= 95 ? "fault" : (pct ?? 0) >= 80 ? "warn" : "nominal";
 
   return (
     <>
@@ -198,12 +196,8 @@ export function SdCard({ sd, node = "FMC_0" }: SdCardProps) {
               <Box
                 as="button"
                 onClick={() => setShowWarning(true)}
-                bg="transparent"
-                border="none"
-                p={0}
-                cursor="pointer"
-                display="flex"
-                alignItems="center"
+                bg="transparent" border="none" p={0}
+                cursor="pointer" display="flex" alignItems="center"
               >
                 <Icon name="sd_card_alert" size={16} color="fault" />
               </Box>
@@ -211,51 +205,71 @@ export function SdCard({ sd, node = "FMC_0" }: SdCardProps) {
           </Flex>
         }
       >
-        <Flex direction="column" gap={3}>
+        <Flex direction="column" gap={2}>
 
-          {/* State */}
-          <Flex align="center" gap={2}>
-            <Text fontSize="xs" color="text.muted" minW="72px">State</Text>
-            {sd ? (
-              <Chip status={tone}>
-                <Mono>{sd.stateName ?? String(sd.state ?? "—")}</Mono>
+          {/* State + logging badge */}
+          <Flex align="center" justify="space-between">
+            <Chip status={tone as Parameters<typeof Chip>[0]["status"]}>
+              <Mono>{sd?.stateName ?? "—"}</Mono>
+            </Chip>
+            {sd?.logging != null && (
+              <Chip status={sd.logging ? "nominal" : "neutral"}>
+                {sd.logging ? "logging" : "idle"}
               </Chip>
-            ) : (
-              <Mono color="text.muted">—</Mono>
             )}
           </Flex>
 
-          {/* Free space */}
-          <Flex align="center" gap={2}>
-            <Text fontSize="xs" color="text.muted" minW="72px">Free</Text>
-            <Mono fontSize="xs">
-              {sd?.freeMb != null ? `${sd.freeMb} MB` : "—"}
-            </Mono>
+          {/* Capacity bar */}
+          {pct != null && (
+            <Box>
+              <Flex justify="space-between" mb={1}>
+                <Text fontSize="2xs" color="text.muted">Used</Text>
+                <Mono fontSize="2xs" color="text.muted">
+                  {pct}% · {sd?.freeMb ?? "—"} MB free
+                  {sd?.totalMb != null ? ` / ${sd.totalMb} MB` : ""}
+                </Mono>
+              </Flex>
+              <Box h="4px" bg="bg.surfaceRaised" borderRadius="full" overflow="hidden">
+                <Box
+                  h="100%"
+                  w={`${pct}%`}
+                  bg={barColor}
+                  borderRadius="full"
+                  style={{ transition: "width 400ms ease" }}
+                />
+              </Box>
+            </Box>
+          )}
+
+          {/* Log rate — visible to everyone */}
+          <Flex align="center" justify="space-between">
+            <Text fontSize="xs" color="text.muted">Log rate</Text>
+            <Mono fontSize="xs">{rateDivLabel(sd?.rateDiv)}</Mono>
           </Flex>
 
-          {/* Written */}
-          <Flex align="center" gap={2}>
-            <Text fontSize="xs" color="text.muted" minW="72px">Written</Text>
-            <Mono fontSize="xs">
-              {sd?.writtenKb != null ? `${sd.writtenKb} KB` : "—"}
-            </Mono>
-          </Flex>
+          {/* Warnings */}
+          {sd?.stalled && (
+            <Chip status="fault"><Mono>stalled</Mono></Chip>
+          )}
+          {sd?.rateReduced && !sd?.stalled && (
+            <Chip status="warn"><Mono>rate reduced</Mono></Chip>
+          )}
 
-          {/* Error */}
+          {/* Error code */}
           {sd?.err ? (
-            <Flex align="center" gap={2}>
-              <Text fontSize="xs" color="text.muted" minW="72px">Error</Text>
+            <Flex align="center" justify="space-between">
+              <Text fontSize="xs" color="text.muted">Error</Text>
               <Mono fontSize="xs" color="fault">{sd.err}</Mono>
             </Flex>
           ) : null}
 
-          {/* Controls */}
+          {/* Operator controls */}
           {canCommand && (
             <Flex direction="column" gap={2} pt={2} borderTop="1px solid" borderColor="border.default">
 
-              {/* Log rate row */}
+              {/* Log rate control */}
               <Flex align="center" gap={2}>
-                <Text fontSize="xs" color="text.muted" flexShrink={0}>Log rate</Text>
+                <Text fontSize="xs" color="text.muted" flexShrink={0}>Set rate</Text>
                 <NativeSelect.Root size="xs" flex="1">
                   <NativeSelect.Field
                     value={divisor}
@@ -263,50 +277,28 @@ export function SdCard({ sd, node = "FMC_0" }: SdCardProps) {
                     fontFamily="mono"
                   >
                     {RATE_PRESETS.map((p) => (
-                      <option key={p.value} value={p.value}>
-                        {p.label}
-                      </option>
+                      <option key={p.value} value={p.value}>{p.label}</option>
                     ))}
                   </NativeSelect.Field>
                   <NativeSelect.Indicator />
                 </NativeSelect.Root>
-                <Button
-                  size="xs"
-                  variant="outline"
-                  onClick={handleSetRate}
-                  disabled={!clientId}
-                  flexShrink={0}
-                >
-                  Set
+                <Button size="xs" variant="outline" onClick={handleSetRate} disabled={!clientId} flexShrink={0}>
+                  Apply
                 </Button>
               </Flex>
 
-              {/* Clear row */}
+              {/* Clear */}
               {!confirmClear ? (
-                <Button
-                  size="xs"
-                  variant="outline"
-                  colorPalette="red"
-                  onClick={() => setConfirmClear(true)}
-                  disabled={!clientId}
-                >
+                <Button size="xs" variant="outline" colorPalette="red" onClick={() => setConfirmClear(true)} disabled={!clientId}>
                   Clear Card
                 </Button>
               ) : (
                 <Flex gap={2} align="center">
                   <Text fontSize="xs" color="fault" flex="1">Erase all data?</Text>
-                  <Button
-                    size="xs"
-                    colorPalette="red"
-                    onClick={handleClear}
-                    disabled={!clientId}
-                    loading={clearing}
-                  >
+                  <Button size="xs" colorPalette="red" onClick={handleClear} disabled={!clientId} loading={clearing}>
                     Yes, Erase
                   </Button>
-                  <Button size="xs" variant="ghost" onClick={() => setConfirmClear(false)}>
-                    Cancel
-                  </Button>
+                  <Button size="xs" variant="ghost" onClick={() => setConfirmClear(false)}>Cancel</Button>
                 </Flex>
               )}
             </Flex>

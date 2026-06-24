@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import { Box, Flex, Text, Button, Select } from "@chakra-ui/react";
+import { Box, Flex, Text, Button, NativeSelect } from "@chakra-ui/react";
 import { Card, Chip } from "@/components/primitives";
 
 // ---------------------------------------------------------------------------
@@ -237,19 +237,11 @@ export function WsViewer() {
                 <Text fontSize="xs" color="text.muted" flexShrink={0}>
                   {mode === "types" ? "Type:" : "Topic:"}
                 </Text>
-                <Box flex="1">
-                  <select
+                <NativeSelect.Root size="xs" flex="1">
+                  <NativeSelect.Field
                     value={col.filter}
                     onChange={(e) => setColumnFilter(col.id, e.target.value)}
-                    style={{
-                      width: "100%",
-                      fontSize: "12px",
-                      background: "transparent",
-                      border: "none",
-                      color: "inherit",
-                      outline: "none",
-                      cursor: "pointer",
-                    }}
+                    fontFamily="mono"
                   >
                     <option value="">
                       {mode === "types" ? "All types" : "All topics"}
@@ -259,8 +251,9 @@ export function WsViewer() {
                         {opt}
                       </option>
                     ))}
-                  </select>
-                </Box>
+                  </NativeSelect.Field>
+                  <NativeSelect.Indicator />
+                </NativeSelect.Root>
                 {columns.length > 1 && (
                   <Box
                     as="button"

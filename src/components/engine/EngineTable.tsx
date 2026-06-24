@@ -316,56 +316,60 @@ export function EngineTable({ sensors, actuators }: EngineTableProps) {
   const isStale = engineStatus !== "live";
 
   return (
-    <Box display="flex" flexDir="column" gap={4} overflowY="auto">
+    <Flex gap={4} align="flex-start" flexWrap="wrap">
       {/* ── Instruments card ── */}
-      <Card title="Instruments" flush>
-        {sensors.length === 0 ? (
-          <Box px={4} py={3} color="text.muted" fontSize="sm">
-            No sensors in config.
-          </Box>
-        ) : (
-          <Table.Root size="sm">
-            <Table.Header>
-              <Table.Row>
-                <Table.ColumnHeader>Tag</Table.ColumnHeader>
-                <Table.ColumnHeader>Type</Table.ColumnHeader>
-                <Table.ColumnHeader>Value</Table.ColumnHeader>
-                <Table.ColumnHeader>Unit</Table.ColumnHeader>
-                <Table.ColumnHeader>Status</Table.ColumnHeader>
-              </Table.Row>
-            </Table.Header>
-            <Table.Body>
-              {sensors.map((sensor) => (
-                <InstrumentRow key={sensor.name} sensor={sensor} isStale={isStale} />
-              ))}
-            </Table.Body>
-          </Table.Root>
-        )}
-      </Card>
+      <Box flex="1" minW="280px">
+        <Card title="Instruments" flush>
+          {sensors.length === 0 ? (
+            <Box px={4} py={3} color="text.muted" fontSize="sm">
+              No sensors in config.
+            </Box>
+          ) : (
+            <Table.Root size="sm">
+              <Table.Header>
+                <Table.Row>
+                  <Table.ColumnHeader>Tag</Table.ColumnHeader>
+                  <Table.ColumnHeader>Type</Table.ColumnHeader>
+                  <Table.ColumnHeader>Value</Table.ColumnHeader>
+                  <Table.ColumnHeader>Unit</Table.ColumnHeader>
+                  <Table.ColumnHeader>Status</Table.ColumnHeader>
+                </Table.Row>
+              </Table.Header>
+              <Table.Body>
+                {sensors.map((sensor) => (
+                  <InstrumentRow key={sensor.name} sensor={sensor} isStale={isStale} />
+                ))}
+              </Table.Body>
+            </Table.Root>
+          )}
+        </Card>
+      </Box>
 
       {/* ── Actuators card ── */}
-      <Card title="Actuators" flush>
-        {actuators.length === 0 ? (
-          <Box px={4} py={3} color="text.muted" fontSize="sm">
-            No actuators in config.
-          </Box>
-        ) : (
-          <Table.Root size="sm">
-            <Table.Header>
-              <Table.Row>
-                <Table.ColumnHeader>Tag</Table.ColumnHeader>
-                <Table.ColumnHeader>Type</Table.ColumnHeader>
-                <Table.ColumnHeader>State</Table.ColumnHeader>
-              </Table.Row>
-            </Table.Header>
-            <Table.Body>
-              {actuators.map((actuator) => (
-                <ActuatorRow key={actuator.name} entry={actuator} />
-              ))}
-            </Table.Body>
-          </Table.Root>
-        )}
-      </Card>
-    </Box>
+      <Box flex="1" minW="280px">
+        <Card title="Actuators" flush>
+          {actuators.length === 0 ? (
+            <Box px={4} py={3} color="text.muted" fontSize="sm">
+              No actuators in config.
+            </Box>
+          ) : (
+            <Table.Root size="sm">
+              <Table.Header>
+                <Table.Row>
+                  <Table.ColumnHeader>Tag</Table.ColumnHeader>
+                  <Table.ColumnHeader>Type</Table.ColumnHeader>
+                  <Table.ColumnHeader>State</Table.ColumnHeader>
+                </Table.Row>
+              </Table.Header>
+              <Table.Body>
+                {actuators.map((actuator) => (
+                  <ActuatorRow key={actuator.name} entry={actuator} />
+                ))}
+              </Table.Body>
+            </Table.Root>
+          )}
+        </Card>
+      </Box>
+    </Flex>
   );
 }

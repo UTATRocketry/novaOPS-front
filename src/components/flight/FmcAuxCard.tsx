@@ -43,7 +43,6 @@ function group(title: string, cells: Cell[]) {
 
 export function FmcAuxCard({ fmc }: FmcAuxCardProps) {
   const temp = fmc?.temp;
-  const sd = fmc?.sd;
   const radio = fmc?.radio;
 
   return (
@@ -52,11 +51,6 @@ export function FmcAuxCard({ fmc }: FmcAuxCardProps) {
         {group("board temps", [
           { label: "near H7",     value: num(temp?.h7, " °C") },
           { label: "power stage", value: num(temp?.pwr, " °C") },
-        ])}
-        {group("SD card log", [
-          { label: "state",   value: sd?.stateName ?? "—" },
-          { label: "free",    value: num(sd?.freeMb, " MB", 0) },
-          { label: "written", value: num(sd?.writtenKb, " KB", 0) },
         ])}
         {group("RFD900x radio", [
           { label: "power",  value: radio?.powered === undefined ? "—" : radio.powered ? "on" : "off" },
