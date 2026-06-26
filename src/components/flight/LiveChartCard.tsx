@@ -14,6 +14,8 @@ export interface LiveChartCardProps {
   yMax?: number;
   /** Rolling-window reset trigger — pass launchEpochMs so it clears at launch. */
   resetKey?: string | number | null;
+  /** External recorder source for the trace (survives page navigation). */
+  getSamples?: () => { xs: number[]; ys: number[][] };
   height?: number;
   noDataLabel?: string;
 }
@@ -27,7 +29,7 @@ function fmt(v: number | null | undefined): string {
 
 /** A live rolling chart with a per-series value readout header. */
 export function LiveChartCard({
-  title, series, values, unit, yMin, yMax, resetKey, height = 200, noDataLabel,
+  title, series, values, unit, yMin, yMax, resetKey, getSamples, height = 200, noDataLabel,
 }: LiveChartCardProps) {
   const hasData = values.some((v) => v != null && Number.isFinite(v));
 
@@ -56,6 +58,7 @@ export function LiveChartCard({
         yMin={yMin}
         yMax={yMax}
         resetKey={resetKey}
+        getSamples={getSamples}
         height={height}
       />
     </Card>

@@ -252,6 +252,18 @@ function ActuatorRow({ entry }: ActuatorRowProps) {
 }
 
 // ---------------------------------------------------------------------------
+// Numeric formatter for the running-average column — precision scales with
+// magnitude so a mean never sprawls across the cell.
+// ---------------------------------------------------------------------------
+
+function fmtNum(v: number): string {
+  const a = Math.abs(v);
+  if (a >= 1000) return v.toFixed(0);
+  if (a >= 100) return v.toFixed(1);
+  return v.toFixed(2);
+}
+
+// ---------------------------------------------------------------------------
 // InstrumentRow — Fix 4: narrow per-sensor selector, not the full map.
 // Each row subscribes only to its own sensor; re-renders only when that sensor
 // value changes, not on every engine_data message for all sensors.
@@ -268,6 +280,8 @@ function InstrumentRow({ sensor, isStale }: InstrumentRowProps) {
   );
   const hasValue = entry?.value != null;
   const displayValue = hasValue ? String(entry!.value) : "—";
+  const hasAvg = entry?.avg != null && Number.isFinite(entry.avg);
+  const displayAvg = hasAvg ? fmtNum(entry!.avg) : "—";
   const unit = entry?.unit ?? sensor.unit ?? "";
 
   return (
@@ -285,6 +299,11 @@ function InstrumentRow({ sensor, isStale }: InstrumentRowProps) {
       <Table.Cell>
         <Mono fontSize="xs" color={hasValue ? "text.primary" : "text.muted"}>
           {displayValue}
+        </Mono>
+      </Table.Cell>
+      <Table.Cell>
+        <Mono fontSize="xs" color={hasAvg ? "text.primary" : "text.muted"}>
+          {displayAvg}
         </Mono>
       </Table.Cell>
       <Table.Cell>
@@ -331,6 +350,7 @@ export function EngineTable({ sensors, actuators }: EngineTableProps) {
                   <Table.ColumnHeader>Tag</Table.ColumnHeader>
                   <Table.ColumnHeader>Type</Table.ColumnHeader>
                   <Table.ColumnHeader>Value</Table.ColumnHeader>
+                  <Table.ColumnHeader>Avg</Table.ColumnHeader>
                   <Table.ColumnHeader>Unit</Table.ColumnHeader>
                   <Table.ColumnHeader>Status</Table.ColumnHeader>
                 </Table.Row>

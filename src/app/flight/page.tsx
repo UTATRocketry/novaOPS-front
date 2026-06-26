@@ -26,6 +26,18 @@ import {
 } from "@/components/flight";
 import { sendFasBuzzer } from "@/lib/api/direct";
 import type { FlightMilestones, FmcStatus } from "@/lib/flight/types";
+import {
+  sampleWindow,
+  CH_ALTITUDE,
+  CH_ACCEL,
+  CH_GYRO,
+  CH_MAG,
+  CH_ACCEL_HI,
+  type FlightChannel,
+} from "@/lib/flight/recorder";
+
+/** Rolling-window length for the dashboard charts (matches the Plot default). */
+const DASH_WINDOW_SEC = 30;
 
 // ---------------------------------------------------------------------------
 // Tab config
@@ -72,11 +84,17 @@ export default function FlightPage() {
 
   const milestones    = flightEvents?.milestones   ?? EMPTY_MILESTONES;
   const launchEpochMs = flightEvents?.launchEpochMs ?? null;
-  const phase         = telemetry?.phase ?? flightEvents?.phase;
+  const phase         = telemetry?.fsm?.phase ?? flightEvents?.phase;
   const fsmState      = telemetry?.fsm?.state ?? telemetry?.state ?? flightEvents?.state;
 
   // Velocity + inclination are not transmitted; estimate them UI-side.
   const { velocity, inclination } = useFlightKinematics(telemetry);
+
+  // Dashboard chart traces read from the central recorder so they keep
+  // collecting from connect and survive page navigation. Clamping the window to
+  // launchEpochMs makes the trace reset to T-0 the moment launch is detected.
+  const recorderSource = (channels: FlightChannel[]) => () =>
+    sampleWindow(channels, DASH_WINDOW_SEC, launchEpochMs);
 
   const fmc = firstFmc(telemetry?.fmc);
 
@@ -144,6 +162,7 @@ export default function FlightPage() {
               yMin={r.altitude?.[0]}
               yMax={r.altitude?.[1]}
               resetKey={launchEpochMs}
+              getSamples={recorderSource(CH_ALTITUDE)}
               height={220}
               noDataLabel="No barometer data"
             />
@@ -155,6 +174,7 @@ export default function FlightPage() {
               yMin={r.accel?.[0]}
               yMax={r.accel?.[1]}
               resetKey={launchEpochMs}
+              getSamples={recorderSource(CH_ACCEL)}
               noDataLabel="No IMU data"
             />
             <LiveChartCard
@@ -165,6 +185,7 @@ export default function FlightPage() {
               yMin={r.gyro?.[0]}
               yMax={r.gyro?.[1]}
               resetKey={launchEpochMs}
+              getSamples={recorderSource(CH_GYRO)}
               noDataLabel="No gyro data"
             />
             <LiveChartCard
@@ -175,6 +196,7 @@ export default function FlightPage() {
               yMin={r.mag?.[0]}
               yMax={r.mag?.[1]}
               resetKey={launchEpochMs}
+              getSamples={recorderSource(CH_MAG)}
               noDataLabel="No magnetometer data"
             />
             <LiveChartCard
@@ -185,6 +207,7 @@ export default function FlightPage() {
               yMin={r.accelHi?.[0]}
               yMax={r.accelHi?.[1]}
               resetKey={launchEpochMs}
+              getSamples={recorderSource(CH_ACCEL_HI)}
               noDataLabel="No high-G data"
             />
           </Flex>
@@ -231,8 +254,8 @@ export default function FlightPage() {
       {/* ------------------------------------------------------------------ */}
       {view === "graph" && (
         <FlightGraph
-          currentTelemetry={telemetry}
           events={flightEvents?.events ?? []}
+          launchEpochMs={launchEpochMs}
         />
       )}
     </Box>

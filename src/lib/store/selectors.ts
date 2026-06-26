@@ -37,14 +37,14 @@ export const sel = {
   flightDataStatus: (s: NovaStore) => s.flightData.status,
   flightDataLastSeen: (s: NovaStore) => s.flightData.lastSeen,
   flightEventsStatus: (s: NovaStore) => s.flightEvents.status,
-  physicalLockoutStatus: (s: NovaStore) => s.physicalLockout.status,
+  lockoutStatus: (s: NovaStore) => s.lockout.status,
 
   // ---- Full slice data (subscribe to the whole map) ----
   actuatorStates: (s: NovaStore) => s.actuatorStates.data,
   engineData: (s: NovaStore) => s.engineData.data,
   flightData: (s: NovaStore) => s.flightData.data,
   flightEvents: (s: NovaStore) => s.flightEvents.data,
-  physicalLockout: (s: NovaStore) => s.physicalLockout.data,
+  lockout: (s: NovaStore) => s.lockout.data,
 
   // ---- Per-item narrow selectors (parameterized) ----
 
@@ -76,7 +76,7 @@ export const sel = {
    * locked — an unknown lock state must block hazardous commands.
    */
   isLocked: (s: NovaStore) =>
-    s.physicalLockout.status !== "live" || s.physicalLockout.data !== "unlocked",
+    s.lockout.status !== "live" || s.lockout.data !== "unlocked",
 
   /** True when the socket transport is open (does not imply any stream is live). */
   isSocketOpen: (s: NovaStore) => s.socket.status === "open",

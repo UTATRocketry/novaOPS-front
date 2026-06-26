@@ -2,8 +2,8 @@ import type {
   ActuatorStateMap,
   ActuatorStatesMessage,
   ClientRole,
+  LockoutState,
   ParsedSensorValue,
-  PhysicalLockoutState,
   SessionMessage,
   SnapshotMessage,
 } from "../types";
@@ -70,7 +70,7 @@ export type LiveSliceName =
   | "engineData"
   | "flightData"
   | "flightEvents"
-  | "physicalLockout";
+  | "lockout";
 
 /** Per-stream freshness windows in milliseconds. */
 export type FreshnessWindows = Record<LiveSliceName, number>;
@@ -85,7 +85,7 @@ export interface NovaStoreState {
   engineData: LiveSlice<EngineDataMap>;
   flightData: LiveSlice<FlightTelemetry>;
   flightEvents: LiveSlice<FlightEvents>;
-  physicalLockout: LiveSlice<PhysicalLockoutState>;
+  lockout: LiveSlice<LockoutState>;
   session: SessionState;
   /**
    * Most-recently-received P&ID layout (from WS broadcast or REST seed).
@@ -127,7 +127,7 @@ export interface NovaStoreActions {
   ingestEngineData: (values: ParsedSensorValue[]) => void;
   ingestFlightData: (data: FlightTelemetry) => void;
   ingestFlightEvents: (events: FlightEvents) => void;
-  ingestPhysicalLockout: (state: PhysicalLockoutState) => void;
+  ingestLockout: (state: LockoutState) => void;
   /** Store a newly-received P&ID layout (from WS push or REST seed). */
   ingestPidLayout: (layout: NovaPidLayout | null) => void;
 

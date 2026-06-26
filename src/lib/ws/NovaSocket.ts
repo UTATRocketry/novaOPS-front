@@ -7,8 +7,8 @@ import type {
   ErrorMessage,
   FlightDataMessage,
   FlightEventsMessage,
+  LockoutMessage,
   ParsedDataMessage,
-  PhysicalLockoutMessage,
   PidLayoutMessage,
   RoleRequestMessage,
   SessionMessage,
@@ -18,7 +18,8 @@ import type {
 import { validateLayout } from "../pid/serializer";
 import { createStalenessTimer, useNovaStore } from "../store";
 import type { FreshnessWindows } from "../store";
-import { adaptFlightData, adaptFlightEvents, resetMissionClock } from "../flight";
+import { adaptFlightData, adaptFlightEvents, resetFlightSession } from "../flight";
+import { startFlightRecorder, stopFlightRecorder } from "../flight/recorder";
 
 // ---------------------------------------------------------------------------
 // Options
@@ -124,7 +125,8 @@ export class NovaSocket {
     this.destroyed = true;
     this.clearReconnectTimer();
     this.stopStalenessTimer();
-    resetMissionClock();
+    stopFlightRecorder();
+    resetFlightSession();
     if (this.ws) {
       this.ws.onclose = null; // prevent handleClose from scheduling a reconnect
       this.ws.close();
@@ -163,6 +165,8 @@ export class NovaSocket {
     this.connecting = false;
     useNovaStore.getState().markOpen(); // also resets reconnectAttempt to 0
     this.startStalenessTimer();
+    // Record flight telemetry from connect — independent of the mounted page.
+    startFlightRecorder();
     if (this.desiredRole) {
       this.send({ type: "role_request", role: this.desiredRole });
     }
@@ -176,6 +180,9 @@ export class NovaSocket {
     this.ws = null;
     this.connecting = false;
     this.stopStalenessTimer();
+    // Pause sampling on drop; the buffer is retained so a quick reconnect keeps
+    // history. A permanent disconnect() clears it via resetFlightSession().
+    stopFlightRecorder();
     useNovaStore.getState().markDisconnected();
     if (!this.destroyed) {
       this.scheduleReconnect();
@@ -265,10 +272,10 @@ export class NovaSocket {
         break;
       }
 
-      case "physical_lockout": {
-        const { state } = m as unknown as PhysicalLockoutMessage;
+      case "lockout": {
+        const { state } = m as unknown as LockoutMessage;
         if (state === "locked" || state === "unlocked") {
-          store.ingestPhysicalLockout(state);
+          store.ingestLockout(state);
         }
         break;
       }

@@ -193,7 +193,7 @@ export interface ActuatorState {
 
 export type ActuatorStateMap = Record<string, ActuatorState>;
 
-export type PhysicalLockoutState = "locked" | "unlocked";
+export type LockoutState = "locked" | "unlocked";
 
 // ---------------------------------------------------------------------------
 // WebSocket server -> client messages
@@ -240,9 +240,9 @@ export interface FlightEventsMessage {
   events: Array<Record<string, unknown>>;
 }
 
-export interface PhysicalLockoutMessage {
-  type: "physical_lockout";
-  state: PhysicalLockoutState;
+export interface LockoutMessage {
+  type: "lockout";
+  state: LockoutState;
 }
 
 export interface ErrorMessage {
@@ -280,7 +280,7 @@ export type ServerMessage =
   | ParsedDataMessage
   | FlightDataMessage
   | FlightEventsMessage
-  | PhysicalLockoutMessage
+  | LockoutMessage
   | PidLayoutMessage
   | ConfigUpdateMessage
   | ErrorMessage

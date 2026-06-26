@@ -88,7 +88,7 @@ const INITIAL_STATE: NovaStoreState = {
   engineData: disconnected<EngineDataMap>(),
   flightData: disconnected(),
   flightEvents: disconnected(),
-  physicalLockout: disconnected(),
+  lockout: disconnected(),
   session: { clientId: null, role: null },
   pidLayout: null,
   consoleMessages: [],
@@ -112,7 +112,7 @@ export const useNovaStore = create<NovaStore>()((set, get) => ({
       engineData:     { ...s.engineData,     status: s.engineData.data     !== null ? "stale" : "connecting" },
       flightData:     { ...s.flightData,     status: s.flightData.data     !== null ? "stale" : "connecting" },
       flightEvents:   { ...s.flightEvents,   status: s.flightEvents.data   !== null ? "stale" : "connecting" },
-      physicalLockout:{ ...s.physicalLockout,status: s.physicalLockout.data !== null ? "stale" : "connecting" },
+      lockout:        { ...s.lockout,status: s.lockout.data !== null ? "stale" : "connecting" },
     })),
 
   markOpen: () =>
@@ -128,7 +128,7 @@ export const useNovaStore = create<NovaStore>()((set, get) => ({
       engineData: { ...s.engineData, status: "disconnected" },
       flightData: { ...s.flightData, status: "disconnected" },
       flightEvents: { ...s.flightEvents, status: "disconnected" },
-      physicalLockout: { ...s.physicalLockout, status: "disconnected" },
+    lockout: { ...s.lockout, status: "disconnected" },
     })),
 
   setSocketError: (error) =>
@@ -154,7 +154,7 @@ export const useNovaStore = create<NovaStore>()((set, get) => ({
       engineData:      { data: null, status: "connecting", lastSeen: null },
       flightData:      { data: null, status: "connecting", lastSeen: null },
       flightEvents:    { data: null, status: "connecting", lastSeen: null },
-      physicalLockout: { data: null, status: "connecting", lastSeen: null },
+      lockout: { data: null, status: "connecting", lastSeen: null },
     });
   },
 
@@ -185,8 +185,8 @@ export const useNovaStore = create<NovaStore>()((set, get) => ({
     set({ flightEvents: { data: events, status: "live", lastSeen: Date.now() } });
   },
 
-  ingestPhysicalLockout: (state) => {
-    set({ physicalLockout: { data: state, status: "live", lastSeen: Date.now() } });
+  ingestLockout: (state) => {
+    set({ lockout: { data: state, status: "live", lastSeen: Date.now() } });
   },
 
   ingestPidLayout: (layout) => {
@@ -230,8 +230,8 @@ export const useNovaStore = create<NovaStore>()((set, get) => ({
     const fe = markStaleIfExpired(s.flightEvents, windows.flightEvents, now);
     if (fe) patch.flightEvents = fe;
 
-    const pl = markStaleIfExpired(s.physicalLockout, windows.physicalLockout, now);
-    if (pl) patch.physicalLockout = pl;
+    const l = markStaleIfExpired(s.lockout, windows.lockout, now);
+    if (l) patch.lockout = l;
 
     if (Object.keys(patch).length > 0) set(patch);
   },

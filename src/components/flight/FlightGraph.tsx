@@ -7,28 +7,11 @@ import {
   useCallback,
 } from "react";
 import { Box, Flex, Text, Separator } from "@chakra-ui/react";
-import { useToken } from "@chakra-ui/react";
 import { Card, Mono } from "@/components/primitives";
-import type { FlightTelemetry, FlightEvent } from "@/lib/flight/types";
+import { useFlightRecord } from "@/hooks/useFlightRecord";
+import { clearFlightRecord } from "@/lib/flight/recorder";
+import type { FlightEvent } from "@/lib/flight/types";
 require("uplot/dist/uPlot.min.css");
-
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
-interface FlightTelemetryPoint {
-  t: number;
-  altitude?: number;
-  velocity?: number;
-  accelMag?: number;
-  pressure?: number;
-  temperature?: number;
-}
-
-export interface FlightGraphProps {
-  currentTelemetry: FlightTelemetry | null;
-  events: FlightEvent[];
-}
 
 // ---------------------------------------------------------------------------
 // Series config
@@ -45,37 +28,67 @@ interface SeriesMeta {
 
 // uPlot requires CSS colours — hardcoded hex is acceptable here per spec
 const SERIES: SeriesMeta[] = [
-  { key: "altitude",    label: "Altitude",         unit: "m",     color: "#60a5fa" },
-  { key: "velocity",    label: "Velocity",          unit: "m/s",   color: "#34d399" },
-  { key: "accelMag",   label: "Accel Magnitude",   unit: "m/s²",  color: "#f87171" },
-  { key: "pressure",   label: "Pressure",          unit: "hPa",   color: "#a78bfa" },
-  { key: "temperature",label: "Temperature",       unit: "°C",    color: "#fbbf24" },
+  { key: "altitude",    label: "Altitude",        unit: "m",     color: "#60a5fa" },
+  { key: "velocity",    label: "Velocity",        unit: "m/s",   color: "#34d399" },
+  { key: "accelMag",    label: "Accel Magnitude", unit: "m/s²",  color: "#f87171" },
+  { key: "pressure",    label: "Pressure",        unit: "hPa",   color: "#a78bfa" },
+  { key: "temperature", label: "Temperature",     unit: "°C",    color: "#fbbf24" },
 ];
 
-const MAX_HISTORY = 1000;
+/** Rolling-window length (seconds) shown before launch is detected. */
+const ROLLING_SEC = 60;
+
+export interface FlightGraphProps {
+  events: FlightEvent[];
+  /** T-0 epoch ms — null before launch (rolling), set after (T+ mission clock). */
+  launchEpochMs: number | null;
+}
 
 // ---------------------------------------------------------------------------
-// Normalise a data array to 0–100% over its own min/max
+// Small numeric helpers (loop-based to avoid spread-on-huge-array stack limits)
 // ---------------------------------------------------------------------------
 
-function normalise(arr: (number | null | undefined)[]): (number | null)[] {
-  const valid = arr.filter((v): v is number => v != null);
-  if (valid.length === 0) return arr.map(() => null);
-  const min = Math.min(...valid);
-  const max = Math.max(...valid);
+function lowerBound(arr: number[], t: number): number {
+  let lo = 0;
+  let hi = arr.length;
+  while (lo < hi) {
+    const mid = (lo + hi) >>> 1;
+    if (arr[mid] < t) lo = mid + 1;
+    else hi = mid;
+  }
+  return lo;
+}
+
+function minMaxFinite(arr: number[]): [number, number] | null {
+  let mn = Infinity;
+  let mx = -Infinity;
+  let any = false;
+  for (const v of arr) {
+    if (Number.isFinite(v)) {
+      any = true;
+      if (v < mn) mn = v;
+      if (v > mx) mx = v;
+    }
+  }
+  return any ? [mn, mx] : null;
+}
+
+/** Normalise a series to 0–100% over its own finite min/max (NaN = gap). */
+function normalise(arr: number[]): number[] {
+  const mm = minMaxFinite(arr);
+  if (!mm) return arr.map(() => NaN);
+  const [min, max] = mm;
   const span = max - min || 1;
-  return arr.map((v) => (v == null ? null : ((v - min) / span) * 100));
+  return arr.map((v) => (Number.isFinite(v) ? ((v - min) / span) * 100 : NaN));
 }
 
 // ---------------------------------------------------------------------------
 // FlightGraph
 // ---------------------------------------------------------------------------
 
-export function FlightGraph({ currentTelemetry, events }: FlightGraphProps) {
-
-  // History buffer — mutated in place
-  const historyRef = useRef<FlightTelemetryPoint[]>([]);
-  const [, forceRender] = useState(0);
+export function FlightGraph({ events, launchEpochMs }: FlightGraphProps) {
+  // Live recorded series (collected centrally from connect — see recorder.ts).
+  const { tsSec, channels } = useFlightRecord(200);
 
   // Series toggles
   const [enabledSeries, setEnabledSeries] = useState<Record<SeriesKey, boolean>>({
@@ -108,42 +121,30 @@ export function FlightGraph({ currentTelemetry, events }: FlightGraphProps) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [events.length]);
 
-  // Accumulate history
-  useEffect(() => {
-    if (!currentTelemetry) return;
-    const t = currentTelemetry.timestamp ?? Date.now();
-    const last = historyRef.current[historyRef.current.length - 1];
-    if (last && last.t === t) return; // deduplicate same timestamp
+  // --- Window selection: rolling before launch, full T+ history after -------
+  const launchActive = launchEpochMs != null;
+  const launchSec = launchActive ? launchEpochMs! / 1000 : null;
+  const nowSec = Date.now() / 1000;
+  const minT = launchSec != null ? launchSec : nowSec - ROLLING_SEC;
+  const startIdx = lowerBound(tsSec, minT);
 
-    const point: FlightTelemetryPoint = {
-      t,
-      altitude: currentTelemetry.altitude,
-      velocity: currentTelemetry.velocity,
-      accelMag: currentTelemetry.accel?.magnitude,
-      pressure: currentTelemetry.pressure,
-      temperature: currentTelemetry.temperature,
-    };
-    historyRef.current = [...historyRef.current, point].slice(-MAX_HISTORY);
-    forceRender((n) => n + 1);
-  }, [currentTelemetry]);
+  const times = tsSec.slice(startIdx);
+  const dataByKey = {} as Record<SeriesKey, number[]>;
+  for (const s of SERIES) dataByKey[s.key] = channels[s.key].slice(startIdx);
+  const t0 = launchSec != null ? launchSec : (times[0] ?? 0);
+  const hasData = times.length > 1;
 
-  const clearHistory = useCallback(() => {
-    historyRef.current = [];
-    forceRender((n) => n + 1);
-  }, []);
-
-  const history = historyRef.current;
-  const hasData = history.length > 0;
-
-  // Compute range info for legend
+  // Legend range info
   const rangeInfo = SERIES.map((s) => {
-    const vals = history.map((p) => p[s.key]).filter((v): v is number => v != null);
-    if (vals.length === 0) return { ...s, min: null, max: null };
-    return { ...s, min: Math.min(...vals), max: Math.max(...vals) };
+    const mm = minMaxFinite(dataByKey[s.key]);
+    return mm ? { ...s, min: mm[0], max: mm[1] } : { ...s, min: null, max: null };
   });
 
-  // Active series in current render
   const activeSeries = SERIES.filter((s) => enabledSeries[s.key]);
+
+  const clearHistory = useCallback(() => {
+    clearFlightRecord();
+  }, []);
 
   return (
     <Flex gap={4} p={4} align="flex-start">
@@ -151,7 +152,16 @@ export function FlightGraph({ currentTelemetry, events }: FlightGraphProps) {
       {/* Left: chart ~75%                                                     */}
       {/* ------------------------------------------------------------------ */}
       <Box flex="3" minW={0}>
-        <Card title="Flight Data Graph" flush minH="400px">
+        <Card
+          title="Flight Data Graph"
+          headerAction={
+            <Mono fontSize="2xs" color={launchActive ? "nominal" : "text.muted"}>
+              {launchActive ? "T+ mission clock" : `Rolling ${ROLLING_SEC}s`}
+            </Mono>
+          }
+          flush
+          minH="400px"
+        >
           {!hasData ? (
             <Flex align="center" justify="center" minH="400px" direction="column" gap={2}>
               <Text fontFamily="mono" fontSize="2xl" color="text.muted">—</Text>
@@ -160,8 +170,11 @@ export function FlightGraph({ currentTelemetry, events }: FlightGraphProps) {
           ) : (
             <Box>
               <UplotChart
-                history={history}
+                times={times}
+                dataByKey={dataByKey}
                 activeSeries={activeSeries}
+                t0={t0}
+                launchActive={launchActive}
                 events={events}
                 enabledEvents={enabledEvents}
               />
@@ -306,39 +319,47 @@ export function FlightGraph({ currentTelemetry, events }: FlightGraphProps) {
 // ---------------------------------------------------------------------------
 
 interface UplotChartProps {
-  history: FlightTelemetryPoint[];
+  times: number[];                       // x in seconds
+  dataByKey: Record<SeriesKey, number[]>;
   activeSeries: SeriesMeta[];
+  t0: number;                            // T-0 reference (seconds) for labels
+  launchActive: boolean;
   events: FlightEvent[];
   enabledEvents: Record<string, boolean>;
 }
 
-function UplotChart({ history, activeSeries, events, enabledEvents }: UplotChartProps) {
+function UplotChart({
+  times, dataByKey, activeSeries, t0, launchActive, events, enabledEvents,
+}: UplotChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const axisProbeRef = useRef<HTMLDivElement>(null);
   const gridProbeRef = useRef<HTMLDivElement>(null);
   // uPlot is a CJS module — the constructor IS the module export
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const uplotRef = useRef<any>(null);
-  // Key to force chart recreation when series list changes
-  const seriesKeyRef = useRef<string>("");
+  // t0 is read at paint time from a ref so a changing T-0 (rolling window) does
+  // not force the whole chart to be rebuilt.
+  const t0Ref = useRef(t0);
+  t0Ref.current = t0;
 
-  const buildChart = useCallback(() => {
-    if (!containerRef.current || history.length === 0) return;
+  const seriesKey = activeSeries.map((s) => s.key).join(",");
 
-    // uPlot paints to canvas and can't read CSS vars — resolve theme tokens
-    // to concrete colours from hidden probes so axis/ticks/grid follow the theme.
+  // --- Create the chart (only when the series set / launch mode changes) ----
+  useEffect(() => {
+    if (!containerRef.current) return;
+
     const readColor = (el: HTMLElement | null, fallback: string) =>
       (el && getComputedStyle(el).color) || fallback;
     const axisColor = readColor(axisProbeRef.current, "#94a0b3");
     const gridColor = readColor(gridProbeRef.current, "#26303f");
 
-    // Lazily import uPlot (CJS module — the module itself is the constructor)
-    import("uplot").then((mod) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const uPlot = (mod as any).default ?? mod;
-      if (!containerRef.current) return;
+    let destroyed = false;
 
-      // Destroy existing instance
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    import("uplot").then((mod: any) => {
+      const uPlot = mod.default ?? mod;
+      if (destroyed || !containerRef.current) return;
+
       if (uplotRef.current) {
         uplotRef.current.destroy();
         uplotRef.current = null;
@@ -347,30 +368,7 @@ function UplotChart({ history, activeSeries, events, enabledEvents }: UplotChart
       const w = containerRef.current.clientWidth || 800;
       const h = 360;
 
-      const times = history.map((p) => p.t / 1000); // uPlot uses seconds
-
-      // Build data arrays: [timestamps, ...series]
-      const rawData: (number | null)[][] = activeSeries.map((s) =>
-        history.map((p) => {
-          const v = p[s.key];
-          return v != null ? v : null;
-        }),
-      );
-      const normData = rawData.map(normalise);
-
-      const data: uPlot.AlignedData = [
-        new Float64Array(times),
-        ...normData.map((arr) => {
-          const fa = new Float64Array(arr.length);
-          arr.forEach((v, i) => { fa[i] = v ?? NaN; });
-          return fa;
-        }),
-      ] as unknown as uPlot.AlignedData;
-
-      // First timestamp for T+ labelling
-      const t0 = times[0] ?? 0;
-
-      const opts: uPlot.Options = {
+      const opts = {
         width: w,
         height: h,
         scales: {
@@ -379,10 +377,11 @@ function UplotChart({ history, activeSeries, events, enabledEvents }: UplotChart
         },
         axes: [
           {
-            // X axis: T+MM:SS relative to first point
-            values: (_u, vals) =>
+            // X axis: T±MM:SS relative to T-0 (read live from t0Ref)
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            values: (_u: any, vals: number[]) =>
               vals.map((v) => {
-                const dt = Math.round(v - t0);
+                const dt = Math.round(v - t0Ref.current);
                 const sign = dt < 0 ? "-" : "+";
                 const abs = Math.abs(dt);
                 const mm = String(Math.floor(abs / 60)).padStart(2, "0");
@@ -394,9 +393,9 @@ function UplotChart({ history, activeSeries, events, enabledEvents }: UplotChart
             grid: { stroke: gridColor, width: 1, dash: [3, 4] },
           },
           {
-            // Y axis: normalised 0–100%
             label: "% of range",
-            values: (_u, vals) => vals.map((v) => `${v?.toFixed(0)}%`),
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            values: (_u: any, vals: number[]) => vals.map((v) => `${v?.toFixed(0)}%`),
             stroke: axisColor,
             ticks: { stroke: gridColor, width: 1 },
             grid: { stroke: gridColor, width: 1, dash: [3, 4] },
@@ -412,77 +411,76 @@ function UplotChart({ history, activeSeries, events, enabledEvents }: UplotChart
           })),
         ],
         cursor: { show: true },
-        legend: { show: false }, // we render our own legend
+        legend: { show: false },
       };
 
-      const u = new uPlot(opts, data, containerRef.current);
-      uplotRef.current = u;
-
-      // Draw event markers as vertical dashed lines using the over div
-      const over = containerRef.current.querySelector<HTMLElement>(".u-over");
-      if (over) {
-        // Remove old markers
-        over.querySelectorAll(".nova-event-marker").forEach((el) => el.remove());
-
-        const visibleEvents = events.filter(
-          (e) => e.timestamp != null && (enabledEvents[e.name] ?? true),
-        );
-
-        for (const ev of visibleEvents) {
-          if (ev.timestamp == null) continue;
-          const evSec = ev.timestamp / 1000;
-          const xPct = (evSec - times[0]) / (times[times.length - 1] - times[0]);
-          if (xPct < 0 || xPct > 1) continue;
-
-          const marker = document.createElement("div");
-          marker.className = "nova-event-marker";
-          marker.style.cssText = `
-            position: absolute;
-            top: 0;
-            bottom: 0;
-            left: ${(xPct * 100).toFixed(2)}%;
-            width: 1px;
-            background: rgba(251, 191, 36, 0.7);
-            border-left: 1px dashed rgba(251, 191, 36, 0.7);
-            pointer-events: none;
-          `;
-
-          const label = document.createElement("span");
-          label.style.cssText = `
-            position: absolute;
-            top: 2px;
-            left: 3px;
-            font-size: 9px;
-            font-family: JetBrains Mono, monospace;
-            color: rgba(251, 191, 36, 0.9);
-            white-space: nowrap;
-            pointer-events: none;
-          `;
-          label.textContent = ev.name.slice(0, 12);
-          marker.appendChild(label);
-          over.appendChild(marker);
-        }
-      }
+      const emptyData = [
+        new Float64Array(0),
+        ...activeSeries.map(() => new Float64Array(0)),
+      ];
+      uplotRef.current = new uPlot(opts, emptyData, containerRef.current);
     });
-  }, [history, activeSeries, events, enabledEvents]);
-
-  // Rebuild on data/series/events change
-  useEffect(() => {
-    const newKey = activeSeries.map((s) => s.key).join(",");
-    if (newKey !== seriesKeyRef.current) {
-      seriesKeyRef.current = newKey;
-    }
-    buildChart();
 
     return () => {
+      destroyed = true;
       if (uplotRef.current) {
         uplotRef.current.destroy();
         uplotRef.current = null;
       }
     };
-  }, [buildChart]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [seriesKey, launchActive]);
 
-  // ResizeObserver for responsive width
+  // --- Push data + redraw markers on every record tick ----------------------
+  useEffect(() => {
+    const u = uplotRef.current;
+    if (!u || times.length === 0) return;
+
+    const normData = activeSeries.map((s) => normalise(dataByKey[s.key]));
+    const data = [
+      new Float64Array(times),
+      ...normData.map((arr) => {
+        const fa = new Float64Array(arr.length);
+        arr.forEach((v, i) => { fa[i] = Number.isFinite(v) ? v : NaN; });
+        return fa;
+      }),
+    ];
+    u.setData(data);
+
+    // Event markers — vertical dashed lines on the .u-over layer.
+    const over = (containerRef.current?.querySelector(".u-over") as HTMLElement) ?? null;
+    if (over) {
+      over.querySelectorAll(".nova-event-marker").forEach((el) => el.remove());
+
+      const span = times[times.length - 1] - times[0] || 1;
+      const draw = (xPct: number, label: string, color: string) => {
+        if (xPct < 0 || xPct > 1) return;
+        const marker = document.createElement("div");
+        marker.className = "nova-event-marker";
+        marker.style.cssText = `position:absolute;top:0;bottom:0;left:${(xPct * 100).toFixed(2)}%;width:1px;background:${color};border-left:1px dashed ${color};pointer-events:none;`;
+        const tag = document.createElement("span");
+        tag.style.cssText = `position:absolute;top:2px;left:3px;font-size:9px;font-family:JetBrains Mono,monospace;color:${color};white-space:nowrap;pointer-events:none;`;
+        tag.textContent = label.slice(0, 14);
+        marker.appendChild(tag);
+        over.appendChild(marker);
+      };
+
+      // Milestone: always mark T-0 once launch is detected.
+      if (launchActive) {
+        draw((t0Ref.current - times[0]) / span, "LAUNCH", "rgba(52, 211, 153, 0.9)");
+      }
+
+      // Backend events with a timestamp (treated as epoch ms).
+      for (const ev of events) {
+        if (ev.timestamp == null) continue;
+        if (!(enabledEvents[ev.name] ?? true)) continue;
+        const evSec = ev.timestamp / 1000;
+        draw((evSec - times[0]) / span, ev.name, "rgba(251, 191, 36, 0.85)");
+      }
+    }
+  }, [times, dataByKey, activeSeries, events, enabledEvents, launchActive]);
+
+  // --- Responsive width -----------------------------------------------------
   useEffect(() => {
     if (!containerRef.current) return;
     const ro = new ResizeObserver(() => {

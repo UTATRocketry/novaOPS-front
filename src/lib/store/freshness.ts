@@ -11,7 +11,7 @@ export const DEFAULT_FRESHNESS_WINDOWS: FreshnessWindows = {
   engineData:      2_000, // 10 Hz feed; stale after 2 s of silence
   flightData:      5_000, // flight telemetry can be bursty
   flightEvents:   60_000, // milestone events are sparse
-  physicalLockout: 30_000, // slow-changing hardware signal
+  lockout:        30_000, // slow-changing hardware signal
 };
 
 /**

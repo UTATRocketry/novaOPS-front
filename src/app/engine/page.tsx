@@ -174,7 +174,10 @@ export default function EnginePage() {
       {view === "table" && !isEditing && (
         <Flex gap={4} align="flex-start">
           <Box flex={1} minW={0}>
-            <EngineTable sensors={sensors} actuators={actuators} />
+            <GaugeStrip sensors={sensors} />
+            <Box mt={4}>
+              <EngineTable sensors={sensors} actuators={actuators} />
+            </Box>
           </Box>
           <Box w="280px" flexShrink={0}>
             <ActionsCard />

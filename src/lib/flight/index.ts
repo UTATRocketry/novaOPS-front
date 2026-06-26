@@ -13,6 +13,7 @@ import type {
   ImcStatus,
   PmbStatus,
 } from "./types";
+import { clearFlightRecord } from "./recorder";
 
 export type {
   AdaptedFlightEvents,
@@ -35,12 +36,12 @@ export type {
 
 // Milestone names for each FlightMilestone key (lowercase, case-insensitive match)
 const MILESTONE_NAMES: Record<keyof FlightMilestones, string[]> = {
-  launchDetected: ["launch", "liftoff", "ignition", "launch_detected"],
+  launchDetected:  ["launch", "liftoff", "ignition", "launch_detected"],
   motorBurnout:    ["burnout", "motor_burnout", "motor_cutoff", "meco"],
-  apogeeDetected:         ["apogee", "apogee_detected"],
-  drogueDeployed: ["drogue", "drogue_deploy", "drogue_deployed"],
-  mainDeployed:   ["main", "main_deploy", "main_deployed", "main_chute", "chute_deploy"],
-  landingDetected:         ["landing", "landed", "touchdown", "touch_down"],
+  apogeeDetected:  ["apogee", "apogee_detected"],
+  drogueDeployed:  ["drogue", "drogue_deploy", "drogue_deployed"],
+  mainDeployed:    ["main", "main_deploy", "main_deployed", "main_chute", "chute_deploy"],
+  landingDetected: ["landing", "landed", "touchdown", "touch_down"],
 };
 
 // ---------------------------------------------------------------------------
@@ -52,9 +53,52 @@ const MILESTONE_NAMES: Record<keyof FlightMilestones, string[]> = {
 
 let _launchEpochMs: number | null = null;
 
-/** Reset the T-0 reference. Call on socket disconnect if a fresh clock is needed. */
-export function resetMissionClock(): void {
+/**
+ * Latched milestone flags. Once a milestone is detected it stays TRUE for the
+ * rest of the flight — a later `flight_events` message that omits the event must
+ * not flip the flag back to FALSE. The latch clears only when the FAS state
+ * returns to "standby" (operator armed a fresh cycle) or the socket tears down.
+ */
+const _latchedMilestones: FlightMilestones = {
+  launchDetected: false,
+  motorBurnout: false,
+  apogeeDetected: false,
+  drogueDeployed: false,
+  mainDeployed: false,
+  landingDetected: false,
+};
+
+/**
+ * Reset the per-flight session: the T-0 reference and every latched milestone.
+ * Call on socket disconnect, or when the FAS state returns to "standby".
+ */
+export function resetFlightSession(): void {
   _launchEpochMs = null;
+  _latchedMilestones.launchDetected = false;
+  _latchedMilestones.motorBurnout = false;
+  _latchedMilestones.apogeeDetected = false;
+  _latchedMilestones.drogueDeployed = false;
+  _latchedMilestones.mainDeployed = false;
+  _latchedMilestones.landingDetected = false;
+  // Drop the recorded flight history — a new cycle records from scratch.
+  clearFlightRecord();
+}
+
+/** Back-compat alias — resets the full flight session (T-0 + latched flags). */
+export function resetMissionClock(): void {
+  resetFlightSession();
+}
+
+/**
+ * Observe a FAS state string from either adapter. A transition back to
+ * "standby" means the previous flight is over and the vehicle is armed for a new
+ * cycle — clear the latch and T-0 so a fresh launch re-latches from scratch.
+ * No-op for every other state.
+ */
+function noteFlightState(state: string | undefined): void {
+  if (typeof state === "string" && state.toLowerCase() === "standby") {
+    resetFlightSession();
+  }
 }
 
 /** Returns the epoch-ms T-0 reference, or null if launch has not been detected. */
@@ -405,10 +449,15 @@ export function adaptFlightData(raw: Record<string, unknown>): FlightTelemetry {
   // --- Flight state machine -------------------------------------------------
   const fsm = obj(raw["fas_fsm"]);
   if (fsm) {
-    const state = typeof fsm["state"] === "string" ? fsm["state"] : undefined;
-    if (state) {
-      out.fsm = { state };
+    const state = typeof fsm["fas_state"] === "string" ? fsm["fas_state"] : undefined;
+    const phase = typeof fsm["flight_phase"] === "string" ? fsm["flight_phase"] : undefined;
+    // The live FSM state is the most frequent signal — use it to clear the
+    // latched milestones when the vehicle returns to standby.
+    noteFlightState(state);
+    if (state || phase) {
+      out.fsm = { state, phase };
       out.state = state;
+      out.phase = phase;
     }
   }
 
@@ -435,13 +484,15 @@ export function adaptFlightEvents(
     timestamp: typeof e["timestamp"] === "number" ? e["timestamp"] : undefined,
   }));
 
-  const milestones: FlightMilestones = {
+  // Milestones detected in THIS message only — latched into the module-level
+  // state below so a flag never reverts once set (until a standby reset).
+  const detected: FlightMilestones = {
     launchDetected: false,
     motorBurnout:    false,
-    apogeeDetected:         false,
-    drogueDeployed: false,
-    mainDeployed:   false,
-    landingDetected:         false,
+    apogeeDetected:  false,
+    drogueDeployed:  false,
+    mainDeployed:    false,
+    landingDetected: false,
   };
 
   let phase: string | undefined;
@@ -450,21 +501,34 @@ export function adaptFlightEvents(
   for (const e of events) {
     const lower = e.name.toLowerCase();
 
-    if (MILESTONE_NAMES.launchDetected.includes(lower))   milestones.launchDetected = true;
-    if (MILESTONE_NAMES.motorBurnout.includes(lower))     milestones.motorBurnout    = true;
-    if (MILESTONE_NAMES.apogeeDetected.includes(lower))   milestones.apogeeDetected         = true;
-    if (MILESTONE_NAMES.drogueDeployed.includes(lower))   milestones.drogueDeployed = true;
-    if (MILESTONE_NAMES.mainDeployed.includes(lower))     milestones.mainDeployed   = true;
-    if (MILESTONE_NAMES.landingDetected.includes(lower))  milestones.landingDetected         = true;
+    if (MILESTONE_NAMES.launchDetected.includes(lower))   detected.launchDetected   = true;
+    if (MILESTONE_NAMES.motorBurnout.includes(lower))     detected.motorBurnout     = true;
+    if (MILESTONE_NAMES.apogeeDetected.includes(lower))   detected.apogeeDetected   = true;
+    if (MILESTONE_NAMES.drogueDeployed.includes(lower))   detected.drogueDeployed   = true;
+    if (MILESTONE_NAMES.mainDeployed.includes(lower))     detected.mainDeployed     = true;
+    if (MILESTONE_NAMES.landingDetected.includes(lower))  detected.landingDetected  = true;
 
-    if (typeof e["phase"] === "string") phase = e["phase"];
-    if (typeof e["state"] === "string") state = e["state"];
+    if (typeof e["flight_phase"] === "string") phase = e["flight_phase"];
+    if (typeof e["fas_state"] === "string") state = e["fas_state"];
   }
 
+  // A return to standby clears the latch BEFORE this message's detections apply,
+  // so a fresh flight cycle re-latches from scratch.
+  noteFlightState(state);
+
+  // Latch: OR each newly-detected milestone into the persistent flags.
+  if (detected.launchDetected)   _latchedMilestones.launchDetected   = true;
+  if (detected.motorBurnout)     _latchedMilestones.motorBurnout     = true;
+  if (detected.apogeeDetected)   _latchedMilestones.apogeeDetected   = true;
+  if (detected.drogueDeployed)   _latchedMilestones.drogueDeployed   = true;
+  if (detected.mainDeployed)     _latchedMilestones.mainDeployed     = true;
+  if (detected.landingDetected)  _latchedMilestones.landingDetected  = true;
+
   // T-0: stamp wall-clock time on first launch detection; never overwrite.
-  if (milestones.launchDetected && _launchEpochMs === null) {
+  if (_latchedMilestones.launchDetected && _launchEpochMs === null) {
     _launchEpochMs = Date.now();
   }
 
-  return { events, milestones, phase, state, launchEpochMs: _launchEpochMs };
+  // Return a snapshot copy so each ingest yields a fresh milestones object.
+  return { events, milestones: { ..._latchedMilestones }, phase, state, launchEpochMs: _launchEpochMs };
 }

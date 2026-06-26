@@ -39,6 +39,14 @@ export interface PlotProps {
   height?: number;
   /** When this changes the rolling buffer is cleared (e.g. launch detected). */
   resetKey?: string | number | null;
+  /**
+   * External buffer source. When provided the chart renders these pre-sampled
+   * arrays (x in seconds, one y-array per series) instead of self-sampling
+   * `values` — used so a central recorder owns the data and it survives the
+   * component unmounting on page navigation. `values` is then ignored for the
+   * trace (callers may still pass it for a header readout).
+   */
+  getSamples?: () => { xs: number[]; ys: number[][] };
 }
 
 function readColor(el: HTMLElement | null, fallback: string): string {
@@ -57,6 +65,7 @@ export function Plot({
   tickMs = 1,
   height = 260,
   resetKey = null,
+  getSamples,
 }: PlotProps) {
   const { colorMode } = useColorMode();
 
@@ -70,6 +79,8 @@ export function Plot({
   const ysRef = useRef<number[][]>(series.map(() => []));
   const valuesRef = useRef(values);
   valuesRef.current = values;
+  const getSamplesRef = useRef(getSamples);
+  getSamplesRef.current = getSamples;
 
   const windowSec = windowMs / 1000;
   // Identity of the series set — rebuild the chart when it changes.
@@ -174,8 +185,13 @@ export function Plot({
       if (u) {
         const nowMs = Date.now();
         const now = nowMs / 1000;
-        // Append a new sample only every tickMs (controls point density).
-        if (nowMs - lastSample >= tickMs) {
+        const ext = getSamplesRef.current;
+        if (ext) {
+          // External source (recorder): render its windowed arrays directly.
+          const { xs, ys } = ext();
+          u.setData([xs, ...ys] as unknown as uPlot.AlignedData, false);
+        } else if (nowMs - lastSample >= tickMs) {
+          // Self-sample: append the current value only every tickMs.
           lastSample = nowMs;
           const vals = valuesRef.current;
           xsRef.current.push(now);

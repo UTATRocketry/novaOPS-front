@@ -163,6 +163,7 @@ export interface ImcStatus {
 /** Flight state machine (`fas_fsm`). */
 export interface FsmStatus {
   state?: string;
+  phase?: string;
 }
 
 // ---------------------------------------------------------------------------
