@@ -1,7 +1,7 @@
 "use client";
 
 import { Box, Flex, Text } from "@chakra-ui/react";
-import { Card } from "@/components/primitives";
+import { Card, Chip, Mono } from "@/components/primitives";
 import { LiveChartCard } from "@/components/flight";
 import type { PmbStatus } from "@/lib/flight/types";
 import type { DeviceRange } from "@/lib/types";
@@ -88,7 +88,16 @@ export function PmbPowerCard({ boardKey, pmb, stale = false, ranges }: PmbPowerC
           <FlagDot label="24V0" value={vmon?.pg24v0} />
           <FlagDot label="charger" value={vmon?.charger} />
           <FlagDot label="batt src" value={vmon?.battSrc} />
+          <FlagDot label="protect" value={vmon?.protect} danger />
         </Flex>
+
+        {vmon?.protect === true && (
+          <Flex mb={3}>
+            <Chip status="fault">
+              <Mono>BATTERY PROTECT — converters cut</Mono>
+            </Chip>
+          </Flex>
+        )}
 
         <Flex direction="column" gap={3}>
           <LiveChartCard

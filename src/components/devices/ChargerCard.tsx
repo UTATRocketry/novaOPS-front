@@ -10,6 +10,8 @@ import { FlagDot, Readout, num } from "./shared";
 export interface ChargerCardProps {
   boardKey: string;
   charger: NonNullable<PmbStatus["charger"]>;
+  /** Firmware charge DAC read-back (`fas_pmb[key].chg_cfg`). */
+  chgCfg?: PmbStatus["chgCfg"];
   stale?: boolean;
 }
 
@@ -21,7 +23,7 @@ const INPUT_PROPS = {
   _focusVisible: { borderColor: "accent.solid" },
 };
 
-export function ChargerCard({ boardKey, charger, stale = false }: ChargerCardProps) {
+export function ChargerCard({ boardKey, charger, chgCfg, stale = false }: ChargerCardProps) {
   // Control state — enable defaults OFF (safety).
   const [enable, setEnable] = useState(false);
   const [chargeCurrent, setChargeCurrent] = useState("");
@@ -60,6 +62,36 @@ export function ChargerCard({ boardKey, charger, stale = false }: ChargerCardPro
           <FlagDot label="charging" value={charger.charging} />
           <FlagDot label="enabled" value={charger.enabled} />
         </Flex>
+
+        {/* Firmware DAC read-back — what the charger is actually configured to. */}
+        {chgCfg && (
+          <Box borderTop="1px solid" borderColor="border.default" mt={3} pt={3}>
+            <Flex align="center" justify="space-between" mb={2}>
+              <Text fontSize="2xs" color="text.muted" textTransform="uppercase" letterSpacing="0.06em">
+                Firmware limits
+              </Text>
+              {chgCfg.vlimit === true && <Chip status="warn">cutoff active</Chip>}
+            </Flex>
+            <Flex gap={6} flexWrap="wrap">
+              <Flex direction="column" gap={1} flex="1" minW="130px">
+                <Readout
+                  label="I setting"
+                  value={chgCfg.iSetting != null ? `${chgCfg.iSetting} / 31` : "—"}
+                />
+                <Readout
+                  label="V setting"
+                  value={chgCfg.vSetting != null ? `${chgCfg.vSetting} / 31` : "—"}
+                />
+              </Flex>
+              <Flex direction="column" gap={1} flex="1" minW="130px">
+                <Readout
+                  label="cells"
+                  value={chgCfg.cells != null ? String(chgCfg.cells) : "—"}
+                />
+              </Flex>
+            </Flex>
+          </Box>
+        )}
       </Box>
 
       {/* Control (telemetry-backed; command path pending backend) */}

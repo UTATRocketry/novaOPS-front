@@ -8,10 +8,16 @@ import type {
   FlightEvent,
   FlightMilestones,
   FlightTelemetry,
+  FmcAuxStatus,
+  FmcRfStatus,
   FmcStatus,
   GpsData,
   ImcStatus,
   PmbStatus,
+  RabStatus,
+  SoundClip,
+  SoundStatus,
+  SoundboardStatus,
 } from "./types";
 import { clearFlightRecord } from "./recorder";
 
@@ -24,10 +30,16 @@ export type {
   FlightEvent,
   FlightMilestones,
   FlightTelemetry,
+  FmcAuxStatus,
+  FmcRfStatus,
   FmcStatus,
   GpsData,
   ImcStatus,
   PmbStatus,
+  RabStatus,
+  SoundClip,
+  SoundStatus,
+  SoundboardStatus,
   Axis3,
 };
 
@@ -263,6 +275,7 @@ function parsePmb(raw: unknown): Record<string, PmbStatus> | undefined {
       put(block, "pg24v0", bool(vmon["pg_24v0"]));
       put(block, "charger", bool(vmon["charger"]));
       put(block, "battSrc", bool(vmon["batt_src"]));
+      put(block, "protect", bool(vmon["protect"]));
       status.vmon = block;
     }
 
@@ -288,6 +301,16 @@ function parsePmb(raw: unknown): Record<string, PmbStatus> | undefined {
       put(block, "status", typeof charger["status"] === "string" ? (charger["status"] as string) : undefined);
       put(block, "cells", num(charger["cells"]));
       status.charger = block;
+    }
+
+    const chgCfg = obj(o["chg_cfg"]);
+    if (chgCfg) {
+      const block: NonNullable<PmbStatus["chgCfg"]> = {};
+      put(block, "iSetting", num(chgCfg["i_setting"]));
+      put(block, "vSetting", num(chgCfg["v_setting"]));
+      put(block, "cells", num(chgCfg["cells"]));
+      put(block, "vlimit", bool(chgCfg["vlimit"]));
+      status.chgCfg = block;
     }
 
     out[key] = status;
@@ -371,6 +394,102 @@ function parseImc(raw: unknown): ImcStatus | undefined {
   return imc;
 }
 
+/**
+ * Recovery Arming Boards (`fas_rab`), keyed "RAB:0" / "RAB:1".
+ *
+ * The legacy `disagree` field / RT_RAB_FLAG_DISAGREE bit is deliberately not read —
+ * it is superseded by the RAB-local `arm_mismatch`.
+ */
+function parseRab(raw: unknown): Record<string, RabStatus> | undefined {
+  const map = obj(raw);
+  if (!map) return undefined;
+  const out: Record<string, RabStatus> = {};
+  for (const [key, value] of Object.entries(map)) {
+    const o = obj(value);
+    if (!o) continue;
+    const status: RabStatus = {
+      rabId: num(o["rab_id"]) ?? 0,
+      fcArmed: bool(o["fc_armed"]) ?? false,
+      armLine: bool(o["arm_line"]) ?? false,
+      disarmLine: bool(o["disarm_line"]) ?? false,
+      fcArmedGpio: bool(o["fc_armed_gpio"]) ?? false,
+      fmcRx: bool(o["fmc_rx"]) ?? false,
+      armMismatch: bool(o["arm_mismatch"]) ?? false,
+      armExpected: bool(o["arm_expected"]) ?? false,
+    };
+    put(status, "rxCount8", num(o["rx_count8"]));
+    put(status, "online", bool(o["online"]));
+    put(status, "uptimeMs", num(o["uptime_ms"]));
+    put(status, "flags", num(o["flags"]));
+    out[key] = status;
+  }
+  return Object.keys(out).length > 0 ? out : undefined;
+}
+
+function parseAux(raw: unknown): FmcAuxStatus | undefined {
+  const o = obj(raw);
+  if (!o) return undefined;
+  const aux: FmcAuxStatus = {
+    runcamPowered: bool(o["runcam_powered"]) ?? false,
+    ppsPresent: bool(o["pps_present"]) ?? false,
+  };
+  put(aux, "ppsCount", num(o["pps_count"]));
+  put(aux, "ppsAgeMs", num(o["pps_age_ms"]));
+  return aux;
+}
+
+function parseRf(raw: unknown): FmcRfStatus | undefined {
+  const o = obj(raw);
+  if (!o) return undefined;
+  const mode = num(o["rate_mode"]);
+  if (mode === undefined) return undefined;
+  const rf: FmcRfStatus = { rateMode: mode };
+  put(rf, "rateName", typeof o["rate_name"] === "string" ? (o["rate_name"] as string) : undefined);
+  return rf;
+}
+
+function parseSound(raw: unknown): SoundboardStatus | undefined {
+  const o = obj(raw);
+  if (!o) return undefined;
+  const out: SoundboardStatus = {};
+
+  const st = obj(o["status"]);
+  if (st) {
+    const s: SoundStatus = {};
+    put(s, "clipCount", num(st["clip_count"]));
+    // playing_idx may be null (idle) or a clip index
+    if (st["playing_idx"] !== undefined)
+      s.playingIdx = st["playing_idx"] === null ? null : num(st["playing_idx"]) ?? null;
+    put(s, "pct", num(st["pct"]));
+    put(s, "usedKb", num(st["used_kb"]));
+    put(s, "capKb", num(st["cap_kb"]));
+    put(s, "busy", bool(st["busy"]));
+    put(s, "ulActive", bool(st["ul_active"]));
+    put(s, "ulReady", bool(st["ul_ready"]));
+    put(s, "tone", bool(st["tone"]));
+    out.status = s;
+  }
+
+  const clips = o["clips"];
+  if (Array.isArray(clips)) {
+    const list: SoundClip[] = [];
+    for (const entry of clips) {
+      const c = obj(entry);
+      if (!c) continue;
+      const idx = num(c["idx"]);
+      if (idx === undefined) continue;
+      const clip: SoundClip = { idx, name: typeof c["name"] === "string" ? (c["name"] as string) : "" };
+      put(clip, "format", num(c["format"]));
+      put(clip, "length", num(c["length"]));
+      put(clip, "sampleRate", num(c["sample_rate"]));
+      list.push(clip);
+    }
+    if (list.length > 0) out.clips = list;
+  }
+
+  return out.status || out.clips ? out : undefined;
+}
+
 /** First entry of `fas_fmc` — the active flight computer for lifted kinematics. */
 function firstFmcRaw(fasFmc: unknown): Record<string, unknown> | undefined {
   const map = obj(fasFmc);
@@ -445,6 +564,10 @@ export function adaptFlightData(raw: Record<string, unknown>): FlightTelemetry {
   put(out, "pmb", parsePmb(raw["fas_pmb"]));
   put(out, "fmc", parseFmc(raw["fas_fmc"]));
   put(out, "imc", parseImc(raw["fas_imc"]));
+  put(out, "rab", parseRab(raw["fas_rab"]));
+  put(out, "aux", parseAux(raw["fas_aux"]));
+  put(out, "rf", parseRf(raw["fas_rf"]));
+  put(out, "sound", parseSound(raw["fas_sound"]));
 
   // --- Flight state machine -------------------------------------------------
   const fsm = obj(raw["fas_fsm"]);

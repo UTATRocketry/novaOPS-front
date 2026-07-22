@@ -87,6 +87,8 @@ export interface PmbStatus {
     pg24v0?: boolean;
     charger?: boolean;
     battSrc?: boolean;
+    /** Firmware battery UVLO/OV protect engaged — converters cut. FAULT when true. */
+    protect?: boolean;
   };
   temp?: {
     ambient?: number; // °C
@@ -103,6 +105,13 @@ export interface PmbStatus {
     state?: string;
     status?: string;
     cells?: number;
+  };
+  /** Charger DAC read-back / firmware limits (`fas_pmb[key].chg_cfg`). */
+  chgCfg?: {
+    iSetting?: number;   // charge-current DAC code (0..31)
+    vSetting?: number;   // charge-voltage DAC code (0..31)
+    cells?: number;
+    vlimit?: boolean;    // firmware charge-voltage cutoff currently holding
   };
 }
 
@@ -158,6 +167,69 @@ export interface ImcStatus {
   armLine: boolean;
   disarmLine: boolean;
   flags?: number;
+}
+
+/**
+ * Recovery Arming Board status (`fas_rab[key]`). One per RAB (A = RAB:0, B = RAB:1).
+ *
+ * The RAB reports *actual* pin states plus its own commanded intent, so the UI can
+ * show intent vs. readback side by side. `armMismatch` is the authoritative alarm —
+ * the legacy FMC-side `disagree` field is deprecated and deliberately not modelled.
+ */
+export interface RabStatus {
+  rabId: number;        // 0 = A, 1 = B
+  fcArmed: boolean;     // RAB read: flight computer armed
+  armLine: boolean;     // GPIO_ARM output level
+  disarmLine: boolean;  // GPIO_DISARM output level
+  fcArmedGpio: boolean; // FMC's redundant direct read
+  fmcRx: boolean;       // FMC->RAB link alive (RAB hears the FMC)
+  rxCount8?: number;    // low 8 bits of RAB's FMC-RX byte counter (liveness)
+  armMismatch: boolean; // RAB-local commanded != observed (>~1 s) — ALARM
+  armExpected: boolean; // RAB last commanded ARMED
+  online?: boolean;
+  uptimeMs?: number;
+  flags?: number;
+}
+
+/** FMC auxiliary status (`fas_aux`): RunCam power + GNSS time-pulse. */
+export interface FmcAuxStatus {
+  runcamPowered: boolean;
+  ppsPresent: boolean;   // GNSS PPS rising edge seen within ~2 s
+  ppsCount?: number;     // rising-edge counter (wraps)
+  ppsAgeMs?: number;     // ms since last edge (undefined if never)
+}
+
+/** FMC RF telemetry rate/power mode (`fas_rf`). Persisted on the FMC; echoed ~1 Hz. */
+export interface FmcRfStatus {
+  rateMode: number;         // 0 = low, 1 = normal, 2 = high
+  rateName?: string;        // "low" | "normal" | "high"
+}
+
+/** Soundboard status (`fas_sound.status`). */
+export interface SoundStatus {
+  clipCount?: number;
+  playingIdx?: number | null; // null = idle
+  pct?: number;               // clear/erase progress 0..100 (100 = idle)
+  usedKb?: number;
+  capKb?: number;
+  busy?: boolean;
+  ulActive?: boolean;
+  ulReady?: boolean;
+  tone?: boolean;             // a generated tone is currently sounding
+}
+
+/** One stored soundboard clip (`fas_sound.clips[]`). */
+export interface SoundClip {
+  idx: number;
+  format?: number;      // 1 = IMA-ADPCM, 2 = PCM_S16
+  length?: number;      // stored bytes
+  sampleRate?: number;  // Hz
+  name: string;
+}
+
+export interface SoundboardStatus {
+  status?: SoundStatus;
+  clips?: SoundClip[];
 }
 
 /** Flight state machine (`fas_fsm`). */
@@ -229,6 +301,14 @@ export interface FlightTelemetry {
   fmc?: Record<string, FmcStatus>;
   /** Ignition module controller arming (`fas_imc`). */
   imc?: ImcStatus;
+  /** Recovery Arming Boards keyed by board (`fas_rab`). */
+  rab?: Record<string, RabStatus>;
+  /** FMC auxiliary status (`fas_aux`). */
+  aux?: FmcAuxStatus;
+  /** FMC RF telemetry rate/power mode (`fas_rf`). */
+  rf?: FmcRfStatus;
+  /** Soundboard status + clip directory (`fas_sound`). */
+  sound?: SoundboardStatus;
   /** Flight state machine (`fas_fsm`). */
   fsm?: FsmStatus;
 }

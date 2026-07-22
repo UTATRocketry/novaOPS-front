@@ -3,21 +3,21 @@
 import { Box, Button } from "@chakra-ui/react";
 import Link from "next/link";
 import { PageHeader } from "@/components/shell";
-import { BuzzerTool } from "@/components/tools";
+import { SoundboardTool } from "@/components/tools";
 
-export default function BuzzerPage() {
+export default function SoundboardPage() {
   return (
     <Box>
       <PageHeader
-        title="Buzzer / Melody"
-        subtitle="FMC buzzer control — play predefined or custom melodies"
+        title="Soundboard"
+        subtitle="FMC soundboard — play stored clips, generate tones, manage flash"
         action={
           <Button size="sm" variant="outline" asChild>
             <Link href="/tools">← Back to Tools</Link>
           </Button>
         }
       />
-      <BuzzerTool />
+      <SoundboardTool />
     </Box>
   );
 }

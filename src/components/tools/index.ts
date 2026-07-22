@@ -1,2 +1,2 @@
 export { ServoTester } from "./ServoTester";
-export { BuzzerTool } from "./BuzzerTool";
+export { SoundboardTool } from "./SoundboardTool";

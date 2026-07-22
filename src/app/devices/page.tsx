@@ -91,7 +91,13 @@ export default function DevicesPage() {
           {/* Charger control + diagnostics */}
           <Flex gap={4} align="flex-start" flexWrap="wrap">
             {chargerKeys.map((k) => (
-              <ChargerCard key={k} boardKey={k} charger={pmb[k]!.charger!} stale={stale} />
+              <ChargerCard
+                key={k}
+                boardKey={k}
+                charger={pmb[k]!.charger!}
+                chgCfg={pmb[k]!.chgCfg}
+                stale={stale}
+              />
             ))}
             <DiagnosticsCard />
           </Flex>

@@ -31,16 +31,35 @@ export function Readout({ label, value }: { label: string; value: string }) {
 /**
  * Boolean status flag. true → green dot; false → neutral dot (known-off);
  * undefined → "—" with no confident dot (unknown, never shown as false).
+ *
+ * Set `danger` for flags whose *asserted* state is the bad one (e.g. a firmware
+ * protection cut-out): true then renders red and the label is highlighted, so an
+ * operator scanning the row never reads a fault as nominal.
  */
-export function FlagDot({ label, value }: { label: string; value: boolean | undefined }) {
+export function FlagDot({
+  label,
+  value,
+  danger = false,
+}: {
+  label: string;
+  value: boolean | undefined;
+  danger?: boolean;
+}) {
+  const asserted = value === true;
   return (
     <Flex align="center" gap={1.5}>
       {value === undefined ? (
         <Mono fontSize="2xs" color="text.muted" w="8px" textAlign="center">—</Mono>
       ) : (
-        <StatusDot status={value ? "nominal" : "neutral"} size={8} glow={value} />
+        <StatusDot
+          status={asserted ? (danger ? "fault" : "nominal") : "neutral"}
+          size={8}
+          glow={asserted}
+        />
       )}
-      <Text fontSize="2xs" color="text.muted">{label}</Text>
+      <Text fontSize="2xs" color={danger && asserted ? "fault" : "text.muted"}>
+        {label}
+      </Text>
     </Flex>
   );
 }

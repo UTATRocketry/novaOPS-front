@@ -20,11 +20,12 @@ import {
   GpsReadout,
   FmcAuxCard,
   LiveChartCard,
+  RabCard,
   SdCard,
   AXIS3_SERIES,
   axis3Values,
 } from "@/components/flight";
-import { sendFasBuzzer } from "@/lib/api/direct";
+import { sendFasSound } from "@/lib/api/direct";
 import type { FlightMilestones, FmcStatus } from "@/lib/flight/types";
 import {
   sampleWindow,
@@ -121,13 +122,13 @@ export default function FlightPage() {
               disabled={!clientId}
               onClick={() => {
                 if (clientId) {
-                  sendFasBuzzer({ node: "FMC_0", action: "play", melody: "test_chime" }, clientId)
+                  sendFasSound({ node: "FMC_0", action: "tone" }, clientId)
                     .catch(console.error);
                 }
               }}
             >
               <Icon name="music_note" size={14} />
-              Test Chime
+              Test Tone
             </Button>
             <PillTabs
               items={VIEW_TABS}
@@ -225,7 +226,13 @@ export default function FlightPage() {
               pressure={telemetry?.pressure}
               temperature={telemetry?.temperature}
             />
-            <FmcAuxCard fmc={fmc} />
+            <FmcAuxCard
+              fmc={fmc}
+              aux={telemetry?.aux}
+              rf={telemetry?.rf}
+              node={fmcKey ? fmcKey.replace(":", "_").toUpperCase() : "FMC_0"}
+            />
+            <RabCard rab={telemetry?.rab} />
             <SdCard
               sd={fmc?.sd}
               node={fmcKey ? fmcKey.replace(":", "_").toLowerCase() : "FMC_0"}

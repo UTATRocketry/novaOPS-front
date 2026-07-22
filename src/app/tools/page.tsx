@@ -23,10 +23,10 @@ const TOOLS: ToolCard[] = [
     href: "/tools/servo",
   },
   {
-    label: "Buzzer / Melody",
-    description: "Play predefined or custom note sequences on the FMC buzzer.",
+    label: "Soundboard",
+    description: "Play stored clips, generate test tones, manage FMC sound flash.",
     icon: "music_note",
-    href: "/tools/buzzer",
+    href: "/tools/soundboard",
   },
 ];
 
