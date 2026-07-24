@@ -75,10 +75,10 @@ function TableControlButton({ entry, button, pending, onFire }: TableControlButt
       onClick={gate.canSend ? () => onFire(button) : undefined}
       aria-disabled={!gate.canSend}
       px={2}
-      py={1}
+      py={0.25}
       minW="58px"
       textAlign="center"
-      fontSize="2xs"
+      fontSize="xs"
       fontFamily="mono"
       fontWeight="700"
       borderRadius="control"
@@ -119,7 +119,7 @@ function ActuatorControlRow({ entry, actuatorState, optimistic, onFire }: Actuat
   const effective = applyOptimistic(actuatorState, optimistic);
   const buttons = computeButtons(entry, effective);
   return (
-    <Flex gap={1.5} flexWrap="wrap">
+    <Flex gap={1.5} direction="row" flexWrap="wrap" align="center" justify="center">
       {buttons.map((b, i) => (
         <TableControlButton
           key={`${b.kind}-${b.command}-${i}`}
@@ -237,9 +237,9 @@ function ActuatorRow({ entry }: ActuatorRowProps) {
 
   return (
     <Table.Row transition="background-color 0.12s" _hover={{ bg: "bg.surfaceRaised" }}>
-      <Table.Cell><Mono fontSize="xs">{entry.name}</Mono></Table.Cell>
-      <Table.Cell><Chip status="neutral">{entry.type}</Chip></Table.Cell>
-      <Table.Cell>
+      <Table.Cell textAlign="center"><Mono fontSize="md">{entry.name}</Mono></Table.Cell>
+      {/* <Table.Cell><Chip status="neutral">{entry.type}</Chip></Table.Cell> */}
+      <Table.Cell textAlign="center">
         <ActuatorControlRow
           entry={entry}
           actuatorState={actuatorState}
@@ -264,17 +264,17 @@ function fmtNum(v: number): string {
 }
 
 // ---------------------------------------------------------------------------
-// InstrumentRow — Fix 4: narrow per-sensor selector, not the full map.
+// SensorRow — Fix 4: narrow per-sensor selector, not the full map.
 // Each row subscribes only to its own sensor; re-renders only when that sensor
 // value changes, not on every engine_data message for all sensors.
 // ---------------------------------------------------------------------------
 
-interface InstrumentRowProps {
+interface SensorRowProps {
   sensor: SensorEntry;
   isStale: boolean;
 }
 
-function InstrumentRow({ sensor, isStale }: InstrumentRowProps) {
+function SensorRow({ sensor, isStale }: SensorRowProps) {
   const entry = useNovaStore(
     useCallback(sel.engineValue(sensor.name), [sensor.name]),
   );
@@ -283,6 +283,8 @@ function InstrumentRow({ sensor, isStale }: InstrumentRowProps) {
   const hasAvg = entry?.avg != null && Number.isFinite(entry.avg);
   const displayAvg = hasAvg ? fmtNum(entry!.avg) : "—";
   const unit = entry?.unit ?? sensor.unit ?? "";
+  const fontSize = "md"
+  const align = "center"
 
   return (
     <Table.Row
@@ -290,28 +292,28 @@ function InstrumentRow({ sensor, isStale }: InstrumentRowProps) {
       transition="opacity 0.3s, background-color 0.12s"
       _hover={{ bg: "bg.surfaceRaised" }}
     >
-      <Table.Cell>
-        <Mono fontSize="xs">{sensor.name}</Mono>
+      <Table.Cell textAlign={align}>
+        <Mono fontSize={fontSize}>{sensor.name}</Mono>
       </Table.Cell>
-      <Table.Cell>
+      {/* <Table.Cell>
         <Chip status="neutral">{sensor.type}</Chip>
-      </Table.Cell>
-      <Table.Cell>
-        <Mono fontSize="xs" color={hasValue ? "text.primary" : "text.muted"}>
+      </Table.Cell> */}
+      <Table.Cell textAlign={align}>
+        <Mono fontSize={fontSize} color={hasValue ? "text.primary" : "text.muted"}>
           {displayValue}
         </Mono>
       </Table.Cell>
-      <Table.Cell>
-        <Mono fontSize="xs" color={hasAvg ? "text.primary" : "text.muted"}>
+      <Table.Cell textAlign={align}>
+        <Mono fontSize={fontSize} color={hasAvg ? "text.primary" : "text.muted"}>
           {displayAvg}
         </Mono>
       </Table.Cell>
-      <Table.Cell>
-        <Mono fontSize="xs" color="text.muted">
+      <Table.Cell textAlign={align}>
+        <Mono fontSize={fontSize} color="text.muted">
           {unit || "—"}
         </Mono>
       </Table.Cell>
-      <Table.Cell>
+      <Table.Cell textAlign={align}>
         <StatusDot
           status={!hasValue ? "neutral" : isStale ? "warn" : "nominal"}
           size={8}
@@ -333,34 +335,38 @@ export function EngineTable({ sensors, actuators }: EngineTableProps) {
   // must read as not-current — otherwise a backend drop leaves the last values
   // looking live. Mirrors the Console Channels liveness treatment.
   const isStale = engineStatus !== "live";
+  const size = "lg";
+  const align = "center";
 
   return (
     <Flex gap={4} align="flex-start" flexWrap="wrap">
-      {/* ── Instruments card ── */}
+      {/* ── Sensors card ── */}
       <Box flex="1" minW="280px">
-        <Card title="Instruments" flush>
+        <Card title="Sensors" flush>
           {sensors.length === 0 ? (
-            <Box px={4} py={3} color="text.muted" fontSize="sm">
+            <Box px={4} py={3} color="text.muted" fontSize={size}>
               No sensors in config.
             </Box>
           ) : (
-            <Table.Root size="sm">
+            <Box overflowX="auto">
+            <Table.Root size={size}>
               <Table.Header>
                 <Table.Row>
-                  <Table.ColumnHeader>Tag</Table.ColumnHeader>
-                  <Table.ColumnHeader>Type</Table.ColumnHeader>
-                  <Table.ColumnHeader>Value</Table.ColumnHeader>
-                  <Table.ColumnHeader>Avg</Table.ColumnHeader>
-                  <Table.ColumnHeader>Unit</Table.ColumnHeader>
-                  <Table.ColumnHeader>Status</Table.ColumnHeader>
+                  <Table.ColumnHeader textAlign={align}>Tag</Table.ColumnHeader>
+                  {/* <Table.ColumnHeader>Type</Table.ColumnHeader> */}
+                  <Table.ColumnHeader textAlign={align}>Value</Table.ColumnHeader>
+                  <Table.ColumnHeader textAlign={align}>Avg</Table.ColumnHeader>
+                  <Table.ColumnHeader textAlign={align}>Unit</Table.ColumnHeader>
+                  <Table.ColumnHeader textAlign={align}>Status</Table.ColumnHeader>
                 </Table.Row>
               </Table.Header>
               <Table.Body>
                 {sensors.map((sensor) => (
-                  <InstrumentRow key={sensor.name} sensor={sensor} isStale={isStale} />
+                  <SensorRow key={sensor.name} sensor={sensor} isStale={isStale} />
                 ))}
               </Table.Body>
             </Table.Root>
+          </Box>
           )}
         </Card>
       </Box>
@@ -369,16 +375,22 @@ export function EngineTable({ sensors, actuators }: EngineTableProps) {
       <Box flex="1" minW="280px">
         <Card title="Actuators" flush>
           {actuators.length === 0 ? (
-            <Box px={4} py={3} color="text.muted" fontSize="sm">
+            <Box px={4} py={3} color="text.muted" fontSize={size}>
               No actuators in config.
             </Box>
           ) : (
-            <Table.Root size="sm">
+            <Box overflowX="auto">
+            <Table.Root size={size}>
+              <Table.ColumnGroup>
+                <Table.Column />
+                {/* <Table.Column /> */}
+                <Table.Column htmlWidth="90%" />
+              </Table.ColumnGroup>
               <Table.Header>
                 <Table.Row>
-                  <Table.ColumnHeader>Tag</Table.ColumnHeader>
-                  <Table.ColumnHeader>Type</Table.ColumnHeader>
-                  <Table.ColumnHeader>State</Table.ColumnHeader>
+                  <Table.ColumnHeader textAlign={align}>Tag</Table.ColumnHeader>
+                  {/* <Table.ColumnHeader>Type</Table.ColumnHeader> */}
+                  <Table.ColumnHeader textAlign={align}>State</Table.ColumnHeader>
                 </Table.Row>
               </Table.Header>
               <Table.Body>
@@ -387,6 +399,7 @@ export function EngineTable({ sensors, actuators }: EngineTableProps) {
                 ))}
               </Table.Body>
             </Table.Root>
+          </Box>
           )}
         </Card>
       </Box>

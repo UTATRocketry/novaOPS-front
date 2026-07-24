@@ -3,7 +3,7 @@
 import { Box, Flex, Text, chakra } from "@chakra-ui/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Icon } from "@/components/primitives";
 
 // Create a Chakra-styled Link so we get token/prop support while keeping
@@ -38,6 +38,9 @@ function isActive(pathname: string, route: string): boolean {
 
 export function NavRail() {
   const [collapsed, setCollapsed] = useState(false);
+  useEffect(() => {
+    if (window.innerWidth <= 1100) setCollapsed(true);
+  }, []);
   const pathname = usePathname();
 
   const width = collapsed ? COLLAPSED_WIDTH : EXPANDED_WIDTH;

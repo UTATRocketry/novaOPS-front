@@ -153,11 +153,12 @@ function PowerToggle({
       size="xs"
       variant="outline"
       flex="1"
+      colorPalette={powered === undefined ? "gray" :powered ? "green" : "red"}
       loading={busy}
       disabled={!clientId || !canCommand || powered === undefined}
       onClick={toggle}
     >
-      {label} {powered === undefined ? "—" : powered ? "off" : "on"}
+      {label} {powered === undefined ? "—" : powered ? "on" : "off"}
     </Button>
   );
 }

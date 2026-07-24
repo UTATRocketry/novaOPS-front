@@ -33,7 +33,7 @@ export function AppShell({ children }: AppShellProps) {
       <NavRail />
       <Flex flex="1" direction="column" overflow="hidden">
         <TopStatusBar />
-        <Box flex="1" overflow="auto" p={6} bg="bg.canvas">
+        <Box flex="1" overflow="auto" p={{ base: 3, lg: 6 }} bg="bg.canvas">
           {children}
         </Box>
       </Flex>

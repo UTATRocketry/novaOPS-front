@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
-import { Box, Flex } from "@chakra-ui/react";
+import { Box, Flex} from "@chakra-ui/react";
 import { PageHeader } from "@/components/shell";
 import {
   PidCanvas,
@@ -161,28 +161,30 @@ export default function EnginePage() {
       )}
 
       {view === "plots" && !isEditing && (
-        <Flex gap={4} align="flex-start">
-          <Box flex={1} minW={0}>
+        <Flex gap={4} align="flex-start" flexWrap="wrap">
+          <Box flex={1} minW="0" minWidth="300px">
             <EnginePlots sensors={sensors} />
           </Box>
-          <Box w="280px" flexShrink={0}>
+          <Box w={{ base: "100%", xl: "280px" }} flexShrink={{ base: 0, xl: 0 }}>
             <ActionsCard />
           </Box>
         </Flex>
       )}
 
       {view === "table" && !isEditing && (
-        <Flex gap={4} align="flex-start">
-          <Box flex={1} minW={0}>
-            <GaugeStrip sensors={sensors} />
-            <Box mt={4}>
-              <EngineTable sensors={sensors} actuators={actuators} />
+        <Box>
+          <Flex gap={4} align="flex-start">
+            <Box flexShrink={0} mt={4}>
+              <ActionsCard />
             </Box>
+            <Box flex={1} minW={0} overflowX="auto">
+              <GaugeStrip sensors={sensors} />
+            </Box>
+          </Flex>
+          <Box mt={4} >
+            <EngineTable sensors={sensors} actuators={actuators} />
           </Box>
-          <Box w="280px" flexShrink={0}>
-            <ActionsCard />
-          </Box>
-        </Flex>
+        </Box>
       )}
     </Box>
   );

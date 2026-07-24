@@ -132,7 +132,7 @@ function ConnectionSection() {
         <Stack gap={0} divideY="1px">
           <SettingRow label="Backend host" description="Host and port for the FastAPI backend. Used for REST and WebSocket connections. Format: host:port">
             <Flex gap={2} align="center">
-              <Input value={host} onChange={(e) => { setHost(e.target.value); setSaved(false); }} fontFamily="mono" fontSize="sm" size="sm" w="220px" bg="bg.canvas" borderColor="border.default" color="text.primary" onKeyDown={(e) => { if (e.key === "Enter") handleSave(); }} />
+              <Input value={host} onChange={(e) => { setHost(e.target.value); setSaved(false); }} fontFamily="mono" fontSize="sm" size="sm" w={{ base: "140px", md: "220px" }} bg="bg.canvas" borderColor="border.default" color="text.primary" onKeyDown={(e) => { if (e.key === "Enter") handleSave(); }} />
               <Flex as="button" onClick={handleSave} align="center" gap={1.5} px={3} py={1.5} borderRadius="control" border="1px solid" borderColor={saved ? "nominal" : "border.default"} bg={saved ? "nominal" : "bg.surface"} color={saved ? "white" : "text.primary"} cursor="pointer" fontSize="sm" transition="all 0.15s">
                 <Icon name={saved ? "check" : "save"} size={15} />
                 {saved ? "Saved" : "Save"}
@@ -269,13 +269,13 @@ export default function SettingsPage() {
   const [active, setActive] = useState<SectionKey>("appearance");
 
   return (
-    <Flex minH="100vh" bg="bg.canvas" p={6} gap={6} align="flex-start">
+    <Flex minH="100vh" bg="bg.canvas" p={{ base: 3, lg: 6 }} gap={{ base: 3, lg: 6 }} align="flex-start">
       {/* Sidebar */}
       <Card
         flexShrink={0}
-        w="190px"
+        w={{ base: "160px", lg: "190px" }}
         position="sticky"
-        top={6}
+        top={{ base: 3, lg: 6 }}
       >
         <Stack gap={0.5}>
           {NAV_ITEMS.map((item) => (

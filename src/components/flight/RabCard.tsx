@@ -107,7 +107,7 @@ function RabArmControls({ rabId, armExpected }: RabArmControlsProps) {
           colorPalette="red"
           onClick={() => setPending("arm")}
           disabled={!connected || isLocked || armExpected}
-          title={isLocked ? "Physical lockout active" : undefined}
+          title={isLocked ? "Nova lockout active" : undefined}
         >
           Arm
         </Button>
@@ -121,7 +121,7 @@ function RabArmControls({ rabId, armExpected }: RabArmControlsProps) {
         </Button>
       </Flex>
       {isLocked && !armExpected && (
-        <Text fontSize="2xs" color="warn">Physical lockout active</Text>
+        <Text fontSize="2xs" color="warn">Nova lockout active</Text>
       )}
       {!clientId && <Text fontSize="2xs" color="text.muted">Not connected</Text>}
       {result && <Mono fontSize="2xs" color="text.muted">{result}</Mono>}

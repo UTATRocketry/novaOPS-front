@@ -28,7 +28,7 @@ export function EpbPowerCard({ boardKey, power, stale = false, ranges }: EpbPowe
   const vR = ranges?.voltage;
   const iR = ranges?.current;
   return (
-    <Card title={`${boardKey} · bus power`} flex="1" minW="320px">
+    <Card title={`${boardKey} · bus power`} flex="1" minW="340px" maxW="100%">
       <Box opacity={stale ? 0.55 : 1} transition="opacity 0.2s">
         <Flex gap={6} mb={3} flexWrap="wrap">
           <Flex direction="column" gap={1} flex="1" minW="120px">

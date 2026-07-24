@@ -48,7 +48,7 @@ export function Card({
         >
           <Heading
             as="h3"
-            fontSize="sm"
+            fontSize="md"
             fontWeight="600"
             letterSpacing="0.02em"
             color="text.primary"

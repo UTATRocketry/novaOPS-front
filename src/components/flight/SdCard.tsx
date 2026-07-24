@@ -21,13 +21,13 @@ import type { FmcSdStatus } from "@/lib/flight/types";
 // ---------------------------------------------------------------------------
 
 const RATE_PRESETS = [
-  { label: "Full rate (÷1)",   value: 1   },
-  { label: "Half rate (÷2)",   value: 2   },
-  { label: "÷5",               value: 5   },
-  { label: "÷10",              value: 10  },
-  { label: "÷20",              value: 20  },
-  { label: "÷50",              value: 50  },
-  { label: "÷100",             value: 100 },
+  { label: "Full rate",         value: 1   },
+  { label: "Half rate",         value: 2   },
+  { label: "1:5",               value: 5   },
+  { label: "1:10",              value: 10  },
+  { label: "1:20",              value: 20  },
+  { label: "1:50",              value: 50  },
+  { label: "1:100",             value: 100 },
 ];
 
 // ---------------------------------------------------------------------------
