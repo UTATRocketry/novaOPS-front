@@ -104,7 +104,7 @@ export function Gauge({
 
   return (
     <Flex direction="column" align="center" opacity={stale ? 0.55 : 1} transition="opacity 0.2s">
-      <svg width={w} height={h + 4} viewBox={`${-margin} ${-margin} ${w + margin * 2} ${h + margin * 2}`}>
+      <svg width={w} height={h + 4} viewBox={`${-margin} ${-margin} ${w + margin * 3} ${h + margin * 2}`}>
         {/* Track */}
         <path
           d={arcPath(cx, cy, rarc, 180, 0)}
