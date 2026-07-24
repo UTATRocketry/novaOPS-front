@@ -134,3 +134,69 @@ export function sendFasSound(body: FasSoundBody, clientId: string): Promise<{ pu
     clientId,
   );
 }
+
+/**
+ * POST /api/fas/charger — PMB battery charging. Charging is DEFAULT-OFF.
+ * `i_setting`/`v_setting` are LTC4162 DAC codes 0..31; omit to leave the persisted
+ * limit unchanged (a plain enable/suspend never clobbers the configured limit).
+ */
+export interface FasChargerBody {
+  node?: string | null;    // default PMB_0
+  enable: boolean;
+  i_setting?: number;      // 0..31, omit = unchanged
+  v_setting?: number;      // 0..31, omit = unchanged
+}
+
+export function sendFasCharger(body: FasChargerBody, clientId: string): Promise<{ published_commands: unknown[] }> {
+  return novaFetch<{ published_commands: unknown[] }>(
+    "/api/fas/charger",
+    { method: "POST", body: JSON.stringify(body) },
+    clientId,
+  );
+}
+
+/** Result of {@link uploadFasSoundClip}. `format`: 1 = IMA-ADPCM, 2 = PCM_S16. */
+export interface SoundUploadResult {
+  uploaded: {
+    name: string;
+    format: number;
+    bytes: number;
+    crc32: number;
+    sample_rate: number;
+    seconds: number;
+  };
+}
+
+/**
+ * POST /api/fas/sound/upload — MULTIPART (not JSON). The backend transcodes the
+ * file (ffmpeg) and the bridge streams it to the FMC; the new clip appears in
+ * `fas_sound.clips` within ~1 s. `novaFetch` skips the JSON content-type for a
+ * FormData body so the browser can set the multipart boundary.
+ *
+ * Throws with the FastAPI `detail` string on 503 (ffmpeg missing) / 413 (too
+ * large) / 422 (transcode failed).
+ */
+export function uploadFasSoundClip(
+  opts: {
+    file: File;
+    name: string;
+    format?: "adpcm" | "pcm";      // default adpcm
+    highpassHz?: number;           // default 700
+    pitchSemitones?: number;       // default 0
+    node?: string | null;          // default FMC_0
+  },
+  clientId: string,
+): Promise<SoundUploadResult> {
+  const fd = new FormData();
+  fd.append("file", opts.file);
+  fd.append("name", opts.name);
+  fd.append("format", opts.format ?? "adpcm");
+  if (opts.highpassHz !== undefined) fd.append("highpass_hz", String(opts.highpassHz));
+  if (opts.pitchSemitones !== undefined) fd.append("pitch_semitones", String(opts.pitchSemitones));
+  if (opts.node) fd.append("node", opts.node);
+  return novaFetch<SoundUploadResult>(
+    "/api/fas/sound/upload",
+    { method: "POST", body: fd },
+    clientId,
+  );
+}

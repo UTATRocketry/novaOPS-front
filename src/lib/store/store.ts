@@ -8,9 +8,16 @@ import type {
 } from "./types";
 import type { ConsoleLogEntry } from "../console/types";
 import { classifyConsoleMessage } from "../console/classify";
+import type { Alert } from "../alerts/types";
 
 /** Hard cap on retained console lines — oldest are dropped past this. */
 const CONSOLE_BUFFER_LIMIT = 1000;
+
+/** Hard cap on retained event alerts — oldest are dropped past this. */
+const EVENT_ALERT_LIMIT = 50;
+
+/** Monotonic event-alert id. Module-level so it never triggers re-renders. */
+let nextEventAlertId = 0;
 
 /**
  * Console ingest is BATCHED. A flood of inbound messages (e.g. mqtt_message
@@ -92,6 +99,8 @@ const INITIAL_STATE: NovaStoreState = {
   session: { clientId: null, role: null },
   pidLayout: null,
   consoleMessages: [],
+  alerts: [],
+  alertCenterOpen: false,
 };
 
 // ---------------------------------------------------------------------------
@@ -210,6 +219,86 @@ export const useNovaStore = create<NovaStore>()((set, get) => ({
     if (consoleFlushTimer) { clearTimeout(consoleFlushTimer); consoleFlushTimer = null; }
     set({ consoleMessages: [] });
   },
+
+  // ---- Alerts ----
+
+  reconcileConditionAlerts: (active) => {
+    const s = get();
+    const prevConditions = s.alerts.filter((a) => a.kind === "condition");
+
+    // Cheap change-detection: same ids in the same order with the same
+    // severity/title/detail means nothing to do. This runs on every telemetry
+    // tick, so skipping the `set` here is what keeps alert subscribers quiet.
+    const unchanged =
+      prevConditions.length === active.length &&
+      active.every((a, i) => {
+        const p = prevConditions[i];
+        return (
+          p.id === a.id &&
+          p.severity === a.severity &&
+          p.title === a.title &&
+          p.detail === a.detail
+        );
+      });
+    if (unchanged) return;
+
+    const now = Date.now();
+    const prevById = new Map(prevConditions.map((a) => [a.id, a]));
+    const nextConditions: Alert[] = active.map((a) => {
+      const prev = prevById.get(a.id);
+      return {
+        id: a.id,
+        severity: a.severity,
+        title: a.title,
+        detail: a.detail,
+        source: a.source,
+        kind: "condition",
+        ts: prev?.ts ?? now,
+        acknowledged: prev?.acknowledged ?? false,
+      };
+    });
+    const events = s.alerts.filter((a) => a.kind === "event");
+    set({ alerts: [...nextConditions, ...events] });
+  },
+
+  pushEventAlert: (alert) => {
+    const now = Date.now();
+    const entry: Alert = {
+      id: alert.id ?? `event:${nextEventAlertId++}`,
+      severity: alert.severity,
+      title: alert.title,
+      detail: alert.detail,
+      source: alert.source,
+      kind: "event",
+      ts: now,
+      acknowledged: false,
+    };
+    set((s) => {
+      const events = s.alerts.filter((a) => a.kind === "event");
+      const conditions = s.alerts.filter((a) => a.kind === "condition");
+      const trimmedEvents =
+        events.length + 1 > EVENT_ALERT_LIMIT
+          ? events.slice(events.length + 1 - EVENT_ALERT_LIMIT)
+          : events;
+      return { alerts: [...conditions, ...trimmedEvents, entry] };
+    });
+  },
+
+  acknowledgeAlert: (id) =>
+    set((s) => ({
+      alerts: s.alerts.map((a) => (a.id === id ? { ...a, acknowledged: true } : a)),
+    })),
+
+  acknowledgeAllAlerts: () =>
+    set((s) => ({ alerts: s.alerts.map((a) => ({ ...a, acknowledged: true })) })),
+
+  dismissAlert: (id) =>
+    set((s) => ({ alerts: s.alerts.filter((a) => a.id !== id) })),
+
+  clearEventAlerts: () =>
+    set((s) => ({ alerts: s.alerts.filter((a) => a.kind !== "event") })),
+
+  setAlertCenterOpen: (open) => set({ alertCenterOpen: open }),
 
   // ---- Staleness sweep ----
 

@@ -88,4 +88,11 @@ export const sel = {
 
   /** The rolling console / event log buffer. */
   consoleMessages: (s: NovaStore) => s.consoleMessages,
+
+  // ---- Alerts ----
+
+  /** All active alerts (condition + event). UI sorts by severity/time. */
+  alerts: (s: NovaStore) => s.alerts,
+  /** Whether the global alert center dialog is open. */
+  alertCenterOpen: (s: NovaStore) => s.alertCenterOpen,
 } as const;

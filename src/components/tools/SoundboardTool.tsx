@@ -1,17 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Box, Button, Flex, Text, chakra } from "@chakra-ui/react";
 import { Card, Chip, Mono } from "@/components/primitives";
 import { useNovaStore } from "@/lib/store/store";
 import { sel } from "@/lib/store/selectors";
-import { sendFasSound, type FasSoundBody } from "@/lib/api/direct";
+import { sendFasSound, uploadFasSoundClip, type FasSoundBody } from "@/lib/api/direct";
 import type { SoundClip, SoundStatus, SoundboardStatus } from "@/lib/flight/types";
 
 const NativeInput = chakra("input");
-
-// TODO(upload): clip upload (file → transcode → bulk stream to the FMC) is not
-// implemented — `fas_bridge.py` has no bulk-TX upload path yet. Revisit once it does.
+const NativeSelect = chakra("select");
 
 const CLIP_FORMATS: Record<number, string> = {
   1: "IMA-ADPCM",
@@ -99,6 +97,128 @@ function StatusPanel({ status }: { status: SoundStatus | undefined }) {
 // ---------------------------------------------------------------------------
 // SoundboardTool
 // ---------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------
+// Clip upload
+//
+// Multipart POST — the backend transcodes (ffmpeg) then the bridge streams the
+// clip to the FMC. The HTTP call resolves when the backend hands off; the true
+// "committed" signal is the clip count rising in `fas_sound.clips` (~1 s later),
+// which the parent shows via the status panel's ulActive/ulReady chips.
+// ---------------------------------------------------------------------------
+
+const NAME_MAX = 24;
+
+function UploadPanel({ node, ready }: { node: string; ready: boolean }) {
+  const clientId = useNovaStore(sel.clientId);
+
+  const [file, setFile]       = useState<File | null>(null);
+  const [name, setName]       = useState("");
+  const [format, setFormat]   = useState<"adpcm" | "pcm">("adpcm");
+  const [busy, setBusy]       = useState(false);
+  const [result, setResult]   = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const trimmedName = name.trim();
+  const canUpload = ready && !busy && !!file && trimmedName.length > 0 && trimmedName.length <= NAME_MAX;
+
+  async function handleUpload() {
+    if (!clientId || !file || !trimmedName) return;
+    setBusy(true);
+    setResult(null);
+    try {
+      const res = await uploadFasSoundClip(
+        { file, name: trimmedName, format, node },
+        clientId,
+      );
+      const u = res.uploaded;
+      setResult(`Uploaded "${u.name}" — ${u.seconds.toFixed(1)} s, ${u.bytes} B. Appears in the list shortly.`);
+      setFile(null);
+      setName("");
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    } catch (e) {
+      // novaFetch surfaces the FastAPI `detail` (503 ffmpeg missing / 413 too
+      // large / 422 transcode failed) as the Error message.
+      setResult(`Error: ${e instanceof Error ? e.message : String(e)}`);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Box borderTop="1px solid" borderColor="border.default" pt={2} mt={1}>
+      <Text fontSize="2xs" color="text.muted" textTransform="uppercase" letterSpacing="0.06em" mb={2}>
+        Upload clip
+      </Text>
+      <Flex direction="column" gap={2}>
+        <NativeInput
+          ref={fileInputRef}
+          type="file"
+          accept="audio/*"
+          onChange={(e) => {
+            const f = e.target.files?.[0] ?? null;
+            setFile(f);
+            // Seed the name from the filename (sans extension) on first pick.
+            if (f && trimmedName === "") setName(f.name.replace(/\.[^.]+$/, "").slice(0, NAME_MAX));
+          }}
+          fontSize="xs"
+          color="text.primary"
+        />
+        <Flex gap={2} flexWrap="wrap">
+          <Box flex="2" minW="140px">
+            <Text fontSize="2xs" color="text.muted" mb={1}>
+              name (≤{NAME_MAX})
+            </Text>
+            <NativeInput
+              type="text"
+              value={name}
+              maxLength={NAME_MAX}
+              onChange={(e) => setName(e.target.value)}
+              fontSize="xs"
+              fontFamily="mono"
+              bg="bg.canvas"
+              border="1px solid"
+              borderColor={trimmedName.length > NAME_MAX ? "fault" : "border.default"}
+              borderRadius="control"
+              px={2}
+              py={1}
+              w="100%"
+              color="text.primary"
+            />
+          </Box>
+          <Box flex="1" minW="90px">
+            <Text fontSize="2xs" color="text.muted" mb={1}>format</Text>
+            <NativeSelect
+              value={format}
+              onChange={(e) => setFormat(e.target.value as "adpcm" | "pcm")}
+              fontSize="xs"
+              fontFamily="mono"
+              bg="bg.canvas"
+              border="1px solid"
+              borderColor="border.default"
+              borderRadius="control"
+              px={2}
+              py={1}
+              w="100%"
+              color="text.primary"
+            >
+              <option value="adpcm">adpcm (compact)</option>
+              <option value="pcm">pcm (clean, 4×)</option>
+            </NativeSelect>
+          </Box>
+        </Flex>
+        <Button size="sm" disabled={!canUpload} loading={busy} onClick={handleUpload}>
+          Upload
+        </Button>
+        <Text fontSize="2xs" color="text.muted">
+          Transcoded on the backend. Keep clips to a few seconds (~400 kB cap;
+          adpcm buys ~4× length).
+        </Text>
+        {result && <Mono fontSize="2xs" color="text.muted">{result}</Mono>}
+      </Flex>
+    </Box>
+  );
+}
 
 export function SoundboardTool() {
   const clientId   = useNovaStore(sel.clientId);
@@ -208,9 +328,7 @@ export function SoundboardTool() {
             </Button>
           </Flex>
 
-          <Text fontSize="2xs" color="text.muted" pt={1}>
-            Clip upload is not yet supported — the bridge has no bulk-TX upload path.
-          </Text>
+          <UploadPanel node={node} ready={ready} />
         </Flex>
       </Card>
 

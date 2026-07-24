@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
-import { Box, Flex, Input, Text } from "@chakra-ui/react";
+import { useEffect, useRef, useState } from "react";
+import { Box, Button, Flex, Input, Text } from "@chakra-ui/react";
 import { Card, Chip, Mono } from "@/components/primitives";
-import { useCommandGate } from "@/hooks/useCommandGate";
+import { useNovaStore } from "@/lib/store/store";
+import { sel } from "@/lib/store/selectors";
+import { sendFasCharger } from "@/lib/api/direct";
 import type { PmbStatus } from "@/lib/flight/types";
 import { FlagDot, Readout, num } from "./shared";
 
@@ -23,23 +25,85 @@ const INPUT_PROPS = {
   _focusVisible: { borderColor: "accent.solid" },
 };
 
+/** "PMB:0" → "PMB_0" (charger commands address the PMB node). */
+function boardNode(boardKey: string): string {
+  return boardKey.replace(":", "_").toUpperCase();
+}
+
+/** Parse a DAC-code input: "" → undefined (unchanged); otherwise clamp to 0..31, or null if invalid. */
+function parseDac(raw: string): number | undefined | null {
+  if (raw.trim() === "") return undefined;
+  const n = Number(raw);
+  if (!Number.isInteger(n) || n < 0 || n > 31) return null;
+  return n;
+}
+
 export function ChargerCard({ boardKey, charger, chgCfg, stale = false }: ChargerCardProps) {
-  // Control state — enable defaults OFF (safety).
-  const [enable, setEnable] = useState(false);
-  const [chargeCurrent, setChargeCurrent] = useState("");
-  const [maxVPerCell, setMaxVPerCell] = useState("");
+  const clientId   = useNovaStore(sel.clientId);
+  const canCommand = useNovaStore(sel.canCommand);
+  const isLocked   = useNovaStore(sel.isLocked);
 
-  // Charger control is a command write → gate on role + physical lockout.
-  const gate = useCommandGate({ name: "CHARGER", state: enable ? "on" : "off" });
+  // DAC-code inputs, seeded once from the firmware read-back so the operator
+  // edits the *actual* configured limits rather than a blank field.
+  const [iSetting, setISetting] = useState("");
+  const [vSetting, setVSetting] = useState("");
+  const seededRef = useRef(false);
+  useEffect(() => {
+    if (seededRef.current || !chgCfg) return;
+    if (chgCfg.iSetting != null) setISetting(String(chgCfg.iSetting));
+    if (chgCfg.vSetting != null) setVSetting(String(chgCfg.vSetting));
+    seededRef.current = true;
+  }, [chgCfg]);
 
-  function applyChargerSettings() {
-    // TODO(backend): no charger-control command exists yet. When the backend
-    // adds one (e.g. POST /api/commands with an LTC4162 charger payload, or a
-    // dedicated system-command), dispatch it here — gated by `gate.canSend`.
-    // Intentionally a no-op until that endpoint exists; do not invent one.
+  const [busy, setBusy]     = useState(false);
+  const [result, setResult] = useState<string | null>(null);
+
+  const node = boardNode(boardKey);
+  const canSend = canCommand && !!clientId;
+  const gateReason = !canCommand
+    ? "Operator role required"
+    : !clientId
+      ? "Not connected"
+      :null;
+
+  async function call(body: Parameters<typeof sendFasCharger>[0], ok: string) {
+    if (!clientId) return;
+    setBusy(true);
+    setResult(null);
+    try {
+      await sendFasCharger(body, clientId);
+      setResult(ok);
+    } catch (e) {
+      setResult(e instanceof Error ? e.message : "Error");
+    } finally {
+      setBusy(false);
+    }
   }
 
-  const canApply = gate.canSend;
+  function setEnabled(enable: boolean) {
+    // Plain enable/suspend — omit the DAC codes so the persisted limit is kept.
+    call({ node, enable }, enable ? "Charging enabled" : "Charging suspended");
+  }
+
+  function applyLimits() {
+    const i = parseDac(iSetting);
+    const v = parseDac(vSetting);
+    if (i === null || v === null) {
+      setResult("DAC codes must be integers 0–31");
+      return;
+    }
+    // Keep the current enable state; only push the codes the operator set.
+    const body: Parameters<typeof sendFasCharger>[0] = { node, enable: charger.enabled ?? false };
+    if (i !== undefined) body.i_setting = i;
+    if (v !== undefined) body.v_setting = v;
+    if (body.i_setting === undefined && body.v_setting === undefined) {
+      setResult("No limits to apply");
+      return;
+    }
+    call(body, "Limits applied");
+  }
+
+  const enabled = charger.enabled === true;
 
   return (
     <Card title={`${boardKey} · LTC4162 charger`} flex="1" minW="320px">
@@ -70,7 +134,7 @@ export function ChargerCard({ boardKey, charger, chgCfg, stale = false }: Charge
               <Text fontSize="2xs" color="text.muted" textTransform="uppercase" letterSpacing="0.06em">
                 Firmware limits
               </Text>
-              {chgCfg.vlimit === true && <Chip status="warn">cutoff active</Chip>}
+              {chgCfg.vlimit === true && <Chip status="warn">voltage cutoff active</Chip>}
             </Flex>
             <Flex gap={6} flexWrap="wrap">
               <Flex direction="column" gap={1} flex="1" minW="130px">
@@ -94,70 +158,86 @@ export function ChargerCard({ boardKey, charger, chgCfg, stale = false }: Charge
         )}
       </Box>
 
-      {/* Control (telemetry-backed; command path pending backend) */}
+      {/* Control */}
       <Box borderTop="1px solid" borderColor="border.default" pt={3}>
         <Flex align="center" justify="space-between" mb={2}>
           <Text fontSize="2xs" color="text.muted" textTransform="uppercase" letterSpacing="0.06em">
             Charger control
           </Text>
-          <Chip status="warn">backend cmd pending</Chip>
+          <Chip status={enabled ? "nominal" : "neutral"}>
+            <Mono>{enabled ? "enabled" : "off"}</Mono>
+          </Chip>
         </Flex>
 
+        {/* Enable / Suspend — charging is default-off; only started from here. */}
         <Flex align="center" gap={2} mb={3}>
-          <Box
-            as="button"
-            onClick={() => setEnable((v) => !v)}
-            px={3}
-            py={1}
-            borderRadius="chip"
-            fontSize="xs"
-            fontFamily="mono"
-            fontWeight="700"
-            border="1px solid"
-            bg={enable ? "color-mix(in srgb, var(--chakra-colors-nominal) 16%, transparent)" : "bg.surfaceRaised"}
-            borderColor={enable ? "nominal" : "border.default"}
-            color={enable ? "nominal" : "text.muted"}
-            cursor="pointer"
+          <Button
+            size="sm"
+            colorPalette="green"
+            variant={enabled ? "solid" : "outline"}
+            disabled={!canSend || busy || enabled}
+            onClick={() => setEnabled(true)}
           >
-            {enable ? "ENABLE" : "DISABLED"}
-          </Box>
+            Enable
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={!canSend || busy || !enabled}
+            onClick={() => setEnabled(false)}
+          >
+            Suspend
+          </Button>
           <Text fontSize="2xs" color="text.muted">default off</Text>
         </Flex>
 
+        {/* DAC-code limits (LTC4162 codes 0..31, not amps/volts). */}
         <Flex gap={3} mb={3} flexWrap="wrap">
           <Box flex="1" minW="130px">
-            <Text fontSize="2xs" color="text.muted" mb={1}>charge current (A)</Text>
-            <Input {...INPUT_PROPS} type="number" value={chargeCurrent} placeholder="—" onChange={(e) => setChargeCurrent(e.target.value)} />
+            <Text fontSize="2xs" color="text.muted" mb={1}>I setting (code 0–31)</Text>
+            <Input
+              {...INPUT_PROPS}
+              type="number"
+              min={0}
+              max={31}
+              value={iSetting}
+              placeholder="unchanged"
+              onChange={(e) => setISetting(e.target.value)}
+            />
           </Box>
           <Box flex="1" minW="130px">
-            <Text fontSize="2xs" color="text.muted" mb={1}>max V / cell</Text>
-            <Input {...INPUT_PROPS} type="number" value={maxVPerCell} placeholder="—" onChange={(e) => setMaxVPerCell(e.target.value)} />
+            <Text fontSize="2xs" color="text.muted" mb={1}>V setting (code 0–31)</Text>
+            <Input
+              {...INPUT_PROPS}
+              type="number"
+              min={0}
+              max={31}
+              value={vSetting}
+              placeholder="unchanged"
+              onChange={(e) => setVSetting(e.target.value)}
+            />
           </Box>
         </Flex>
 
         <Flex align="center" gap={3}>
-          <Box
-            as="button"
-            onClick={canApply ? applyChargerSettings : undefined}
-            aria-disabled={!canApply}
-            px={4}
-            py={2}
-            borderRadius="control"
-            fontSize="sm"
-            fontWeight="600"
-            bg={canApply ? "accent.solid" : "bg.surfaceRaised"}
-            color={canApply ? "white" : "text.muted"}
-            border="1px solid"
-            borderColor={canApply ? "accent.solid" : "border.default"}
-            cursor={canApply ? "pointer" : "not-allowed"}
-            _hover={canApply ? { filter: "brightness(1.1)" } : {}}
+          <Button
+            size="sm"
+            colorPalette="blue"
+            disabled={!canSend || busy}
+            loading={busy}
+            onClick={applyLimits}
           >
-            Apply
-          </Box>
-          {gate.reason && <Chip status="warn">{gate.reason}</Chip>}
+            Apply limits
+          </Button>
+          {gateReason && <Chip status="warn">{gateReason}</Chip>}
         </Flex>
+
+        {result && (
+          <Text fontSize="2xs" fontFamily="mono" color="text.muted" mt={2}>{result}</Text>
+        )}
         <Text fontSize="2xs" color="text.muted" mt={2}>
-          Control wired through the role + lockout gate; the backend charger command does not exist yet.
+          I/V are raw LTC4162 DAC codes (0–31), not amps/volts. Blank leaves the
+          persisted limit unchanged.
         </Text>
       </Box>
     </Card>

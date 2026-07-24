@@ -10,6 +10,7 @@ import type {
 import type { AdaptedFlightEvents, FlightTelemetry as FlightTelemetryShape } from "../flight/types";
 import type { NovaPidLayout } from "../pid/serializer";
 import type { ConsoleLogEntry } from "../console/types";
+import type { Alert, AlertInput, ConditionAlert } from "../alerts/types";
 
 // ---------------------------------------------------------------------------
 // Core primitives
@@ -101,6 +102,15 @@ export interface NovaStoreState {
    * Capped to the most recent CONSOLE_BUFFER_LIMIT entries.
    */
   consoleMessages: ConsoleLogEntry[];
+  /**
+   * Active alerts (condition + event), newest-relevant first is NOT guaranteed —
+   * the UI sorts by severity/time. This slice is intentionally domain-agnostic:
+   * it holds whatever the pluggable sources (`lib/alerts/sources`) and the event
+   * bus produce, so specific alerts can be added/removed without touching it.
+   */
+  alerts: Alert[];
+  /** Whether the alert center dialog is open (global, page-independent). */
+  alertCenterOpen: boolean;
 }
 
 export interface NovaStoreActions {
@@ -139,6 +149,29 @@ export interface NovaStoreActions {
   pushConsoleEntry: (entry: Omit<ConsoleLogEntry, "id" | "ts">) => void;
   /** Clear the console buffer. */
   clearConsole: () => void;
+
+  // --- Alerts ---
+
+  /**
+   * Replace the full set of `condition` alerts with the currently-active set
+   * produced by the sources. Preserves `ts` and `acknowledged` for conditions
+   * whose id persists; drops conditions no longer active. Event alerts are left
+   * untouched. No-ops (skips the state update) when nothing changed, so it is
+   * safe to call on every telemetry tick.
+   */
+  reconcileConditionAlerts: (active: ConditionAlert[]) => void;
+  /** Append a transient `event` alert (e.g. an API error). Generates an id. */
+  pushEventAlert: (alert: AlertInput) => void;
+  /** Mark one alert acknowledged (silences its toast; stays in the center). */
+  acknowledgeAlert: (id: string) => void;
+  /** Acknowledge every current alert. */
+  acknowledgeAllAlerts: () => void;
+  /** Remove an alert. Condition alerts re-appear next tick if still active. */
+  dismissAlert: (id: string) => void;
+  /** Remove every `event` alert (conditions clear on their own). */
+  clearEventAlerts: () => void;
+  /** Open/close the global alert center dialog. */
+  setAlertCenterOpen: (open: boolean) => void;
 
   // --- Staleness sweep (called by createStalenessTimer) ---
 

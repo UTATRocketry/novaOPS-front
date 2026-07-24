@@ -5,6 +5,7 @@ import { useEffect, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { NovaSocket } from "@/lib/ws";
 import { queryKeys } from "@/hooks/queryKeys";
+import { NotificationCenter } from "@/components/alerts";
 import { NavRail } from "./NavRail";
 import { TopStatusBar } from "./TopStatusBar";
 
@@ -37,6 +38,7 @@ export function AppShell({ children }: AppShellProps) {
           {children}
         </Box>
       </Flex>
+      <NotificationCenter />
     </Flex>
   );
 }

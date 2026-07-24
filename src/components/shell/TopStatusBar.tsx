@@ -2,13 +2,15 @@
 
 import { Box, Flex } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
-import { Icon, Mono, StatusDot, Chip } from "@/components/primitives";
+import { Icon, Mono, StatusDot } from "@/components/primitives";
 import type { Status } from "@/components/primitives";
 import { useNovaStore, sel } from "@/lib/store";
 import { getMissionStartMs } from "@/lib/flight";
 import { adaptSignal } from "@/lib/signal";
 import type { ClientRole } from "@/lib/types";
+import { AlertChips } from "@/components/alerts";
 import { RoleModal } from "./RoleModal";
+import { BatteryIndicator } from "./BatteryIndicator";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -194,23 +196,15 @@ export function TopStatusBar() {
 
         {/* Signal bars */}
         <SignalBars bars={signal.bars} />
+
+        {/* Battery voltage */}
+        <BatteryIndicator />
       </Flex>
 
       {/* Right cluster */}
       <Flex align="center" gap={3} ml="auto">
-        {/* Alert chips — counts stubbed at 0, Phase 3 will wire real alert state */}
-        <Chip status="warn">
-          <Icon name="warning" size={12} color="currentColor" />
-          <Mono>0</Mono>
-        </Chip>
-        <Chip status="error">
-          <Icon name="error" size={12} color="currentColor" />
-          <Mono>0</Mono>
-        </Chip>
-        <Chip status="fault">
-          <Icon name="dangerous" size={12} color="currentColor" />
-          <Mono>0</Mono>
-        </Chip>
+        {/* Alert chips — live counts by severity; click to open the alert center */}
+        <AlertChips />
 
         {/* Role pill */}
         <RolePill role={sessionRole} onClick={() => setIsModalOpen(true)} />
