@@ -9,7 +9,9 @@ export type {
 } from "./types";
 export {
   SEVERITIES_DESC,
+  SEVERITY_CHAKRA_STATUS,
   SEVERITY_ICON,
+  SEVERITY_PALETTE,
   SEVERITY_RANK,
   SEVERITY_STATUS,
 } from "./types";

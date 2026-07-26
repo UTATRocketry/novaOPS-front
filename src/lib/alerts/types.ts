@@ -92,12 +92,36 @@ export const SEVERITY_STATUS: Record<AlertSeverity, Status> = {
   fault: "fault",
 };
 
-/** severity → Material Symbols icon name. */
+/** severity → Material Symbols icon name (used by the top-bar chips). */
 export const SEVERITY_ICON: Record<AlertSeverity, string> = {
   info: "info",
   warn: "warning",
   error: "error",
   fault: "dangerous",
+};
+
+/**
+ * severity → Chakra `status` (Alert) / `type` (Toast). Chakra has no separate
+ * "fault" — both error and fault map to "error" for the built-in indicator
+ * icon; the colour split is preserved via {@link SEVERITY_PALETTE}.
+ */
+export const SEVERITY_CHAKRA_STATUS: Record<AlertSeverity, "info" | "warning" | "error"> = {
+  info: "info",
+  warn: "warning",
+  error: "error",
+  fault: "error",
+};
+
+/**
+ * severity → Chakra colorPalette. Chosen to echo the app's status hues while
+ * staying native Chakra palettes, and to keep error (rose→pink) visually
+ * distinct from fault (red).
+ */
+export const SEVERITY_PALETTE: Record<AlertSeverity, string> = {
+  info: "blue",
+  warn: "orange",
+  error: "pink",
+  fault: "red",
 };
 
 /** Higher = more severe. Drives sort order and the top-bar chip colour. */

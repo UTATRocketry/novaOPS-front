@@ -1,13 +1,9 @@
 "use client";
 
-import { Box, Button, Dialog, Flex, Portal, Text } from "@chakra-ui/react";
+import { Alert as ChakraAlert, Box, Button, Dialog, Flex, Portal, Text } from "@chakra-ui/react";
 import { Icon, Mono } from "@/components/primitives";
 import { useNovaStore, sel } from "@/lib/store";
-import {
-  SEVERITY_ICON,
-  SEVERITY_RANK,
-  SEVERITY_STATUS,
-} from "@/lib/alerts";
+import { SEVERITY_CHAKRA_STATUS, SEVERITY_PALETTE, SEVERITY_RANK } from "@/lib/alerts";
 import type { Alert } from "@/lib/alerts";
 
 // ---------------------------------------------------------------------------
@@ -33,41 +29,25 @@ function byPriority(a: Alert, b: Alert): number {
 function AlertRow({ alert, now }: { alert: Alert; now: number }) {
   const acknowledge = useNovaStore((s) => s.acknowledgeAlert);
   const dismiss = useNovaStore((s) => s.dismissAlert);
-  const color = SEVERITY_STATUS[alert.severity];
 
   return (
-    <Flex
-      gap={3}
-      p={3}
-      borderRadius="control"
-      bg="bg.surfaceRaised"
-      borderLeft="3px solid"
-      borderColor={color}
+    <ChakraAlert.Root
+      status={SEVERITY_CHAKRA_STATUS[alert.severity]}
+      colorPalette={SEVERITY_PALETTE[alert.severity]}
+      variant="subtle"
+      alignItems="flex-start"
       opacity={alert.acknowledged ? 0.6 : 1}
-      align="flex-start"
     >
-      <Icon name={SEVERITY_ICON[alert.severity]} size={18} color={color} mt="1px" />
+      <ChakraAlert.Indicator />
 
-      <Box flex="1" minW={0}>
-        <Flex align="center" gap={2} wrap="wrap">
-          <Text fontSize="sm" fontWeight="600" color="text.primary">
-            {alert.title}
-          </Text>
-          {alert.acknowledged && (
-            <Mono fontSize="2xs" color="text.muted">
-              ack&apos;d
-            </Mono>
-          )}
-        </Flex>
-        {alert.detail && (
-          <Text fontSize="xs" color="text.muted" mt={0.5}>
-            {alert.detail}
-          </Text>
-        )}
-        <Mono fontSize="2xs" color="text.muted" mt={1} display="block">
+      <ChakraAlert.Content flex="1" minW={0} gap={0.5}>
+        <ChakraAlert.Title>{alert.title}</ChakraAlert.Title>
+        {alert.detail && <ChakraAlert.Description>{alert.detail}</ChakraAlert.Description>}
+        <Mono fontSize="2xs" color="text.muted" mt={1}>
           {alert.source} · {relativeTime(alert.ts, now)}
+          {alert.acknowledged ? " · ack'd" : ""}
         </Mono>
-      </Box>
+      </ChakraAlert.Content>
 
       <Flex direction="column" gap={1} flexShrink={0}>
         {!alert.acknowledged && (
@@ -81,7 +61,7 @@ function AlertRow({ alert, now }: { alert: Alert; now: number }) {
           </Button>
         )}
       </Flex>
-    </Flex>
+    </ChakraAlert.Root>
   );
 }
 
