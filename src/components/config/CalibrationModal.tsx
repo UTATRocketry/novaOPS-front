@@ -12,6 +12,28 @@ const SAMPLE_MS = 200;
 
 type Pair = [number, number]; // [measured raw, real physical]
 
+/**
+ * Ordinary least-squares fit of `real = m·measured + b`. Returns null when there
+ * is no trend to fit — fewer than two points, or every measured value identical
+ * (a vertical line has no defined slope).
+ */
+function linearFit(pairs: Pair[]): { m: number; b: number } | null {
+  const n = pairs.length;
+  if (n < 2) return null;
+  let sx = 0, sy = 0, sxy = 0, sxx = 0;
+  for (const [x, y] of pairs) {
+    sx += x;
+    sy += y;
+    sxy += x * y;
+    sxx += x * x;
+  }
+  const denom = n * sxx - sx * sx;
+  if (denom === 0) return null;
+  const m = (n * sxy - sx * sy) / denom;
+  const b = (sy - m * sx) / n;
+  return { m, b };
+}
+
 export interface CalibrationModalProps {
   sensor: SensorEntry;
   onSave: (calibration: Pair[]) => void;
@@ -35,7 +57,8 @@ export function CalibrationModal({ sensor, onSave, onClose }: CalibrationModalPr
   );
   const [capturing, setCapturing] = useState(false);
   const [progress, setProgress] = useState(0); // 0..1
-  const [measured, setMeasured] = useState<number | null>(null);
+  // Editable so a point can be entered by hand, not only via capture.
+  const [measuredInput, setMeasuredInput] = useState("");
   const [real, setReal] = useState("");
 
   const samplesRef = useRef<number[]>([]);
@@ -52,7 +75,7 @@ export function CalibrationModal({ sensor, onSave, onClose }: CalibrationModalPr
 
   function startCapture() {
     samplesRef.current = [];
-    setMeasured(null);
+    setMeasuredInput("");
     setProgress(0);
     setCapturing(true);
     const start = Date.now();
@@ -65,22 +88,47 @@ export function CalibrationModal({ sensor, onSave, onClose }: CalibrationModalPr
         stopCapture();
         setCapturing(false);
         const s = samplesRef.current;
-        setMeasured(s.length ? s.reduce((a, b) => a + b, 0) / s.length : null);
+        const avg = s.length ? s.reduce((a, b) => a + b, 0) / s.length : null;
+        setMeasuredInput(avg != null ? avg.toFixed(4) : "");
       }
     }, SAMPLE_MS);
   }
 
+  const measuredNum = Number(measuredInput);
+  const realNum = Number(real);
+  const canAddPoint =
+    measuredInput.trim() !== "" &&
+    real.trim() !== "" &&
+    !Number.isNaN(measuredNum) &&
+    !Number.isNaN(realNum);
+
   function addPoint() {
-    if (measured == null || real.trim() === "") return;
-    const r = Number(real);
-    if (Number.isNaN(r)) return;
-    setPairs((prev) => [...prev, [Number(measured.toFixed(4)), r]]);
-    setMeasured(null);
+    if (!canAddPoint) return;
+    setPairs((prev) => [...prev, [Number(measuredNum.toFixed(4)), realNum]]);
+    setMeasuredInput("");
     setReal("");
   }
 
   function removePair(i: number) {
     setPairs((prev) => prev.filter((_, idx) => idx !== i));
+  }
+
+  // Re-zero (tare): keep the fitted slope and the assigned real values, but
+  // shift every point's measured value horizontally so the current live reading
+  // maps to 0. Shifting all x by a constant preserves the slope; the shift is
+  // Δ = valueNow / m. Requires a trend (≥2 points), a non-flat slope, and a
+  // live value.
+  const liveValue = live?.value ?? null;
+  const fit = linearFit(pairs);
+  const canZero = liveValue != null && fit != null && fit.m !== 0;
+
+  function zeroAtCurrent() {
+    if (liveValue == null || fit == null || fit.m === 0) return;
+    const valueNow = fit.m * liveValue + fit.b; // current calibrated reading
+    const shift = valueNow / fit.m; // horizontal shift that drives it to 0
+    setPairs((prev) =>
+      prev.map(([meas, realv]) => [Number((meas + shift).toFixed(6)), realv] as Pair),
+    );
   }
 
   return (
@@ -97,8 +145,9 @@ export function CalibrationModal({ sensor, onSave, onClose }: CalibrationModalPr
       <Card title={`Calibrate · ${sensor.name}`} w="560px" maxW="92vw">
         <Flex direction="column" gap={4}>
           <Text fontSize="xs" color="text.muted">
-            Average the live raw reading into a measured point, then assign its real value.
-            Run with the backend calibration flag OFF so raw values are captured.
+            Capture a 10&nbsp;s average of the live raw reading, or type a measured value by
+            hand, then assign its real value. Run with the backend calibration flag OFF so
+            raw values are captured.
           </Text>
 
           {/* Capture */}
@@ -126,17 +175,25 @@ export function CalibrationModal({ sensor, onSave, onClose }: CalibrationModalPr
                 {live?.value != null ? String(live.value) : "—"}
               </Mono>
             </Flex>
-            <Flex direction="column">
-              <Text fontSize="2xs" color="text.muted">Measured avg</Text>
-              <Mono fontSize="sm" color={measured != null ? "accent.solid" : "text.muted"}>
-                {measured != null ? measured.toFixed(4) : "—"}
-              </Mono>
-            </Flex>
           </Flex>
 
-          {/* Assign real value */}
-          <Flex align="flex-end" gap={2}>
-            <Box flex="1">
+          {/* Assign a point — capture fills Measured, or enter both by hand */}
+          <Flex align="flex-end" gap={2} flexWrap="wrap">
+            <Box flex="1" minW="140px">
+              <Text fontSize="xs" color="text.muted" mb={1}>Measured (raw)</Text>
+              <Input
+                size="sm"
+                type="number"
+                fontFamily="mono"
+                value={measuredInput}
+                placeholder="capture or type"
+                bg="bg.canvas"
+                borderColor="border.default"
+                onChange={(e) => setMeasuredInput(e.target.value)}
+                _focusVisible={{ borderColor: "accent.solid" }}
+              />
+            </Box>
+            <Box flex="1" minW="140px">
               <Text fontSize="xs" color="text.muted" mb={1}>Real value ({sensor.unit ?? "unit"})</Text>
               <Input
                 size="sm"
@@ -152,18 +209,18 @@ export function CalibrationModal({ sensor, onSave, onClose }: CalibrationModalPr
             </Box>
             <Box
               as="button"
-              onClick={measured != null && real.trim() !== "" ? addPoint : undefined}
-              aria-disabled={measured == null || real.trim() === ""}
+              onClick={canAddPoint ? addPoint : undefined}
+              aria-disabled={!canAddPoint}
               px={3}
               py={2}
               borderRadius="control"
               fontSize="sm"
               fontWeight="600"
-              bg={measured != null && real.trim() !== "" ? "accent.solid" : "bg.surfaceRaised"}
-              color={measured != null && real.trim() !== "" ? "white" : "text.muted"}
+              bg={canAddPoint ? "accent.solid" : "bg.surfaceRaised"}
+              color={canAddPoint ? "white" : "text.muted"}
               border="1px solid"
               borderColor="border.default"
-              cursor={measured != null && real.trim() !== "" ? "pointer" : "not-allowed"}
+              cursor={canAddPoint ? "pointer" : "not-allowed"}
             >
               Add point
             </Box>
@@ -204,6 +261,49 @@ export function CalibrationModal({ sensor, onSave, onClose }: CalibrationModalPr
           {pairs.length === 1 && (
             <Chip status="warn">A linear fit needs at least 2 points.</Chip>
           )}
+
+          {/* Re-zero (tare) */}
+          <Flex
+            align="center"
+            justify="space-between"
+            gap={3}
+            flexWrap="wrap"
+            p={3}
+            border="1px solid"
+            borderColor="border.default"
+            borderRadius="control"
+          >
+            <Box flex="1" minW="200px">
+              <Text fontSize="xs" color="text.primary" fontWeight="600">
+                Zero at current reading
+              </Text>
+              <Text fontSize="2xs" color="text.muted">
+                Keeps the calibration slope but offsets every point so the current live reading
+                reads 0. Needs at least two points and a live value.
+              </Text>
+            </Box>
+            <Flex
+              as="button"
+              align="center"
+              gap={1}
+              onClick={canZero ? zeroAtCurrent : undefined}
+              aria-disabled={!canZero}
+              px={3}
+              py={2}
+              borderRadius="control"
+              fontSize="sm"
+              fontWeight="600"
+              bg="bg.surfaceRaised"
+              color={canZero ? "text.primary" : "text.muted"}
+              border="1px solid"
+              borderColor="border.default"
+              cursor={canZero ? "pointer" : "not-allowed"}
+              _hover={canZero ? { borderColor: "accent.solid" } : undefined}
+              flexShrink={0}
+            >
+              <Icon name="exposure_zero" size={16} /> Zero here
+            </Flex>
+          </Flex>
 
           {/* Actions */}
           <Flex justify="flex-end" gap={2}>

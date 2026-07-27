@@ -9,8 +9,9 @@ import {
 } from "@chakra-ui/react";
 import { Card, Mono } from "@/components/primitives";
 import { useNovaStore } from "@/lib/store";
+import { useActuators } from "@/hooks/useConfig";
 import { sendDirectServo } from "@/lib/api/direct";
-import type { SourceTarget } from "@/lib/types";
+import type { ActuatorEntry, SourceTarget } from "@/lib/types";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -189,6 +190,7 @@ function ServoDial({ pulseUs }: { pulseUs: number }) {
 export function ServoTester() {
   // Pulse & positions
   const [pulseUs, setPulseUs]     = useState(1500);
+  const [exactInput, setExactInput] = useState(""); // typed exact position
   const [posA, setPosA]           = useState(500);
   const [posB, setPosB]           = useState(2500);
   const [sweeping, setSweeping]   = useState(false);
@@ -208,6 +210,18 @@ export function ServoTester() {
   const [lastResult, setLastResult] = useState<string | null>(null);
 
   const clientId = useNovaStore((s) => s.session.clientId);
+
+  // Actuator(s) bound to the current servo channel (matched within the selected
+  // target, and node when one is given) — shown under the Channel input.
+  const { data: actuators } = useActuators();
+  const matchedActuators = ((actuators ?? []) as ActuatorEntry[])
+    .filter(
+      (a) =>
+        a.binding.servo_channel === channel &&
+        a.binding.target === target &&
+        (node.trim() === "" || (a.binding.node ?? "") === node.trim()),
+    )
+    .map((a) => a.name);
 
   // Sweep logic
   const sweepDir = useRef<1 | -1>(1);
@@ -274,6 +288,13 @@ export function ServoTester() {
     sendPulse(us);
   };
 
+  const applyExact = () => {
+    const n = Number(exactInput);
+    if (exactInput.trim() === "" || Number.isNaN(n)) return;
+    handleSlider(clamp(Math.round(n), rangeMin, rangeMax));
+    setExactInput("");
+  };
+
   return (
     <Flex gap={5} wrap="wrap" align="flex-start">
       {/* Left: Dial + controls */}
@@ -283,10 +304,13 @@ export function ServoTester() {
 
           {/* Slider */}
           <Box mt={4} px={2}>
-            <Flex justify="space-between" mb={1}>
+            <Flex justify="space-between" align="baseline" mb={1}>
               <Text fontSize="xs" color="text.muted">
                 <Mono>{rangeMin}µs</Mono>
               </Text>
+              <Mono fontSize="sm" fontWeight="700" color="accent.solid">
+                {pulseUs}µs · {Math.round(usToAngle(pulseUs))}°
+              </Mono>
               <Text fontSize="xs" color="text.muted">
                 <Mono>{rangeMax}µs</Mono>
               </Text>
@@ -300,6 +324,33 @@ export function ServoTester() {
               onChange={(e) => handleSlider(Number(e.target.value))}
               style={{ width: "100%", accentColor: "var(--chakra-colors-accent-solid, #3b82f6)" }}
             />
+
+            {/* Exact value entry */}
+            <Flex gap={2} mt={3} align="center">
+              <Text fontSize="xs" color="text.muted" flexShrink={0}>Exact</Text>
+              <input
+                type="number"
+                min={rangeMin}
+                max={rangeMax}
+                value={exactInput}
+                placeholder={`${pulseUs}`}
+                onChange={(e) => setExactInput(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") applyExact(); }}
+                style={{
+                  flex: 1,
+                  minWidth: 0,
+                  background: "transparent",
+                  border: "1px solid var(--chakra-colors-border-default)",
+                  borderRadius: "6px",
+                  padding: "4px 8px",
+                  color: "inherit",
+                  fontFamily: "monospace",
+                  fontSize: "13px",
+                }}
+              />
+              <Text fontSize="xs" color="text.muted" flexShrink={0}>µs</Text>
+              <Button size="xs" variant="outline" onClick={applyExact}>Go</Button>
+            </Flex>
           </Box>
 
           {/* Presets */}
@@ -516,7 +567,7 @@ export function ServoTester() {
                 <input
                   type="text"
                   value={node}
-                  placeholder="e.g. EPB:0"
+                  placeholder="e.g. EPB_0"
                   onChange={(e) => setNode(e.target.value)}
                   style={{
                     width: "100%",
@@ -551,6 +602,19 @@ export function ServoTester() {
                     fontSize: "13px",
                   }}
                 />
+                {/* Actuator bound to this servo channel, if any */}
+                <Box mt={1}>
+                  {matchedActuators.length > 0 ? (
+                    <Text fontSize="xs" color="text.muted">
+                      Actuator:{" "}
+                      <Mono color="text.primary">{matchedActuators.join(", ")}</Mono>
+                    </Text>
+                  ) : (
+                    <Text fontSize="xs" color="text.muted">
+                      No actuator bound to this channel.
+                    </Text>
+                  )}
+                </Box>
               </Box>
 
               {/* Disable */}

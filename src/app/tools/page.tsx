@@ -23,6 +23,12 @@ const TOOLS: ToolCard[] = [
     href: "/tools/servo",
   },
   {
+    label: "Relay Tester",
+    description: "Direct relay/load-switch control. On/off, momentary pulse, blink.",
+    icon: "toggle_on",
+    href: "/tools/relay",
+  },
+  {
     label: "Soundboard",
     description: "Play stored clips, generate test tones, manage FMC sound flash.",
     icon: "music_note",
