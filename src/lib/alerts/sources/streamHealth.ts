@@ -35,7 +35,7 @@ export const streamHealthSource: AlertSource = {
     }
 
     for (const s of STALE_STREAMS) {
-      if (s.pick(ctx) === "stale") {
+      if (s.pick(ctx) === "stale" && s.label !== "Actuator") {
         const key = s.label.toLowerCase();
         alerts.push({
           id: `stream:${key}:stale`,
