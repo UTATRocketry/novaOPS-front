@@ -115,6 +115,8 @@ function UploadPanel({ node, ready }: { node: string; ready: boolean }) {
   const [file, setFile]       = useState<File | null>(null);
   const [name, setName]       = useState("");
   const [format, setFormat]   = useState<"adpcm" | "pcm">("adpcm");
+  const [highpass, setHighpass] = useState("");
+  const [pitch, setPitch]     = useState("");
   const [busy, setBusy]       = useState(false);
   const [result, setResult]   = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -127,8 +129,22 @@ function UploadPanel({ node, ready }: { node: string; ready: boolean }) {
     setBusy(true);
     setResult(null);
     try {
+      // Blank = omit, so the backend applies its own default (700 Hz / 0 st).
+      const hp = Number(highpass);
+      const st = Number(pitch);
       const res = await uploadFasSoundClip(
-        { file, name: trimmedName, format, node },
+        {
+          file,
+          name: trimmedName,
+          format,
+          node,
+          ...(highpass.trim() !== "" && Number.isFinite(hp) && hp >= 0
+            ? { highpassHz: Math.round(hp) }
+            : {}),
+          ...(pitch.trim() !== "" && Number.isFinite(st) && st >= 0
+            ? { pitchSemitones: st }
+            : {}),
+        },
         clientId,
       );
       const u = res.uploaded;
@@ -207,12 +223,58 @@ function UploadPanel({ node, ready }: { node: string; ready: boolean }) {
             </NativeSelect>
           </Box>
         </Flex>
+        <Flex gap={2} flexWrap="wrap">
+          <Box flex="1" minW="110px">
+            <Text fontSize="2xs" color="text.muted" mb={1}>high-pass (Hz)</Text>
+            <NativeInput
+              type="number"
+              min={0}
+              step={50}
+              value={highpass}
+              placeholder="700"
+              onChange={(e) => setHighpass(e.target.value)}
+              fontSize="xs"
+              fontFamily="mono"
+              bg="bg.canvas"
+              border="1px solid"
+              borderColor="border.default"
+              borderRadius="control"
+              px={2}
+              py={1}
+              w="100%"
+              color="text.primary"
+            />
+          </Box>
+          <Box flex="1" minW="110px">
+            <Text fontSize="2xs" color="text.muted" mb={1}>pitch up (semitones)</Text>
+            <NativeInput
+              type="number"
+              min={0}
+              step={0.5}
+              value={pitch}
+              placeholder="0"
+              onChange={(e) => setPitch(e.target.value)}
+              fontSize="xs"
+              fontFamily="mono"
+              bg="bg.canvas"
+              border="1px solid"
+              borderColor="border.default"
+              borderRadius="control"
+              px={2}
+              py={1}
+              w="100%"
+              color="text.primary"
+            />
+          </Box>
+        </Flex>
         <Button size="sm" disabled={!canUpload} loading={busy} onClick={handleUpload}>
           Upload
         </Button>
         <Text fontSize="2xs" color="text.muted">
           Transcoded on the backend. Keep clips to a few seconds (~400 kB cap;
-          adpcm buys ~4× length).
+          adpcm buys ~4× length). High-pass and pitch shape the audio for the
+          small speaker — blank uses the backend defaults (700 Hz, 0 st); pitch
+          shifts up without changing tempo.
         </Text>
         {result && <Mono fontSize="2xs" color="text.muted">{result}</Mono>}
       </Flex>
@@ -370,7 +432,7 @@ export function SoundboardTool() {
                 <NativeInput
                   type="number"
                   value={freqHz}
-                  placeholder="default"
+                  placeholder="2000"
                   onChange={(e) => setFreqHz(e.target.value)}
                   fontSize="xs"
                   fontFamily="mono"
@@ -389,7 +451,7 @@ export function SoundboardTool() {
                 <NativeInput
                   type="number"
                   value={toneMs}
-                  placeholder="default"
+                  placeholder="500"
                   onChange={(e) => setToneMs(e.target.value)}
                   fontSize="xs"
                   fontFamily="mono"
