@@ -45,6 +45,19 @@ const config = defineConfig({
         error: { value: "#fb7185" }, // orange-ish: error  (kept distinct from fault)
         fault: { value: "#ef4444" }, // red: fault / danger
         info: { value: "#3b82f6" }, // blue: info
+        
+        plot: {
+          1: { value: "#3b82f6" }, // blue
+          2: { value: "#22c55e" }, // green
+          3: { value: "#f59e0b" }, // amber
+          4: { value: "#a855f7" }, // violet
+          5: { value: "#ef4444" }, // red
+          6: { value: "#06b6d4" }, // cyan
+          7: { value: "#ec4899" }, // pink
+          8: { value: "#84cc16" }, // lime
+          9: { value: "#f97316" }, // orange
+          10: { value: "#14b8a6" }, // teal
+        },
         // Role colours
         role: {
           viewer: { value: "#64748b" }, // slate grey

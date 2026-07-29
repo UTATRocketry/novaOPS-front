@@ -18,3 +18,4 @@
 import "@/app/tools/servo/tool";
 import "@/app/tools/relay/tool";
 import "@/app/tools/soundboard/tool";
+import "@/app/tools/analysis/tool";
