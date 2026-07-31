@@ -9,6 +9,7 @@ import { getMissionStartMs } from "@/lib/flight";
 import { adaptSignal } from "@/lib/signal";
 import type { ClientRole } from "@/lib/types";
 import { AlertChips } from "@/components/alerts";
+import { useColorMode } from "@/lib/theme/color-mode";
 import { RoleModal } from "./RoleModal";
 import { BatteryIndicator } from "./BatteryIndicator";
 
@@ -132,6 +133,7 @@ export function TopStatusBar() {
 
   const socketStatus = useNovaStore(sel.socketStatus);
   const sessionRole = useNovaStore(sel.sessionRole);
+  const { colorMode, toggleColorMode } = useColorMode();
 
   const signal = adaptSignal(null);
   const { dotStatus, label: connLabel } = mapSocketStatus(socketStatus);
@@ -203,6 +205,28 @@ export function TopStatusBar() {
 
       {/* Right cluster */}
       <Flex align="center" gap={3} ml="auto">
+        {/* Color mode toggle */}
+        <Box
+          as="button"
+          onClick={toggleColorMode}
+          aria-label="Toggle light / dark mode"
+          title="Toggle light / dark mode"
+          display="flex"
+          alignItems="center"
+          justifyContent="center"
+          w="30px"
+          h="30px"
+          borderRadius="control"
+          bg="transparent"
+          border="none"
+          cursor="pointer"
+          color="chrome.textMuted"
+          _hover={{ bg: "chrome.surfaceHover", color: "chrome.text" }}
+          style={{ transition: "background 150ms ease, color 150ms ease" }}
+        >
+          <Icon name={colorMode === "dark" ? "light_mode" : "dark_mode"} size={18} color="currentColor" />
+        </Box>
+
         {/* Alert chips — live counts by severity; click to open the alert center */}
         <AlertChips />
 
