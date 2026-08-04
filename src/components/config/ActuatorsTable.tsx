@@ -26,7 +26,7 @@ const TARGETS: SourceTarget[] = ["GCS", "FAS", "TCS"];
 const SOLENOID_TYPES = ["", "nominally_closed", "nominally_open"] as const;
 const RELAY_TYPES = ["", "nominally_off", "nominally_on"] as const;
 // Hardware channel ranges (inclusive).
-const RELAY_MAX = 23;
+const RELAY_MAX = 15;
 const SERVO_MAX = 15;
 
 // ---------------------------------------------------------------------------

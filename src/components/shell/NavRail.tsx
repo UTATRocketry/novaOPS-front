@@ -27,9 +27,12 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Settings", route: "/settings",icon: "settings" },
 ];
 
-const EXPANDED_WIDTH = "200px";
+const EXPANDED_WIDTH = "150px";
 const COLLAPSED_WIDTH = "56px";
 const TOP_BAR_HEIGHT = "48px";
+
+/** Dark logo assets on the fixed-dark rail need inverting to render as white. */
+const WHITE_LOGO = "brightness(0) invert(1)";
 
 function isActive(pathname: string, route: string): boolean {
   if (route === "/") return pathname === "/";
@@ -68,44 +71,23 @@ export function NavRail() {
         px={collapsed ? 0 : 3}
         height={TOP_BAR_HEIGHT}
         flexShrink={0}
-        justify={collapsed ? "center" : "flex-start"}
+        justify="center"//{collapsed ? "center" : "flex-start"}
         borderBottom="1px solid"
         borderColor="chrome.border"
       >
-        {/* Brand mark: blue square with "N" */}
-        <Flex
-          align="center"
-          justify="center"
-          width="28px"
-          height="28px"
-          borderRadius="6px"
-          bg="accent.500"
-          flexShrink={0}
-        >
-          <Text
-            as="span"
-            color="white"
-            fontWeight="700"
-            fontSize="14px"
-            lineHeight="1"
-            fontFamily="body"
-          >
-            N
-          </Text>
-        </Flex>
-        {!collapsed && (
-          <Text
-            as="span"
-            color="chrome.text"
-            fontWeight="700"
-            fontSize="sm"
-            letterSpacing="0.12em"
-            fontFamily="body"
-            whiteSpace="nowrap"
-          >
-            NOVA
-          </Text>
-        )}
+        {/* Nova icon*/}
+        <img
+          src={collapsed ? "/images/nova_icon.svg" : "/images/nova_logo.svg"}
+          alt="Nova"
+          style={{ height: "28px", filter: WHITE_LOGO, flexShrink: 0, display: "block" }}
+        />
+        {/* {!collapsed && (
+          <img
+            src="/images/nova_logo.svg"
+            alt="Nova"
+            style={{ height: "16px", filter: WHITE_LOGO, display: "block" }}
+          />
+        )} */}
       </Flex>
 
       {/* Nav items */}

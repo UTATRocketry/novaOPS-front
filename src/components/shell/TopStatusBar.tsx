@@ -13,6 +13,8 @@ import { useColorMode } from "@/lib/theme/color-mode";
 import { RoleModal } from "./RoleModal";
 import { BatteryIndicator } from "./BatteryIndicator";
 
+const WHITE_LOGO = "brightness(0) invert(1)";
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -169,7 +171,24 @@ export function TopStatusBar() {
       borderColor="chrome.border"
       flexShrink={0}
       gap={5}
+      position="relative"
     >
+      {/* UTAT logo */}
+      <Box
+        position="absolute"
+        left="50%"
+        top="50%"
+        transform="translate(-50%, -50%)"
+        pointerEvents="none"
+        display={{ base: "none", lg: "block" }}
+      >
+        <img
+          src="/images/utat_logo.png"
+          alt="UTAT"
+          style={{ height: "80px", filter: WHITE_LOGO, opacity: 0.9, display: "block" }}
+        />
+      </Box>
+
       {/* Left cluster */}
       <Flex align="center" gap={5}>
         {/* Local time */}
