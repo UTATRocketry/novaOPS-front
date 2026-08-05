@@ -44,30 +44,45 @@ export function AlertToaster() {
   const seen = useRef<Set<string>>(new Set());
 
   useEffect(() => {
-    const byId = new Map(alerts.map((a) => [a.id, a] as const));
+    // The toaster mutates its own store with flushSync. Driving it straight
+    // from the effect body can land while React is still rendering (React then
+    // warns and drops the flush), so the reconcile is deferred to a microtask —
+    // still same-tick, but safely outside the render/commit phase.
+    let cancelled = false;
 
-    // Tear down toasts whose alert cleared or was acknowledged.
-    for (const id of Array.from(seen.current)) {
-      const a = byId.get(id);
-      if (!a || a.acknowledged) {
-        alertToaster.dismiss(id);
-        seen.current.delete(id);
+    queueMicrotask(() => {
+      if (cancelled) return;
+      const byId = new Map(alerts.map((a) => [a.id, a] as const));
+
+      // Tear down toasts whose alert cleared or was acknowledged.
+      for (const id of Array.from(seen.current)) {
+        const a = byId.get(id);
+        if (!a || a.acknowledged) {
+          alertToaster.dismiss(id);
+          seen.current.delete(id);
+        }
       }
-    }
 
-    // Raise a toast for each newly-active, unacknowledged alert.
-    for (const a of alerts) {
-      if (seen.current.has(a.id) || a.acknowledged) continue;
-      seen.current.add(a.id);
-      alertToaster.create({
-        id: a.id,
-        type: SEVERITY_CHAKRA_STATUS[a.severity],
-        title: a.title,
-        description: a.detail,
-        duration: TOAST_MS,
-        meta: { palette: SEVERITY_PALETTE[a.severity], alertId: a.id } satisfies ToastMeta,
-      });
-    }
+      // Raise a toast for each newly-active, unacknowledged alert.
+      for (const a of alerts) {
+        if (seen.current.has(a.id) || a.acknowledged) continue;
+        seen.current.add(a.id);
+        alertToaster.create({
+          id: a.id,
+          type: SEVERITY_CHAKRA_STATUS[a.severity],
+          title: a.title,
+          description: a.detail,
+          duration: TOAST_MS,
+          meta: { palette: SEVERITY_PALETTE[a.severity], alertId: a.id } satisfies ToastMeta,
+        });
+      }
+    });
+
+    // A superseded run is safe to drop: `seen` persists across runs, so the
+    // next one reconciles the full set against the newer alert list anyway.
+    return () => {
+      cancelled = true;
+    };
   }, [alerts]);
 
   return (
