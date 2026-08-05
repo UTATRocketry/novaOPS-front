@@ -22,8 +22,10 @@ const ACTUATOR_TYPES: ActuatorType[] = [
   "powered_device",
   "powered_gpio_device",
   "gpio_device",
+  "motor",
 ];
-const SOURCES: SourceTarget[] = ["GCS", "FAS", "TCS"];
+const SOURCES: SourceTarget[] = ["GCS", "FAS", "TCS", "OPS"];
+const SOURCE_LIST = SOURCES.join(", ");
 
 function isNonEmpty(v: unknown): v is string {
   return typeof v === "string" && v.trim().length > 0;
@@ -74,7 +76,7 @@ function validateActuator(a: ActuatorEntry, i: number, errors: string[], seen: S
 
   const b = a.binding;
   if (!b || typeof b !== "object" || !SOURCES.includes(b.target)) {
-    errors.push(`${tag} (${a.name || "?"}): binding.target must be GCS, TCS, or FAS.`);
+    errors.push(`${tag} (${a.name || "?"}): binding.target must be one of ${SOURCE_LIST}.`);
   }
   // Note: binding.node is optional in types.ts (node?: string | null), so a
   // missing FAS node is not a schema error here — the backend rejects it on PUT
@@ -84,6 +86,34 @@ function validateActuator(a: ActuatorEntry, i: number, errors: string[], seen: S
   const act = a.actions;
   if (act?.position_aliases && act.positions && act.position_aliases.length !== act.positions.length) {
     errors.push(`${tag} (${a.name}): position_aliases and positions must be the same length.`);
+  }
+
+  // Motor wiring — a reversible motor drives two relays, and its state labels
+  // are the ONLY accepted command states, so a wrong count makes the actuator
+  // uncommandable. Both are backend-rejected; catching them here keeps a bad
+  // config off the control surface entirely.
+  if (a.type === "motor" && b && typeof b === "object") {
+    if (typeof b.relay_channel !== "number") {
+      errors.push(`${tag} (${a.name}): motor requires binding.relay_channel.`);
+    }
+    if (act?.reversible && typeof b.reverse_relay_channel !== "number") {
+      errors.push(`${tag} (${a.name}): reversible motor requires binding.reverse_relay_channel.`);
+    }
+    if (act?.reversible && b.relay_channel === b.reverse_relay_channel && typeof b.relay_channel === "number") {
+      errors.push(`${tag} (${a.name}): relay_channel and reverse_relay_channel must differ.`);
+    }
+    const labels = act?.state_labels;
+    if (labels && labels.length > 0) {
+      const expected = act?.reversible ? 3 : 2;
+      if (labels.length !== expected) {
+        errors.push(
+          `${tag} (${a.name}): state_labels must have exactly ${expected} entries when reversible is ${act?.reversible ? "true" : "false"}.`,
+        );
+      }
+      if (new Set(labels.map((l) => l.toLowerCase())).size !== labels.length) {
+        errors.push(`${tag} (${a.name}): state_labels must be unique.`);
+      }
+    }
   }
 }
 
@@ -101,7 +131,7 @@ export function validateConfig(config: SystemConfig): string[] {
   // Commands: each entry needs a binding.target.
   for (const [name, cmd] of Object.entries(config.Commands ?? {})) {
     if (!cmd.binding || !SOURCES.includes(cmd.binding.target)) {
-      errors.push(`Command "${name}": binding.target must be GCS, TCS, or FAS.`);
+      errors.push(`Command "${name}": binding.target must be one of ${SOURCE_LIST}.`);
     }
   }
 

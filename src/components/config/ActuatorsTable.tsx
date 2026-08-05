@@ -13,6 +13,7 @@ import {
   SelectCell,
   TABLE_CSS,
   TextCell,
+  ToggleCell,
 } from "./fields";
 
 const ACTUATOR_TYPES: ActuatorType[] = [
@@ -21,13 +22,15 @@ const ACTUATOR_TYPES: ActuatorType[] = [
   "powered_device",
   "powered_gpio_device",
   "gpio_device",
+  "motor",
 ];
-const TARGETS: SourceTarget[] = ["GCS", "FAS", "TCS"];
+const TARGETS: SourceTarget[] = ["GCS", "FAS", "TCS", "OPS"];
 const SOLENOID_TYPES = ["", "nominally_closed", "nominally_open"] as const;
 const RELAY_TYPES = ["", "nominally_off", "nominally_on"] as const;
 // Hardware channel ranges (inclusive).
 const RELAY_MAX = 15;
 const SERVO_MAX = 15;
+const GPIO_MAX = 15;
 
 // ---------------------------------------------------------------------------
 // Small labelled field used inside the per-type detail editor.
@@ -54,6 +57,8 @@ interface DetailProps {
   usedRelay: ReadonlySet<number>;
   /** Servo channels used by OTHER actuators. */
   usedServo: ReadonlySet<number>;
+  /** GPIO channels used by OTHER actuators. */
+  usedGpio: ReadonlySet<number>;
 }
 
 function aliasesField(entry: ActuatorEntry, setActions: DetailProps["setActions"]) {
@@ -93,7 +98,21 @@ function gpioField(entry: ActuatorEntry, setActions: DetailProps["setActions"], 
   );
 }
 
-function TypeDetail({ entry, setBinding, setActions, usedRelay, usedServo }: DetailProps) {
+/** GPIO command channel — the wire the arm/disarm action drives. */
+function gpioChannelField(entry: ActuatorEntry, setBinding: DetailProps["setBinding"], used: ReadonlySet<number>) {
+  return (
+    <Field label="gpio_channel">
+      <ChannelSelectCell
+        value={entry.binding.gpio_channel ?? undefined}
+        max={GPIO_MAX}
+        used={used}
+        onChange={(v) => setBinding({ gpio_channel: v ?? null })}
+      />
+    </Field>
+  );
+}
+
+function TypeDetail({ entry, setBinding, setActions, usedRelay, usedServo, usedGpio }: DetailProps) {
   const act = entry.actions ?? {};
   switch (entry.type) {
     case "servo":
@@ -147,13 +166,57 @@ function TypeDetail({ entry, setBinding, setActions, usedRelay, usedServo }: Det
             <SelectCell value={(act.relay_type as string) ?? ""} options={RELAY_TYPES} onChange={(v) => setActions({ relay_type: v || null })} />
           </Field>
           {relayChannelField(entry, setBinding, usedRelay)}
+          {gpioChannelField(entry, setBinding, usedGpio)}
           {gpioField(entry, setActions, "arm, disarm")}
         </Flex>
       );
     case "gpio_device":
       return (
         <Flex gap={3} flexWrap="wrap">
+          {gpioChannelField(entry, setBinding, usedGpio)}
           {gpioField(entry, setActions, "armed, disarmed")}
+        </Flex>
+      );
+    case "motor":
+      return (
+        <Flex gap={3} flexWrap="wrap">
+          <Field label="reversible">
+            <ToggleCell
+              value={act.reversible === true}
+              onChange={(v) =>
+                setActions({
+                  reversible: v || undefined,
+                  // The label count is fixed by reversibility (3 vs 2), so a
+                  // stale list from the other mode would be rejected outright.
+                  state_labels: undefined,
+                })
+              }
+            />
+          </Field>
+          {relayChannelField(entry, setBinding, usedRelay)}
+          {act.reversible && (
+            <Field label="reverse_relay_channel">
+              <ChannelSelectCell
+                value={entry.binding.reverse_relay_channel ?? undefined}
+                max={RELAY_MAX}
+                used={usedRelay}
+                onChange={(v) => setBinding({ reverse_relay_channel: v ?? null })}
+              />
+            </Field>
+          )}
+          <Field label={act.reversible ? "state_labels (3)" : "state_labels (2)"}>
+            <CsvListCell
+              value={act.state_labels}
+              onChange={(l) => setActions({ state_labels: l.length ? (l as string[]) : undefined })}
+              placeholder={act.reversible ? "forward, stop, reverse" : "on, off"}
+            />
+          </Field>
+          <Field label="invert_relays">
+            <ToggleCell
+              value={act.invert_relays === true}
+              onChange={(v) => setActions({ invert_relays: v || undefined })}
+            />
+          </Field>
         </Flex>
       );
     default:
@@ -170,9 +233,10 @@ function usedChannels(
   excludeIdx: number,
   target: SourceTarget,
   node: string | null | undefined,
-): { relay: ReadonlySet<number>; servo: ReadonlySet<number> } {
+): { relay: ReadonlySet<number>; servo: ReadonlySet<number>; gpio: ReadonlySet<number> } {
   const relay = new Set<number>();
   const servo = new Set<number>();
+  const gpio = new Set<number>();
   for (let j = 0; j < actuators.length; j++) {
     if (j === excludeIdx) continue;
     const a = actuators[j];
@@ -181,9 +245,12 @@ function usedChannels(
     const myNode = node ?? null;
     if (aNode !== myNode) continue;
     if (a.binding.relay_channel != null) relay.add(a.binding.relay_channel);
+    // A reversible motor holds TWO relays; both are taken.
+    if (a.binding.reverse_relay_channel != null) relay.add(a.binding.reverse_relay_channel);
     if (a.binding.servo_channel != null) servo.add(a.binding.servo_channel);
+    if (a.binding.gpio_channel != null) gpio.add(a.binding.gpio_channel);
   }
-  return { relay, servo };
+  return { relay, servo, gpio };
 }
 
 // ---------------------------------------------------------------------------
@@ -274,7 +341,7 @@ export function ActuatorsTable({ actuators, onChange }: ActuatorsTableProps) {
                       <Table.Cell colSpan={6}>
                         <Box bg="bg.canvas" borderRadius="control" p={3} my={1}>
                           {(() => {
-                            const { relay: usedRelay, servo: usedServo } = usedChannels(actuators, i, a.binding.target, a.binding.node);
+                            const { relay: usedRelay, servo: usedServo, gpio: usedGpio } = usedChannels(actuators, i, a.binding.target, a.binding.node);
                             return (
                               <TypeDetail
                                 entry={a}
@@ -282,6 +349,7 @@ export function ActuatorsTable({ actuators, onChange }: ActuatorsTableProps) {
                                 setActions={(patch) => setActions(i, patch)}
                                 usedRelay={usedRelay}
                                 usedServo={usedServo}
+                                usedGpio={usedGpio}
                               />
                             );
                           })()}

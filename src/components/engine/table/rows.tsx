@@ -36,6 +36,7 @@ function applyOptimistic(
     else if (kind === "enable") s.enable = cmd;
     else if (kind === "power") s.power = cmd;
     else if (kind === "arming") s.arming = cmd;
+    else if (kind === "motion") s.motion = cmd;
   }
   return s;
 }

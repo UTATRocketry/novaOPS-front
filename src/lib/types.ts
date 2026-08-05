@@ -10,14 +10,15 @@
 // Config schema
 // ---------------------------------------------------------------------------
 
-export type SourceTarget = "GCS" | "FAS" | "TCS";
+export type SourceTarget = "GCS" | "FAS" | "TCS" | "OPS";
 export type SensorType = "PT" | "LC" | "TC";
 export type ActuatorType =
   | "servo"
   | "solenoid"
   | "powered_device"
   | "powered_gpio_device"
-  | "gpio_device";
+  | "gpio_device"
+  | "motor";
 export type ConvertMethod = "none" | "linear" | "polynomial";
 export type ClientRole = "viewer" | "pad" | "operator" | "admin";
 
@@ -41,9 +42,20 @@ export interface SensorEntry {
 
 export interface ActuatorBinding {
   target: SourceTarget;
+  /**
+   * FAS board node, e.g. "EPB_1". Naming is 0-BASED and matches the board key:
+   * board `EPB:0` is node `EPB_0`. Required for FAS actuators.
+   */
   node?: string | null;
+  /** Alternative to `node`: resolves to `"{board_type}_{board_id}"`. */
+  board_type?: string | null;
+  board_id?: number | null;
   relay_channel?: number | null;
+  /** Second relay of a reversible motor. Required when `actions.reversible`. */
+  reverse_relay_channel?: number | null;
   servo_channel?: number | null;
+  /** GPIO command channel for `gpio_device` / `powered_gpio_device`. */
+  gpio_channel?: number | null;
 }
 
 export interface ActuatorActions {
@@ -54,6 +66,36 @@ export interface ActuatorActions {
   relay_type?: "nominally_off" | "nominally_on" | string | null;
   solenoid_type?: "nominally_closed" | "nominally_open" | string | null;
   gpio_commands?: string[];
+
+  // --- Motor only ---------------------------------------------------------
+  /** Motor runs both directions through two relays (reverse polarity). */
+  reversible?: boolean;
+  /**
+   * Accepted command states for a motor, in relay-pattern order. Exactly 3
+   * entries when `reversible` (forward / stop / reverse), 2 otherwise
+   * (on / off), and all labels must be unique. Defaults apply when unset.
+   */
+  state_labels?: string[];
+  /** Active-low relay board: flips published relay states, not their ordering. */
+  invert_relays?: boolean;
+}
+
+/** Motor command states used when `actions.state_labels` is not set. */
+export const MOTOR_DEFAULT_LABELS_REVERSIBLE = ["forward", "stop", "reverse"] as const;
+export const MOTOR_DEFAULT_LABELS = ["on", "off"] as const;
+
+/**
+ * The command states a motor accepts, in relay-pattern order. The first entry
+ * of a non-reversible motor energizes; for a reversible motor index 1 (`stop`)
+ * is the all-relays-off state the backend initializes to.
+ */
+export function motorStateLabels(actions?: ActuatorActions): string[] {
+  if (actions?.state_labels && actions.state_labels.length > 0) {
+    return actions.state_labels;
+  }
+  return actions?.reversible
+    ? [...MOTOR_DEFAULT_LABELS_REVERSIBLE]
+    : [...MOTOR_DEFAULT_LABELS];
 }
 
 export interface ActuatorEntry {
@@ -188,6 +230,11 @@ export interface ActuatorState {
   enable?: "enabled" | "disabled" | string;
   power?: "on" | "off" | string;
   arming?: "armed" | "disarmed" | "arm" | "disarm" | string;
+  /**
+   * Motor state, reported as the current label from `actions.state_labels`
+   * (or the defaults). Initializes to the all-relays-off label (stop / off).
+   */
+  motion?: string;
   state?: string; // fallback for unknown actuators
 }
 

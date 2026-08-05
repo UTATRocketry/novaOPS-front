@@ -18,14 +18,16 @@
  *   enable:   enabled=info(blue)  / disabled=neutral
  *   power:    on=nominal(green)   / off=fault(red)
  *   arming:   armed=nominal(green)/ disarmed=fault(red)
+ *   motion:   running=nominal(green)/ stopped=neutral / reverse=warn(amber)
  */
-import type { ActuatorEntry, ActuatorState } from "../types";
+import type { ActuatorActions, ActuatorEntry, ActuatorState } from "../types";
+import { motorStateLabels } from "../types";
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
-export type SegmentKind = "position" | "enable" | "power" | "arming";
+export type SegmentKind = "position" | "enable" | "power" | "arming" | "motion";
 
 export type SegmentColor = "nominal" | "fault" | "info" | "warn" | "neutral";
 
@@ -65,6 +67,7 @@ const AXIS_LABEL: Record<SegmentKind, string> = {
   enable:   "ENABLE",
   power:    "POWER",
   arming:   "ARM",
+  motion:   "MOTOR",
 };
 
 /** [bgFill, textFill, strokeColour] hex for a control colour (SVG-safe). */
@@ -189,6 +192,10 @@ export function deriveControls(entry: ActuatorEntry): ControlSegment[] {
       segments.push(armingSegment());
       break;
 
+    case "motor":
+      segments.push(motionSegment(actions));
+      break;
+
     default:
       if (actions?.gpio_commands && actions.gpio_commands.length > 0) {
         segments.push(armingSegment());
@@ -209,6 +216,7 @@ export function rawValueForKind(kind: SegmentKind, state: ActuatorState | null):
     case "enable":   return state.enable;
     case "power":    return state.power;
     case "arming":   return state.arming;
+    case "motion":   return state.motion;
   }
 }
 
@@ -288,6 +296,30 @@ function powerSegment(): ControlSegment {
       { label: "ON",  command: "on",  match: ["on", "enabled", "powered", "true", "1"],     activeColor: "nominal" },
       { label: "OFF", command: "off", match: ["off", "disabled", "unpowered", "false", "0"], activeColor: "fault"  },
     ],
+  };
+}
+
+/**
+ * Motor drive axis. The accepted states are exactly the actuator's state labels
+ * (`actions.state_labels`, else forward/stop/reverse when reversible and on/off
+ * when not) — the backend rejects anything else, so the labels are used verbatim
+ * as commands rather than mapped onto a fixed vocabulary.
+ *
+ * The all-relays-off label (index 1 reversible, index 1 otherwise) is the rest
+ * state and reads neutral; a driven state reads nominal, and reverse reads warn
+ * so an operator can tell direction apart at a glance on the P&ID.
+ */
+function motionSegment(actions?: ActuatorActions): ControlSegment {
+  const labels = motorStateLabels(actions);
+  const stopIdx = 1; // both patterns put the de-energized label second
+  return {
+    kind: "motion",
+    options: labels.map((label, i) => ({
+      label: label.toUpperCase(),
+      command: label,
+      match: [label.toLowerCase()],
+      activeColor: "nominal", //i === stopIdx ? "neutral" : i === 0 ? "nominal" : "warn",
+    })),
   };
 }
 

@@ -18,7 +18,8 @@ import type {
 import { validateLayout } from "../pid/serializer";
 import { createStalenessTimer, useNovaStore } from "../store";
 import type { FreshnessWindows } from "../store";
-import { adaptFlightData, adaptFlightEvents, resetFlightSession } from "../flight";
+import { adaptFlightData, adaptFlightEvents, parseFasLink, resetFlightSession } from "../flight";
+import { parseConsolePorts } from "../console";
 import { startFlightRecorder, stopFlightRecorder } from "../flight/recorder";
 
 // ---------------------------------------------------------------------------
@@ -259,7 +260,11 @@ export class NovaSocket {
           typeof data === "object" && data !== null && !Array.isArray(data)
             ? (data as Record<string, unknown>)
             : {};
-        store.ingestFlightData(adaptFlightData(payload));
+        const telemetry = adaptFlightData(payload);
+        store.ingestFlightData(telemetry);
+        // `fas_link` is mirrored into every flight frame, so the link panel
+        // stays current even when the console stream is not running.
+        if (telemetry.link) store.ingestFasLink(telemetry.link);
         break;
       }
 
@@ -305,10 +310,45 @@ export class NovaSocket {
         break;
       }
 
+      // --- FAS bridge console acks -----------------------------------------
+      // These carry state the link panel needs, and are ALSO console lines, so
+      // each updates the store and then falls through to the console log.
+
+      case "console_serial": {
+        const link = parseFasLink(m);
+        if (link) store.ingestFasLink(link);
+        store.ingestConsoleMessage(m);
+        break;
+      }
+
+      case "console_config": {
+        // A failed `configure` leaves the link down with that error and is not
+        // guaranteed to be followed by a `console_serial`, so record it here.
+        // A successful one is reported by the `console_serial` that follows.
+        if (m["ok"] === false) {
+          const link = parseFasLink(m);
+          if (link) store.ingestFasLink({ ...link, connected: false });
+        }
+        store.ingestConsoleMessage(m);
+        break;
+      }
+
+      case "console_ports": {
+        store.ingestFasPorts(parseConsolePorts(m));
+        store.ingestConsoleMessage(m);
+        break;
+      }
+
+      case "console_status": {
+        store.setFasStreaming(m["active"] === true);
+        store.ingestConsoleMessage(m);
+        break;
+      }
+
       default:
         // Console passthrough (nova/console rebroadcast), FAS console output
-        // (fas_frame / console_tx / console_ports / console_config / console_status),
-        // or any unrecognised message — all land in the console / events log.
+        // (fas_frame / console_tx), or any unrecognised message — all land in
+        // the console / events log.
         store.ingestConsoleMessage(m);
         break;
     }
