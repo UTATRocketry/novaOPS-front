@@ -2,6 +2,7 @@ export { AppShell } from "./AppShell";
 export { NavRail } from "./NavRail";
 export { TopStatusBar } from "./TopStatusBar";
 export { BatteryIndicator } from "./BatteryIndicator";
+export { FasLinkControl } from "./FasLinkControl";
 export { PageHeader } from "./PageHeader";
 export type { PageHeaderProps } from "./PageHeader";
 export { RoleModal } from "./RoleModal";

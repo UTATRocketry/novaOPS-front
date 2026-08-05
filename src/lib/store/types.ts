@@ -9,7 +9,8 @@ import type {
 } from "../types";
 import type { AdaptedFlightEvents, FlightTelemetry as FlightTelemetryShape } from "../flight/types";
 import type { NovaPidLayout } from "../pid/serializer";
-import type { ConsoleLogEntry } from "../console/types";
+import type { ConsoleLogEntry, FasSerialPort } from "../console/types";
+import type { FasLink } from "../flight/types";
 import type { Alert, AlertInput, ConditionAlert } from "../alerts/types";
 
 // ---------------------------------------------------------------------------
@@ -111,6 +112,21 @@ export interface NovaStoreState {
   alerts: Alert[];
   /** Whether the alert center dialog is open (global, page-independent). */
   alertCenterOpen: boolean;
+
+  /**
+   * FAS bridge serial-link state, from `console_serial` messages and the
+   * `fas_link` mirror in every flight_data frame.
+   *
+   * Not a LiveSlice — it is edge-driven bridge state, not a polled stream.
+   * `null` = unknown (nothing received yet, or the socket dropped). The UI must
+   * render `—` for null and must NOT read it as "disconnected": an unknown link
+   * is not a known-closed link.
+   */
+  fasLink: FasLink | null;
+  /** Serial ports last enumerated by `list_ports`. null = never enumerated. */
+  fasPorts: FasSerialPort[] | null;
+  /** Whether the bridge is streaming decoded RX frames (`console_status`). */
+  fasStreaming: boolean;
 }
 
 export interface NovaStoreActions {
@@ -149,6 +165,15 @@ export interface NovaStoreActions {
   pushConsoleEntry: (entry: Omit<ConsoleLogEntry, "id" | "ts">) => void;
   /** Clear the console buffer. */
   clearConsole: () => void;
+
+  // --- FAS bridge serial link ---
+
+  /** Record the bridge's serial-link state (`console_serial` / `fas_link`). */
+  ingestFasLink: (link: FasLink) => void;
+  /** Replace the enumerated serial-port list (`console_ports`). */
+  ingestFasPorts: (ports: FasSerialPort[]) => void;
+  /** Record whether frame streaming is active (`console_status`). */
+  setFasStreaming: (active: boolean) => void;
 
   // --- Alerts ---
 

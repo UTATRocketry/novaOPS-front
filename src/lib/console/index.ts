@@ -1,3 +1,5 @@
-export type { ConsoleKind, ConsoleLogEntry } from "./types";
+export type { ConsoleKind, ConsoleLogEntry, FasSerialPort } from "./types";
 export { TELEMETRY_MSG_TYPES, isConsoleLine } from "./types";
-export { classifyConsoleMessage } from "./classify";
+export { classifyConsoleMessage, parseConsolePorts } from "./classify";
+export { describeLink } from "./link";
+export type { FasLinkDisplay } from "./link";

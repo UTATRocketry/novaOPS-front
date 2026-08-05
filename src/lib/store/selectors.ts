@@ -89,6 +89,15 @@ export const sel = {
   /** The rolling console / event log buffer. */
   consoleMessages: (s: NovaStore) => s.consoleMessages,
 
+  // ---- FAS bridge serial link ----
+
+  /** Bridge serial-link state; null = unknown (render `—`, not "disconnected"). */
+  fasLink: (s: NovaStore) => s.fasLink,
+  /** Last enumerated serial ports; null = never enumerated. */
+  fasPorts: (s: NovaStore) => s.fasPorts,
+  /** True while the bridge is streaming decoded RX frames. */
+  fasStreaming: (s: NovaStore) => s.fasStreaming,
+
   // ---- Alerts ----
 
   /** All active alerts (condition + event). UI sorts by severity/time. */

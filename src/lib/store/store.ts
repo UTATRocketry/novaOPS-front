@@ -101,6 +101,9 @@ const INITIAL_STATE: NovaStoreState = {
   consoleMessages: [],
   alerts: [],
   alertCenterOpen: false,
+  fasLink: null,
+  fasPorts: null,
+  fasStreaming: false,
 };
 
 // ---------------------------------------------------------------------------
@@ -138,6 +141,12 @@ export const useNovaStore = create<NovaStore>()((set, get) => ({
       flightData: { ...s.flightData, status: "disconnected" },
       flightEvents: { ...s.flightEvents, status: "disconnected" },
     lockout: { ...s.lockout, status: "disconnected" },
+      // The bridge's link state is only knowable through the socket — once it
+      // drops, the last-known value is a guess, so drop back to "unknown" (—)
+      // rather than showing a stale "connected".
+      fasLink: null,
+      fasPorts: null,
+      fasStreaming: false,
     })),
 
   setSocketError: (error) =>
@@ -200,6 +209,34 @@ export const useNovaStore = create<NovaStore>()((set, get) => ({
 
   ingestPidLayout: (layout) => {
     set({ pidLayout: layout });
+  },
+
+  // ---- FAS bridge serial link ----
+
+  ingestFasLink: (link) => {
+    // `fas_link` rides along on every flight_data frame, so this is called at
+    // telemetry rate. Skip the `set` when nothing changed — otherwise every
+    // subscriber re-renders many times a second for a value that changes rarely.
+    const prev = get().fasLink;
+    if (
+      prev !== null &&
+      prev.connected === link.connected &&
+      prev.port === link.port &&
+      prev.baud === link.baud &&
+      prev.error === link.error
+    ) {
+      return;
+    }
+    set({ fasLink: link });
+  },
+
+  ingestFasPorts: (ports) => {
+    set({ fasPorts: ports });
+  },
+
+  setFasStreaming: (active) => {
+    if (get().fasStreaming === active) return;
+    set({ fasStreaming: active });
   },
 
   // ---- Console / event log ----

@@ -22,6 +22,17 @@ export type ConsoleKind =
   | "tx"
   | "system";
 
+/**
+ * One entry of a `console_ports` message — a serial port the FAS bridge host
+ * can see (pyserial `comports()`). `device` is what a `configure` command wants.
+ */
+export interface FasSerialPort {
+  device: string;
+  name?: string;
+  description?: string;
+  hwid?: string;
+}
+
 /** A single colour-coded line in the console / events stream. */
 export interface ConsoleLogEntry {
   /** Monotonic id, assigned on ingest. Stable React key. */

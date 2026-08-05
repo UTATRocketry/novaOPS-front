@@ -238,6 +238,22 @@ export interface FsmStatus {
   phase?: string;
 }
 
+/**
+ * FAS bridge serial-link state (`fas_link`, and the `console_serial` console
+ * message — the two carry the same object).
+ *
+ * This is the bridge's own RS-422 port, not a board: `connected: false` means
+ * the bridge is up but has no port open (never configured, unplugged, or in use
+ * elsewhere) and every other `fas_*` block is going stale. `port` is `""` when
+ * no port is configured; `error` is null after an explicit disconnect.
+ */
+export interface FasLink {
+  connected: boolean;
+  port: string | null;
+  baud: number | null;
+  error: string | null;
+}
+
 // ---------------------------------------------------------------------------
 // flight_data adapter output
 // ---------------------------------------------------------------------------
@@ -311,6 +327,8 @@ export interface FlightTelemetry {
   sound?: SoundboardStatus;
   /** Flight state machine (`fas_fsm`). */
   fsm?: FsmStatus;
+  /** Bridge serial-link state (`fas_link`). Absent when the payload omits it. */
+  link?: FasLink;
 }
 
 // ---------------------------------------------------------------------------

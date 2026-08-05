@@ -1,5 +1,5 @@
 import type { Status } from "@/components/primitives";
-import type { ConsoleKind, ConsoleLogEntry } from "./types";
+import type { ConsoleKind, ConsoleLogEntry, FasSerialPort } from "./types";
 
 /** Board-kind code → short label (mirrors FAS CAN-ID `kind` field). */
 const BOARD_KINDS: Record<number, string> = {
@@ -39,6 +39,31 @@ function asString(v: unknown): string | undefined {
 
 function asNumber(v: unknown): number | undefined {
   return typeof v === "number" ? v : undefined;
+}
+
+/**
+ * Extract the port list from a `console_ports` message. Entries without a
+ * `device` are dropped — `device` is the only field a `configure` needs, so a
+ * port we cannot address is not worth offering.
+ */
+export function parseConsolePorts(raw: Record<string, unknown>): FasSerialPort[] {
+  const ports = Array.isArray(raw["ports"]) ? raw["ports"] : [];
+  const out: FasSerialPort[] = [];
+  for (const entry of ports) {
+    if (!entry || typeof entry !== "object") continue;
+    const o = entry as Record<string, unknown>;
+    const device = asString(o["device"]);
+    if (!device) continue;
+    const port: FasSerialPort = { device };
+    const name = asString(o["name"]);
+    if (name) port.name = name;
+    const description = asString(o["description"]);
+    if (description) port.description = description;
+    const hwid = asString(o["hwid"]);
+    if (hwid) port.hwid = hwid;
+    out.push(port);
+  }
+  return out;
 }
 
 /**
@@ -128,6 +153,28 @@ function classifyBody(
         status: "nominal",
         kind: "system",
         text: `Configured ${port}${baud ? ` @ ${baud}` : ""}`,
+        raw,
+      };
+    }
+
+    // Bridge serial-link state — pushed unprompted on every link change.
+    case "console_serial": {
+      const connected = raw["connected"] === true;
+      const port = asString(raw["port"]);
+      const baud = asNumber(raw["baud"]);
+      const err = asString(raw["error"]);
+      if (connected) {
+        return {
+          status: "nominal",
+          kind: "system",
+          text: `Serial link up — ${port || "?"}${baud ? ` @ ${baud}` : ""}`,
+          raw,
+        };
+      }
+      return {
+        status: err ? "error" : "neutral",
+        kind: "system",
+        text: `Serial link down${port ? ` (${port})` : ""}${err ? `: ${err}` : ""}`,
         raw,
       };
     }

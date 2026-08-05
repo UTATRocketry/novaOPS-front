@@ -12,6 +12,7 @@ import { AlertChips } from "@/components/alerts";
 import { useColorMode } from "@/lib/theme/color-mode";
 import { RoleModal } from "./RoleModal";
 import { BatteryIndicator } from "./BatteryIndicator";
+import { FasLinkControl } from "./FasLinkControl";
 
 const WHITE_LOGO = "brightness(0) invert(1)";
 
@@ -220,6 +221,9 @@ export function TopStatusBar() {
 
         {/* Battery voltage */}
         <BatteryIndicator />
+
+        {/* FAS serial link — status + port configurator */}
+        <FasLinkControl />
       </Flex>
 
       {/* Right cluster */}

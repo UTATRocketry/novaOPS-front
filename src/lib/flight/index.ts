@@ -4,6 +4,7 @@ import type {
   FasActuatorChannel,
   FasBoard,
   FasBoardPower,
+  FasLink,
   FasSensorMasks,
   FlightEvent,
   FlightMilestones,
@@ -26,6 +27,7 @@ export type {
   FasActuatorChannel,
   FasBoard,
   FasBoardPower,
+  FasLink,
   FasSensorMasks,
   FlightEvent,
   FlightMilestones,
@@ -426,6 +428,28 @@ function parseRab(raw: unknown): Record<string, RabStatus> | undefined {
   return Object.keys(out).length > 0 ? out : undefined;
 }
 
+/**
+ * Parse a `fas_link` block / `console_serial` message body into a FasLink.
+ *
+ * Exported because the console publishes the identical object as a standalone
+ * `console_serial` WS message — the socket router reuses this so both paths
+ * produce one shape. Returns undefined when the block is absent, so a
+ * flight_data payload without `fas_link` never overwrites known link state.
+ */
+export function parseFasLink(raw: unknown): FasLink | undefined {
+  const o = obj(raw);
+  if (o === undefined) return undefined;
+  const port = typeof o["port"] === "string" ? (o["port"] as string) : null;
+  return {
+    connected: bool(o["connected"]) ?? false,
+    // The bridge sends "" for "no port configured" — normalize to null so the
+    // UI renders `—` rather than an empty gap.
+    port: port ? port : null,
+    baud: num(o["baud"]) ?? null,
+    error: typeof o["error"] === "string" ? (o["error"] as string) : null,
+  };
+}
+
 function parseAux(raw: unknown): FmcAuxStatus | undefined {
   const o = obj(raw);
   if (!o) return undefined;
@@ -568,6 +592,7 @@ export function adaptFlightData(raw: Record<string, unknown>): FlightTelemetry {
   put(out, "aux", parseAux(raw["fas_aux"]));
   put(out, "rf", parseRf(raw["fas_rf"]));
   put(out, "sound", parseSound(raw["fas_sound"]));
+  put(out, "link", parseFasLink(raw["fas_link"]));
 
   // --- Flight state machine -------------------------------------------------
   const fsm = obj(raw["fas_fsm"]);
