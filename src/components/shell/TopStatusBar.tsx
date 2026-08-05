@@ -135,7 +135,7 @@ export function TopStatusBar() {
 
   const socketStatus = useNovaStore(sel.socketStatus);
   const sessionRole = useNovaStore(sel.sessionRole);
-  const { colorMode, toggleColorMode } = useColorMode();
+  const { colorMode, toggleColorMode, mounted: colorModeReady } = useColorMode();
 
   const signal = adaptSignal(null);
   const { dotStatus, label: connLabel } = mapSocketStatus(socketStatus);
@@ -243,7 +243,15 @@ export function TopStatusBar() {
           _hover={{ bg: "chrome.surfaceHover", color: "chrome.text" }}
           style={{ transition: "background 150ms ease, color 150ms ease" }}
         >
-          <Icon name={colorMode === "dark" ? "light_mode" : "dark_mode"} size={18} color="currentColor" />
+          {/* Empty until the mode is known — the button keeps its 30px box, so
+              nothing shifts when the icon appears. */}
+          {colorModeReady && (
+            <Icon
+              name={colorMode === "dark" ? "light_mode" : "dark_mode"}
+              size={18}
+              color="currentColor"
+            />
+          )}
         </Box>
 
         {/* Alert chips — live counts by severity; click to open the alert center */}

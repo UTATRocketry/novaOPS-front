@@ -44,16 +44,18 @@ function SettingRow({ label, description, children }: { label: string; descripti
 }
 
 function AppearanceSection() {
-  const { colorMode, toggleColorMode } = useColorMode();
+  const { colorMode, toggleColorMode, mounted: colorModeReady } = useColorMode();
   const [tab, setTab] = useState("pid");
+  // Neutral until next-themes reports the real mode — see useColorMode.
+  const isDark = colorMode === "dark";
   return (
     <Box>
       <Stack gap={4}>
         <Card title="Theme">
           <SettingRow label="Color mode" description="Toggle between dark (default) and light themes.">
             <Flex as="button" onClick={toggleColorMode} align="center" gap={2} px={3} py={1.5} borderRadius="control" border="1px solid" borderColor="border.default" bg="bg.surface" color="text.primary" cursor="pointer" fontSize="sm">
-              <Icon name={colorMode === "dark" ? "light_mode" : "dark_mode"} size={16} />
-              {colorMode === "dark" ? "Switch to Light" : "Switch to Dark"}
+              <Icon name={!colorModeReady ? "contrast" : isDark ? "light_mode" : "dark_mode"} size={16} />
+              {!colorModeReady ? "Switch theme" : isDark ? "Switch to Light" : "Switch to Dark"}
             </Flex>
           </SettingRow>
         </Card>

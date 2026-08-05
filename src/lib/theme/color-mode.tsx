@@ -1,7 +1,7 @@
 "use client";
 
 import { ThemeProvider, useTheme } from "next-themes";
-import type { PropsWithChildren } from "react";
+import { useEffect, useState, type PropsWithChildren } from "react";
 
 /**
  * Color mode is driven by next-themes (the Chakra v3 approach).
@@ -17,9 +17,13 @@ export function ColorModeProvider({ children }: PropsWithChildren) {
 
 export function useColorMode() {
   const { resolvedTheme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   const colorMode = resolvedTheme === "light" ? "light" : "dark";
   return {
     colorMode,
+    mounted,
     setColorMode: setTheme,
     toggleColorMode: () => setTheme(colorMode === "dark" ? "light" : "dark"),
   };
