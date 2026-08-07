@@ -2,12 +2,21 @@
 
 Next.js + Chakra UI v3 ground control station.
 
-## Run it
+## Set up
 
 ```bash
 npm install
 cp .env.example .env.local   # point at your backend
+npm run build
+```
+
+## Run It
+```
+# for development
 npm run dev                  # http://localhost:3000
+
+# for production
+npm run start
 ```
 
 
