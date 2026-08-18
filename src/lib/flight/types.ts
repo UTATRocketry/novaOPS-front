@@ -111,7 +111,11 @@ export interface PmbStatus {
     iSetting?: number;   // charge-current DAC code (0..31)
     vSetting?: number;   // charge-voltage DAC code (0..31)
     cells?: number;
-    vlimit?: boolean;    // firmware charge-voltage cutoff currently holding
+    vlimit?: boolean;         // firmware charge-voltage cutoff currently holding
+    enabledIntent?: boolean;  // persisted automatic-charge intent
+    persistError?: boolean;   // runtime state may differ from flash — warn
+    targetsOk?: boolean;      // direct I/V targets verified by read-back
+    controlUnknown?: boolean; // LTC gate state cannot be proven — warn
   };
 }
 
@@ -139,12 +143,31 @@ export interface FmcSdStatus {
   rateDiv?: number | null;
 }
 
+/** STM32WL vehicle-radio state (`fas_fmc[key].radio`), echoed ~1 Hz. */
 export interface FmcRadioStatus {
-  powered?: boolean;
-  enabled?: boolean;
-  everyN?: number;
-  txFrames?: number;
-  txBytes?: number;
+  /** Raw flag byte, kept for debugging/console display. */
+  flags?: number;
+  /** Modem state machine code, and its decoded name when the backend supplies one. */
+  state?: number;
+  stateName?: string;
+  /** Last fault code latched by the modem driver; 0 = none. */
+  lastFault?: number;
+  /** Frames waiting in the FMC's transmit queue. */
+  queueDepth?: number;
+  /** Frames handed to the modem since boot. */
+  txAccepted?: number;
+  /** Frames dropped because the queue was full — the number that matters on the pad. */
+  txDropped?: number;
+
+  // Decoded flag bits (see RADIO_STATUS_FLAG_* in gs/protocol.py).
+  powerRequested?: boolean;   // operator asked for the rail
+  powered?: boolean;          // rail is actually on
+  ready?: boolean;            // modem answered and is usable
+  configValid?: boolean;      // a valid config record is loaded
+  readbackMatches?: boolean;  // modem read-back agrees with the stored record
+  txActive?: boolean;         // a transmission is in flight right now
+  clockCalibrated?: boolean;  // TCXO/clock calibration completed
+  fault?: boolean;            // latched fault — surface prominently
 }
 
 export interface FmcTemps {
@@ -191,18 +214,99 @@ export interface RabStatus {
   flags?: number;
 }
 
-/** FMC auxiliary status (`fas_aux`): RunCam power + GNSS time-pulse. */
+/**
+ * FMC auxiliary status (`fas_aux`): camera, RF amplifier, GNSS time-pulse.
+ *
+ * `runcamPowered` / `rfPaOn` are the EPB's own ACTUATOR_STATE echo as the FMC
+ * saw it — *not* the FMC's intent. A board that never answered reads `false`
+ * rather than a guess, so each is paired with its `*Requested` sibling in the
+ * UI: "asked for on, reading off" is its own distinct, alarming state.
+ */
 export interface FmcAuxStatus {
-  runcamPowered: boolean;
-  ppsPresent: boolean;   // GNSS PPS rising edge seen within ~2 s
-  ppsCount?: number;     // rising-edge counter (wraps)
-  ppsAgeMs?: number;     // ms since last edge (undefined if never)
+  /** Raw aux flag byte. */
+  flags?: number;
+
+  runcamPowered: boolean;      // EPB echo — the camera rail is on
+  runcamPresent?: boolean;     // camera answered RCDP GET_DEVICE_INFO
+  runcamRecording?: boolean;   // a START_RECORDING is in effect
+  runcamAutostop?: boolean;    // the auto-stop timer is armed
+  /** Seconds remaining before auto-stop; `null` when the field is not applicable. */
+  runcamRecordS?: number | null;
+
+  rfPaRequested?: boolean;     // operator master enable is set
+  rfPaOn?: boolean;            // EPB echo — the amplifier rail is on
+  rfPaCycling?: boolean;       // the duty-cycle scheduler is running
+  rfPaInhibited?: boolean;     // held off because the modem is not ready
+
+  ppsPresent: boolean;         // GNSS PPS rising edge seen within ~2 s
+  ppsCount?: number;           // rising-edge counter (wraps)
+  ppsAgeMs?: number;           // ms since last edge (undefined if never)
 }
 
-/** FMC RF telemetry rate/power mode (`fas_rf`). Persisted on the FMC; echoed ~1 Hz. */
-export interface FmcRfStatus {
-  rateMode: number;         // 0 = low, 1 = normal, 2 = high
-  rateName?: string;        // "low" | "normal" | "high"
+// ---------------------------------------------------------------------------
+// Vehicle-radio configuration (`fas_radio_cfg`, FMC_RADIO_CONFIG 0x3D)
+// ---------------------------------------------------------------------------
+
+/** One EPB ADC channel selected for the 200 Hz RF pressure stream. */
+export interface RadioPressureChannel {
+  boardId: number;   // EPB 0..7
+  channel: number;   // 0..1
+}
+
+/** LoRa link parameters (the vehicle has exactly one mode). */
+export interface RadioLoraProfile {
+  frequencyHz: number;
+  bandwidthHz: number;
+  powerDbm: number;
+  spreadingFactor: number;
+  codingRate: string;       // "4/5" … "4/8"
+  preambleSymbols: number;
+}
+
+/** RF amplifier duty cycle + EPB peripheral bindings. */
+export interface RadioRfChain {
+  paBoardId?: number | null;      // null = unfitted
+  paChannel?: number | null;
+  runcamBoardId?: number | null;
+  runcamChannel?: number | null;
+  cyclePeriodMs: number;          // 1000..60000
+  warmupMs: number;               // 0..2000
+  tailMs: number;                 // 0..2000
+  maxOnMs: number;                // 1..30000
+  minOffMs: number;               // 0..60000
+  runcamAutostopS: number;        // 0..43200
+  dutyCycle: boolean;
+  runcamAutostop: boolean;
+  bootSound: boolean;
+  recOnPower: boolean;
+}
+
+/** The FMC-authoritative vehicle-radio config (`fas_radio_cfg`). */
+export interface RadioConfig {
+  callsign: string;
+  networkId: number;
+  vehicleNodeId: number;
+  allocationLowHz: number;
+  allocationHighHz: number;
+  lora: RadioLoraProfile;
+  pressureChannels: RadioPressureChannel[];
+  rfChain: RadioRfChain;
+}
+
+/** Transaction envelope around a config read-back. */
+export interface RadioConfigState {
+  config?: RadioConfig;
+  status?: number;
+  statusName?: string;            // request|accepted|applied|invalid|store_error|link_error|busy
+  transactionId?: number;
+  generation?: number;
+  persisted?: boolean;
+  linkReady?: boolean;
+  readbackMatches?: boolean;
+  placeholderId?: boolean;        // callsign is still XXXXXX
+  validationError?: number;
+  /** Set when the payload could not be decoded at all. */
+  decodeError?: string;
 }
 
 /** Soundboard status (`fas_sound.status`). */
@@ -321,8 +425,8 @@ export interface FlightTelemetry {
   rab?: Record<string, RabStatus>;
   /** FMC auxiliary status (`fas_aux`). */
   aux?: FmcAuxStatus;
-  /** FMC RF telemetry rate/power mode (`fas_rf`). */
-  rf?: FmcRfStatus;
+  /** FMC-authoritative vehicle-radio configuration (`fas_radio_cfg`). */
+  radioConfig?: RadioConfigState;
   /** Soundboard status + clip directory (`fas_sound`). */
   sound?: SoundboardStatus;
   /** Flight state machine (`fas_fsm`). */

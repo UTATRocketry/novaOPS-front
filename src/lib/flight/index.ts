@@ -10,12 +10,16 @@ import type {
   FlightMilestones,
   FlightTelemetry,
   FmcAuxStatus,
-  FmcRfStatus,
   FmcStatus,
   GpsData,
   ImcStatus,
   PmbStatus,
   RabStatus,
+  RadioConfig,
+  RadioConfigState,
+  RadioLoraProfile,
+  RadioPressureChannel,
+  RadioRfChain,
   SoundClip,
   SoundStatus,
   SoundboardStatus,
@@ -33,12 +37,16 @@ export type {
   FlightMilestones,
   FlightTelemetry,
   FmcAuxStatus,
-  FmcRfStatus,
   FmcStatus,
   GpsData,
   ImcStatus,
   PmbStatus,
   RabStatus,
+  RadioConfig,
+  RadioConfigState,
+  RadioLoraProfile,
+  RadioPressureChannel,
+  RadioRfChain,
   SoundClip,
   SoundStatus,
   SoundboardStatus,
@@ -133,6 +141,10 @@ function bool(v: unknown): boolean | undefined {
   if (v === 1 || v === "1") return true;
   if (v === 0 || v === "0") return false;
   return undefined;
+}
+
+function str(v: unknown): string | undefined {
+  return typeof v === "string" ? v : undefined;
 }
 
 function obj(v: unknown): Record<string, unknown> | undefined {
@@ -312,6 +324,10 @@ function parsePmb(raw: unknown): Record<string, PmbStatus> | undefined {
       put(block, "vSetting", num(chgCfg["v_setting"]));
       put(block, "cells", num(chgCfg["cells"]));
       put(block, "vlimit", bool(chgCfg["vlimit"]));
+      put(block, "enabledIntent", bool(chgCfg["enabled_intent"]));
+      put(block, "persistError", bool(chgCfg["persist_error"]));
+      put(block, "targetsOk", bool(chgCfg["targets_ok"]));
+      put(block, "controlUnknown", bool(chgCfg["control_unknown"]));
       status.chgCfg = block;
     }
 
@@ -362,11 +378,21 @@ function parseFmc(raw: unknown): Record<string, FmcStatus> | undefined {
     const radio = obj(o["radio"]);
     if (radio) {
       const block: NonNullable<FmcStatus["radio"]> = {};
-      put(block, "powered", bool(radio["powered"]));
-      put(block, "enabled", bool(radio["enabled"]));
-      put(block, "everyN", num(radio["every_n"]));
-      put(block, "txFrames", num(radio["tx_frames"]));
-      put(block, "txBytes", num(radio["tx_bytes"]));
+      put(block, "flags",      num(radio["flags"]));
+      put(block, "state",      num(radio["state"]));
+      put(block, "stateName",  str(radio["state_name"]));
+      put(block, "lastFault",  num(radio["last_fault"]));
+      put(block, "queueDepth", num(radio["queue_depth"]));
+      put(block, "txAccepted", num(radio["tx_accepted"]));
+      put(block, "txDropped",  num(radio["tx_dropped"]));
+      put(block, "powerRequested",  bool(radio["power_requested"]));
+      put(block, "powered",         bool(radio["powered"]));
+      put(block, "ready",           bool(radio["ready"]));
+      put(block, "configValid",     bool(radio["config_valid"]));
+      put(block, "readbackMatches", bool(radio["readback_matches"]));
+      put(block, "txActive",        bool(radio["tx_active"]));
+      put(block, "clockCalibrated", bool(radio["clock_calibrated"]));
+      put(block, "fault",           bool(radio["fault"]));
       status.radio = block;
     }
 
@@ -457,19 +483,136 @@ function parseAux(raw: unknown): FmcAuxStatus | undefined {
     runcamPowered: bool(o["runcam_powered"]) ?? false,
     ppsPresent: bool(o["pps_present"]) ?? false,
   };
+  put(aux, "flags", num(o["aux_flags"]));
+  put(aux, "runcamPresent",   bool(o["runcam_present"]));
+  put(aux, "runcamRecording", bool(o["runcam_recording"]));
+  put(aux, "runcamAutostop",  bool(o["runcam_autostop"]));
+  // null means "not applicable" (0xFFFF on the wire), which is not 0 seconds —
+  // preserve it so the UI renders a dash rather than "stopping now".
+  if (o["runcam_record_s"] !== undefined) {
+    aux.runcamRecordS = o["runcam_record_s"] === null ? null : num(o["runcam_record_s"]) ?? null;
+  }
+  put(aux, "rfPaRequested", bool(o["rf_pa_requested"]));
+  put(aux, "rfPaOn",        bool(o["rf_pa_on"]));
+  put(aux, "rfPaCycling",   bool(o["rf_pa_cycling"]));
+  put(aux, "rfPaInhibited", bool(o["rf_pa_inhibited"]));
   put(aux, "ppsCount", num(o["pps_count"]));
   put(aux, "ppsAgeMs", num(o["pps_age_ms"]));
   return aux;
 }
 
-function parseRf(raw: unknown): FmcRfStatus | undefined {
+// ---------------------------------------------------------------------------
+// Vehicle-radio configuration (`fas_radio_cfg`)
+// ---------------------------------------------------------------------------
+
+/** null = unfitted peripheral binding; undefined = field absent. Both are preserved. */
+function nullableNum(v: unknown): number | null | undefined {
+  if (v === undefined) return undefined;
+  if (v === null) return null;
+  return num(v) ?? null;
+}
+
+function parseLora(raw: unknown): RadioLoraProfile | undefined {
   const o = obj(raw);
   if (!o) return undefined;
-  const mode = num(o["rate_mode"]);
-  if (mode === undefined) return undefined;
-  const rf: FmcRfStatus = { rateMode: mode };
-  put(rf, "rateName", typeof o["rate_name"] === "string" ? (o["rate_name"] as string) : undefined);
-  return rf;
+  return {
+    frequencyHz:     num(o["frequency_hz"]) ?? 0,
+    bandwidthHz:     num(o["bandwidth_hz"]) ?? 0,
+    powerDbm:        num(o["power_dbm"]) ?? 0,
+    spreadingFactor: num(o["spreading_factor"]) ?? 0,
+    codingRate:      str(o["coding_rate"]) ?? "",
+    preambleSymbols: num(o["preamble_symbols"]) ?? 0,
+  };
+}
+
+function parsePressureChannels(raw: unknown): RadioPressureChannel[] | undefined {
+  if (!Array.isArray(raw)) return undefined;
+  const out: RadioPressureChannel[] = [];
+  for (const entry of raw) {
+    const o = obj(entry);
+    if (!o) continue;
+    const boardId = num(o["board_id"]);
+    const channel = num(o["channel"]);
+    if (boardId === undefined || channel === undefined) continue;
+    out.push({ boardId, channel });
+  }
+  return out;
+}
+
+function parseRfChain(raw: unknown): RadioRfChain | undefined {
+  const o = obj(raw);
+  if (!o) return undefined;
+  const chain: RadioRfChain = {
+    cyclePeriodMs:   num(o["cycle_period_ms"]) ?? 0,
+    warmupMs:        num(o["warmup_ms"]) ?? 0,
+    tailMs:          num(o["tail_ms"]) ?? 0,
+    maxOnMs:         num(o["max_on_ms"]) ?? 0,
+    minOffMs:        num(o["min_off_ms"]) ?? 0,
+    runcamAutostopS: num(o["runcam_autostop_s"]) ?? 0,
+    dutyCycle:       bool(o["duty_cycle"]) ?? false,
+    runcamAutostop:  bool(o["runcam_autostop"]) ?? false,
+    bootSound:       bool(o["boot_sound"]) ?? false,
+    recOnPower:      bool(o["rec_on_power"]) ?? false,
+  };
+  // Peripheral bindings are null when the board/channel is unfitted.
+  const paBoard = nullableNum(o["pa_board_id"]);
+  if (paBoard !== undefined) chain.paBoardId = paBoard;
+  const paCh = nullableNum(o["pa_channel"]);
+  if (paCh !== undefined) chain.paChannel = paCh;
+  const rcBoard = nullableNum(o["runcam_board_id"]);
+  if (rcBoard !== undefined) chain.runcamBoardId = rcBoard;
+  const rcCh = nullableNum(o["runcam_channel"]);
+  if (rcCh !== undefined) chain.runcamChannel = rcCh;
+  return chain;
+}
+
+function parseRadioConfigRecord(raw: unknown): RadioConfig | undefined {
+  const o = obj(raw);
+  if (!o) return undefined;
+  const lora = parseLora(o["lora"]);
+  const rfChain = parseRfChain(o["rf_chain"]);
+  if (!lora || !rfChain) return undefined;
+  return {
+    callsign:         str(o["callsign"]) ?? "",
+    networkId:        num(o["network_id"]) ?? 0,
+    vehicleNodeId:    num(o["vehicle_node_id"]) ?? 0,
+    allocationLowHz:  num(o["allocation_low_hz"]) ?? 0,
+    allocationHighHz: num(o["allocation_high_hz"]) ?? 0,
+    lora,
+    pressureChannels: parsePressureChannels(o["pressure_channels"]) ?? [],
+    rfChain,
+  };
+}
+
+/**
+ * `fas_radio_cfg` — the FMC-authoritative radio config plus its transaction
+ * envelope. A malformed 88-byte record arrives as
+ * `{ config_decode_error, raw_hex }`; that path leaves `config` undefined so the
+ * UI can show the decode failure rather than a half-parsed record.
+ */
+function parseRadioConfig(raw: unknown): RadioConfigState | undefined {
+  const o = obj(raw);
+  if (!o) return undefined;
+  const state: RadioConfigState = {};
+
+  const decodeError = str(o["config_decode_error"]);
+  if (decodeError !== undefined) {
+    state.decodeError = decodeError;
+  } else {
+    put(state, "config", parseRadioConfigRecord(o["config"]));
+  }
+
+  put(state, "status",          num(o["status"]));
+  put(state, "statusName",      str(o["status_name"]));
+  put(state, "transactionId",   num(o["transaction_id"]));
+  put(state, "generation",      num(o["generation"]));
+  put(state, "persisted",       bool(o["persisted"]));
+  put(state, "linkReady",       bool(o["link_ready"]));
+  put(state, "readbackMatches", bool(o["readback_matches"]));
+  put(state, "placeholderId",   bool(o["placeholder_id"]));
+  put(state, "validationError", num(o["validation_error"]));
+
+  return Object.keys(state).length > 0 ? state : undefined;
 }
 
 function parseSound(raw: unknown): SoundboardStatus | undefined {
@@ -590,7 +733,7 @@ export function adaptFlightData(raw: Record<string, unknown>): FlightTelemetry {
   put(out, "imc", parseImc(raw["fas_imc"]));
   put(out, "rab", parseRab(raw["fas_rab"]));
   put(out, "aux", parseAux(raw["fas_aux"]));
-  put(out, "rf", parseRf(raw["fas_rf"]));
+  put(out, "radioConfig", parseRadioConfig(raw["fas_radio_cfg"]));
   put(out, "sound", parseSound(raw["fas_sound"]));
   put(out, "link", parseFasLink(raw["fas_link"]));
 

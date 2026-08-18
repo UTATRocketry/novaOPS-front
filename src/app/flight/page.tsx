@@ -229,7 +229,6 @@ export default function FlightPage() {
             <FmcAuxCard
               fmc={fmc}
               aux={telemetry?.aux}
-              rf={telemetry?.rf}
               node={fmcKey ? fmcKey.replace(":", "_").toUpperCase() : "FMC_0"}
             />
             <RabCard rab={telemetry?.rab} />
