@@ -227,8 +227,10 @@ export interface FmcAuxStatus {
   flags?: number;
 
   runcamPowered: boolean;      // EPB echo — the camera rail is on
-  runcamPresent?: boolean;     // camera answered RCDP GET_DEVICE_INFO
-  runcamRecording?: boolean;   // a START_RECORDING is in effect
+  // No runcamPresent / runcamRecording: nothing in this system can observe the
+  // camera. The FMC has only its supply, no signal path, so aux_flags bits 1
+  // and 2 are permanently reserved and never emitted. A field here would only
+  // ever render a confident "no", which is worse than showing nothing.
   runcamAutostop?: boolean;    // the auto-stop timer is armed
   /** Seconds remaining before auto-stop; `null` when the field is not applicable. */
   runcamRecordS?: number | null;

@@ -484,8 +484,6 @@ function parseAux(raw: unknown): FmcAuxStatus | undefined {
     ppsPresent: bool(o["pps_present"]) ?? false,
   };
   put(aux, "flags", num(o["aux_flags"]));
-  put(aux, "runcamPresent",   bool(o["runcam_present"]));
-  put(aux, "runcamRecording", bool(o["runcam_recording"]));
   put(aux, "runcamAutostop",  bool(o["runcam_autostop"]));
   // null means "not applicable" (0xFFFF on the wire), which is not 0 seconds —
   // preserve it so the UI renders a dash rather than "stopping now".

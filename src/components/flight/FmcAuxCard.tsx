@@ -198,11 +198,13 @@ function PowerToggle({
 function RuncamRecordControl({ aux, node }: { aux: FmcAuxStatus | undefined; node: string }) {
   const clientId   = useNovaStore(sel.clientId);
   const canCommand = useNovaStore(sel.canCommand);
-  const [autostop, setAutostop] = useState("0");
+  // Blank = send no autostop_s, which the FMC reads as "use my persisted
+  // runcam_autostop_s". 0 is NOT that: 0 is an explicit "no timer at all", so
+  // it must not be the default an operator gets without asking for it.
+  const [autostop, setAutostop] = useState("");
   const [busy, setBusy]         = useState(false);
   const [error, setError]       = useState<string | null>(null);
 
-  const recording = aux?.runcamRecording;
   const disabled  = !clientId || !canCommand || busy;
 
   async function send(enable: boolean) {
@@ -211,7 +213,7 @@ function RuncamRecordControl({ aux, node }: { aux: FmcAuxStatus | undefined; nod
     setError(null);
     try {
       const body: Parameters<typeof sendFasRuncamRecord>[0] = { node, enable };
-      if (enable) {
+      if (enable && autostop.trim() !== "") {
         // The firmware clamps too, but a silent server-side clamp is a bad
         // surprise — do it here so the operator sees the value that was sent.
         const parsed = Number(autostop);
@@ -220,6 +222,8 @@ function RuncamRecordControl({ aux, node }: { aux: FmcAuxStatus | undefined; nod
         if (clamped !== seconds) setAutostop(String(clamped));
         body.autostop_s = clamped;
       }
+      // Left blank the field is omitted entirely, so the FMC applies its own
+      // persisted default instead of being told "never stop".
       await withBackendSupport("RunCam recording", () => sendFasRuncamRecord(body, clientId));
     } catch (e) {
       setError(e instanceof Error ? e.message : "Error");
@@ -236,20 +240,18 @@ function RuncamRecordControl({ aux, node }: { aux: FmcAuxStatus | undefined; nod
   return (
     <Box flex="1" minW="200px">
       <Text fontSize="2xs" color="text.muted" textTransform="uppercase" letterSpacing="0.06em" mb={2}>
-        RunCam recording
+        RunCam rail
       </Text>
 
+      {/* Raising the 8V4 rail is what starts a recording and dropping it is what
+          ends one — there is no record command and no way to ask the camera
+          anything. So this shows the rail as the EPB echoed it and the FMC's own
+          timer, and claims nothing about the camera itself. */}
       <Flex direction="column" gap={1} mb={2}>
         <Flex align="baseline" justify="space-between" gap={2}>
-          <Text fontSize="xs" color="text.muted">recording</Text>
-          <Mono fontSize="xs" color={recording ? "nominal" : "text.primary"}>
-            {onOff(recording, "yes", "no")}
-          </Mono>
-        </Flex>
-        <Flex align="baseline" justify="space-between" gap={2}>
-          <Text fontSize="xs" color="text.muted">camera</Text>
-          <Mono fontSize="xs" color="text.primary">
-            {onOff(aux?.runcamPresent, "present", "no answer")}
+          <Text fontSize="xs" color="text.muted">rail</Text>
+          <Mono fontSize="xs" color={aux?.runcamPowered ? "nominal" : "text.primary"}>
+            {onOff(aux?.runcamPowered, "on", "off")}
           </Mono>
         </Flex>
         <Flex align="baseline" justify="space-between" gap={2}>
@@ -273,13 +275,14 @@ function RuncamRecordControl({ aux, node }: { aux: FmcAuxStatus | undefined; nod
               fontFamily="mono"
               flex="1"
               minW="70px"
-              aria-label="RunCam auto-stop seconds"
+              placeholder="FMC default"
+              aria-label="RunCam auto-stop seconds (blank = FMC persisted default, 0 = no timer)"
             />
             <Button size="xs" variant="outline" colorPalette="green" disabled={disabled} onClick={() => send(true)}>
-              Record
+              Rail on
             </Button>
             <Button size="xs" variant="outline" disabled={disabled} onClick={() => send(false)}>
-              Stop
+              Rail off
             </Button>
           </Flex>
           <Text fontSize="2xs" color="text.muted">
@@ -323,7 +326,6 @@ export function FmcAuxCard({ fmc, aux, node = "FMC_0" }: FmcAuxCardProps) {
           {
             label: "RunCam",
             value: onOff(aux?.runcamPowered),
-            status: aux?.runcamPowered === false && aux?.runcamRecording ? "warn" : undefined,
           },
           {
             label: "RF amp",
