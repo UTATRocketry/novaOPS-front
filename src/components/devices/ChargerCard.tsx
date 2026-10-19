@@ -134,7 +134,13 @@ export function ChargerCard({ boardKey, charger, chgCfg, stale = false }: Charge
               <Text fontSize="2xs" color="text.muted" textTransform="uppercase" letterSpacing="0.06em">
                 Firmware limits
               </Text>
-              {chgCfg.vlimit === true && <Chip status="warn">voltage cutoff active</Chip>}
+              <Flex gap={2} flexWrap="wrap">
+                {chgCfg.vlimit === true && <Chip status="warn">voltage cutoff active</Chip>}
+                {/* The LTC gate state cannot be proven, so no reading here is trustworthy. */}
+                {chgCfg.controlUnknown === true && <Chip status="error">control state unknown</Chip>}
+                {/* Flash write failed: the running state may not survive a reset. */}
+                {chgCfg.persistError === true && <Chip status="warn">persist error</Chip>}
+              </Flex>
             </Flex>
             <Flex gap={6} flexWrap="wrap">
               <Flex direction="column" gap={1} flex="1" minW="130px">
@@ -151,6 +157,14 @@ export function ChargerCard({ boardKey, charger, chgCfg, stale = false }: Charge
                 <Readout
                   label="cells"
                   value={chgCfg.cells != null ? String(chgCfg.cells) : "—"}
+                />
+                <Readout
+                  label="auto-charge intent"
+                  value={chgCfg.enabledIntent == null ? "—" : chgCfg.enabledIntent ? "on" : "off"}
+                />
+                <Readout
+                  label="targets verified"
+                  value={chgCfg.targetsOk == null ? "—" : chgCfg.targetsOk ? "yes" : "no"}
                 />
               </Flex>
             </Flex>

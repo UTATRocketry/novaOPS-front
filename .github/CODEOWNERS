@@ -1,0 +1,8 @@
+# Code owners must approve PRs that touch these paths (branch protection:
+# "require review from code owners"). Everything else needs any one approval.
+# Listed paths are the ones that can move hardware or run the station - see
+# CONTRIBUTING.md in UTATRocketry/Nova-Collected.
+#
+# Replace the owner with a team once one exists, e.g. @UTATRocketry/nova-leads
+
+/.github/   @Awesome-Ace22

@@ -1,6 +1,24 @@
 import { novaFetch } from "./novaFetch";
 import type { SourceTarget } from "../types";
 
+/**
+ * Run a call against an endpoint that the backend may not have yet (the
+ * STM32WL wave landed on the frontend first). A 404/405 becomes a clear
+ * "not supported yet" message rather than a bare API error; everything else
+ * propagates unchanged.
+ */
+export async function withBackendSupport<T>(label: string, call: () => Promise<T>): Promise<T> {
+  try {
+    return await call();
+  } catch (e) {
+    const message = e instanceof Error ? e.message : String(e);
+    if (/\b(404|405)\b/.test(message) || /not found/i.test(message)) {
+      throw new Error(`${label}: backend does not support this yet`);
+    }
+    throw e;
+  }
+}
+
 export interface DirectRelayBody {
   target: SourceTarget;
   node?: string;
@@ -88,10 +106,15 @@ export function sendFasRab(body: FasRabBody, clientId: string): Promise<{ publis
   );
 }
 
-/** POST /api/fas/aux — RFD900 / RunCam load-switch power. */
+/**
+ * POST /api/fas/aux — load-switch power for the FMC's auxiliary rails.
+ *
+ * `radio` is the STM32WL vehicle modem's own rail and is not actuator-gated.
+ * `runcam` and `rf_pa` are EPB load switches: the actuator lock applies.
+ */
 export interface FasAuxBody {
   node?: string | null;    // default FMC_0
-  device: "rfd" | "runcam";
+  device: "radio" | "runcam" | "rf_pa";
   enable: boolean;
 }
 
@@ -103,15 +126,48 @@ export function sendFasAux(body: FasAuxBody, clientId: string): Promise<{ publis
   );
 }
 
-/** POST /api/fas/rf — set the FMC RF telemetry rate/power mode (persisted on the FMC). */
-export interface FasRfBody {
-  node?: string | null;    // default FMC_0
-  mode: 0 | 1 | 2;         // 0 = low, 1 = normal, 2 = high
+/**
+ * POST /api/fas/runcam_record — start/stop a RunCam recording.
+ *
+ * Distinct from {@link sendFasAux} with `device: "runcam"`, which only powers the
+ * camera rail. Note that with the config record's `recOnPower` set, powering the
+ * rail starts a recording on its own.
+ */
+export interface FasRuncamRecordBody {
+  node: string;
+  enable: boolean;
+  /** 0 = record until stopped. Max 43200. */
+  autostop_s?: number;
 }
 
-export function sendFasRf(body: FasRfBody, clientId: string): Promise<{ published_commands: unknown[] }> {
+export function sendFasRuncamRecord(
+  body: FasRuncamRecordBody,
+  clientId: string,
+): Promise<{ published_commands: unknown[] }> {
   return novaFetch<{ published_commands: unknown[] }>(
-    "/api/fas/rf",
+    "/api/fas/runcam_record",
+    { method: "POST", body: JSON.stringify(body) },
+    clientId,
+  );
+}
+
+/**
+ * POST /api/fas/radio_config — patch the FMC-authoritative radio config record.
+ *
+ * `cfg` is a partial patch merged server-side against the stored record.
+ */
+export interface FasRadioConfigBody {
+  node: string;
+  cfg: Record<string, unknown>;
+  target?: "vehicle" | "ground";
+}
+
+export function sendFasRadioConfig(
+  body: FasRadioConfigBody,
+  clientId: string,
+): Promise<{ published_commands: unknown[] }> {
+  return novaFetch<{ published_commands: unknown[] }>(
+    "/api/fas/radio_config",
     { method: "POST", body: JSON.stringify(body) },
     clientId,
   );
