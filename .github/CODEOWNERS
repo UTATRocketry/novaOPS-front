@@ -1,8 +1,19 @@
 # Code owners must approve PRs that touch these paths (branch protection:
-# "require review from code owners"). Everything else needs any one approval.
-# Listed paths are the ones that can move hardware or run the station - see
-# CONTRIBUTING.md in UTATRocketry/Nova-Collected.
+# "require review from code owners"). The last matching line wins.
 #
-# Replace the owner with a team once one exists, e.g. @UTATRocketry/nova-leads
+# Everything defaults to the Software Elevated Privileges team. Orchestration
+# (running the station, deploys, releases, CI) and anything that can move
+# hardware needs @Awesome-Ace22 specifically - see CONTRIBUTING.md in
+# UTATRocketry/Nova-Collected.
 
-/.github/   @Awesome-Ace22
+*                   @UTATRocketry/software-elevated-privileges
+
+# Hardware risk: sending actuator commands and the hazardous-command gate
+/src/lib/api/commands.ts                  @Awesome-Ace22
+/src/hooks/useCommands.ts                 @Awesome-Ace22
+/src/hooks/useCommandGate.ts              @Awesome-Ace22
+/src/lib/pid/bridge.ts                    @Awesome-Ace22
+/src/components/console/Commanding.tsx    @Awesome-Ace22
+/src/components/engine/table/rows.tsx     @Awesome-Ace22
+# Orchestration: CI
+/.github/                                 @Awesome-Ace22
