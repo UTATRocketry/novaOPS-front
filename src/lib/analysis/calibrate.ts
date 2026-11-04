@@ -7,16 +7,75 @@
  * linear interpolation between breakpoints; outside it, the end segment's slope
  * is extended rather than clamped, so an over-range reading stays visibly
  * over-range instead of flat-topping at the last calibrated point.
+ *
+ * The `theil_sen` and `repeated_median` methods instead fit one robust
+ * straight line through all the points, matching the backend's
+ * `data_service.py`, so a single bad point doesn't bend the result. The line
+ * also carries on past the outermost points.
  */
 
-import type { ConvertSpec, SensorBinding, SensorEntry } from "@/lib/types";
+import type { ConvertMethod, ConvertSpec, SensorBinding, SensorEntry } from "@/lib/types";
 import type { ChannelBinding } from "./types";
+
+/** `value = slope * raw + intercept`. */
+export interface CalibrationLine {
+  slope: number;
+  intercept: number;
+}
 
 export interface CalibrationTable {
   /** Raw breakpoints, sorted ascending and de-duplicated. */
   xs: Float64Array;
   /** Engineering values at each breakpoint. */
   ys: Float64Array;
+  /**
+   * Set only for a robust method: the fitted line, used instead of the
+   * breakpoints. `null` when the points give no slope (fewer than two
+   * different raw values), and the raw value then passes through, as in the
+   * backend.
+   */
+  line?: CalibrationLine | null;
+}
+
+export type RobustMethod = "theil_sen" | "repeated_median";
+
+export function isRobustMethod(method: ConvertMethod | undefined): method is RobustMethod {
+  return method === "theil_sen" || method === "repeated_median";
+}
+
+function median(values: number[]): number {
+  const s = [...values].sort((a, b) => a - b);
+  const mid = s.length >> 1;
+  return s.length % 2 ? s[mid] : (s[mid - 1] + s[mid]) / 2;
+}
+
+/** Slopes from point i to every other point with a different raw value. */
+function slopesFrom(i: number, xs: number[], ys: number[], onlyAfter: boolean): number[] {
+  const out: number[] = [];
+  for (let j = onlyAfter ? i + 1 : 0; j < xs.length; j++) {
+    if (j === i || xs[j] === xs[i]) continue;
+    out.push((ys[j] - ys[i]) / (xs[j] - xs[i]));
+  }
+  return out;
+}
+
+function lineWithSlope(slope: number, xs: number[], ys: number[]): CalibrationLine {
+  return { slope, intercept: median(xs.map((x, i) => ys[i] - slope * x)) };
+}
+
+/** Theil–Sen: slope is the median of the slopes between every pair of points. Ignores up to ~29% bad points. */
+export function theilSenFit(xs: number[], ys: number[]): CalibrationLine | null {
+  const slopes = xs.flatMap((_, i) => slopesFrom(i, xs, ys, true));
+  return slopes.length ? lineWithSlope(median(slopes), xs, ys) : null;
+}
+
+/** Siegel's repeated median: each point's median slope to the others, then the median of those. Ignores up to half the points being bad. */
+export function repeatedMedianFit(xs: number[], ys: number[]): CalibrationLine | null {
+  const perPoint = xs
+    .map((_, i) => slopesFrom(i, xs, ys, false))
+    .filter((s) => s.length > 0)
+    .map(median);
+  return perPoint.length ? lineWithSlope(median(perPoint), xs, ys) : null;
 }
 
 export class CalibrationError extends Error {}
@@ -64,10 +123,18 @@ export function validateCalibrationTable(
  */
 export function applyCalibration(
   raw: Float64Array,
-  { xs, ys }: CalibrationTable,
+  { xs, ys, line }: CalibrationTable,
 ): Float64Array {
   const n = xs.length;
   const out = new Float64Array(raw.length);
+
+  if (line !== undefined) {
+    for (let i = 0; i < raw.length; i++) {
+      const v = raw[i];
+      out[i] = !Number.isFinite(v) ? NaN : line ? line.slope * v + line.intercept : v;
+    }
+    return out;
+  }
 
   if (n === 0) return out.fill(NaN);
   if (n === 1) {
@@ -140,7 +207,14 @@ export function calibrationFor(convert: ConvertSpec | undefined): CalibrationTab
   const table = convert?.calibration;
   if (!table || table.length === 0) return null;
   if (convert?.method === "none") return null;
-  return validateCalibrationTable(table);
+  const validated = validateCalibrationTable(table);
+  if (!isRobustMethod(convert?.method)) return validated;
+
+  // Fit every point, duplicated raw values included, as the backend does.
+  const xs = table.map((p) => Number(p[0]));
+  const ys = table.map((p) => Number(p[1]));
+  const fit = convert.method === "theil_sen" ? theilSenFit : repeatedMedianFit;
+  return { ...validated, line: fit(xs, ys) };
 }
 
 /** True when the sensor declares a usable calibration table. */
