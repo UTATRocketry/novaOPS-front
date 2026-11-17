@@ -1,8 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import { Box, Flex, Text, Button, NativeSelect } from "@chakra-ui/react";
-import { Card, Chip } from "@/components/primitives";
+import { Box, Flex, Text, Button, Input, NativeSelect } from "@chakra-ui/react";
+import { useNovaStore, sel } from "@/lib/store";
+import {
+  getMqttTopics,
+  subscribeMqttTopic,
+  unsubscribeMqttTopic,
+} from "@/lib/api";
+import { INPUT_PROPS } from "./controlStyles";
 
 // ---------------------------------------------------------------------------
 // WebSocket URL (mirrors NovaSocket.buildUrl)
@@ -52,6 +58,47 @@ export function WsViewer() {
   const [latestAny, setLatestAny] = useState<unknown>(null);
   const [seenTypes, setSeenTypes] = useState<string[]>([]);
   const [seenTopics, setSeenTopics] = useState<string[]>([]);
+
+  // Ad-hoc backend subscriptions (see /api/mqtt/topics)
+  const clientId = useNovaStore(sel.clientId);
+  const role = useNovaStore(sel.sessionRole);
+  const canSubscribe = (role === "operator" || role === "admin") && !!clientId;
+  const [subscribed, setSubscribed] = useState<string[]>([]);
+  const [topicInput, setTopicInput] = useState("");
+  const [subBusy, setSubBusy] = useState(false);
+  const [subError, setSubError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    getMqttTopics()
+      .then((r) => {
+        if (!cancelled) setSubscribed(r.topics);
+      })
+      .catch(() => {
+        // list is informational; leave it empty if the backend is unreachable
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const changeSubscription = async (action: "add" | "remove", topic: string) => {
+    if (!clientId || !topic || subBusy) return;
+    setSubBusy(true);
+    setSubError(null);
+    try {
+      const r =
+        action === "add"
+          ? await subscribeMqttTopic(topic, clientId)
+          : await unsubscribeMqttTopic(topic, clientId);
+      setSubscribed(r.topics);
+      if (action === "add") setTopicInput("");
+    } catch (err) {
+      setSubError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setSubBusy(false);
+    }
+  };
 
   const [columns, setColumns] = useState<Column[]>([{ id: nextId(), filter: "" }]);
 
@@ -138,7 +185,10 @@ export function WsViewer() {
     setColumns((prev) => prev.map((c) => (c.id === id ? { ...c, filter } : c)));
   };
 
-  const filterOptions = mode === "types" ? seenTypes : seenTopics;
+  const filterOptions =
+    mode === "types"
+      ? seenTypes
+      : [...seenTopics, ...subscribed.filter((t) => !seenTopics.includes(t))];
 
   function columnData(col: Column): unknown {
     if (mode === "types") {
@@ -206,6 +256,90 @@ export function WsViewer() {
           + Add column
         </Button>
       </Flex>
+
+      {/* Extra MQTT topic subscriptions */}
+      <Box
+        mb={4}
+        p={3}
+        border="1px solid"
+        borderColor="border.default"
+        borderRadius="card"
+        bg="bg.surface"
+      >
+        <Text fontSize="xs" color="text.muted" mb={2}>
+          Extra MQTT topics
+        </Text>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            void changeSubscription("add", topicInput.trim());
+          }}
+        >
+          <Flex gap={2} align="center">
+            <Input
+              {...INPUT_PROPS}
+              size="xs"
+              fontFamily="mono"
+              placeholder="nova/stats/#"
+              value={topicInput}
+              onChange={(e) => setTopicInput(e.target.value)}
+              disabled={!canSubscribe || subBusy}
+            />
+            <Button
+              type="submit"
+              size="xs"
+              variant="outline"
+              disabled={!canSubscribe || subBusy || topicInput.trim() === ""}
+            >
+              Subscribe
+            </Button>
+          </Flex>
+        </form>
+        {!canSubscribe && (
+          <Text fontSize="xs" color="text.muted" mt={2}>
+            Operator or admin role required to change subscriptions.
+          </Text>
+        )}
+        {subError && (
+          <Text fontSize="xs" color="red.400" mt={2}>
+            {subError}
+          </Text>
+        )}
+        {subscribed.length > 0 && (
+          <Flex gap={2} mt={2} wrap="wrap">
+            {subscribed.map((t) => (
+              <Flex
+                key={t}
+                align="center"
+                gap={1.5}
+                px={2}
+                py={0.5}
+                border="1px solid"
+                borderColor="border.default"
+                borderRadius="control"
+                fontFamily="mono"
+                fontSize="xs"
+              >
+                {t}
+                {canSubscribe && (
+                  <Box
+                    as="button"
+                    onClick={() => void changeSubscription("remove", t)}
+                    bg="transparent"
+                    border="none"
+                    cursor="pointer"
+                    color="text.muted"
+                    _hover={{ color: "red.400" }}
+                    title={`Unsubscribe from ${t}`}
+                  >
+                    ✕
+                  </Box>
+                )}
+              </Flex>
+            ))}
+          </Flex>
+        )}
+      </Box>
 
       {/* Columns */}
       <Flex gap={3} align="stretch" minH="320px">
