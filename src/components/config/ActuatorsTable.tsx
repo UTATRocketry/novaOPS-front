@@ -112,6 +112,14 @@ function gpioChannelField(entry: ActuatorEntry, setBinding: DetailProps["setBind
   );
 }
 
+function relayTypeField(entry: ActuatorEntry, setActions: DetailProps["setActions"]) {
+  return (
+    <Field label="relay_type">
+      <SelectCell value={(entry.actions?.relay_type as string) ?? ""} options={RELAY_TYPES} onChange={(v) => setActions({ relay_type: v || null })} />
+    </Field>
+  );
+}
+
 function TypeDetail({ entry, setBinding, setActions, usedRelay, usedServo, usedGpio }: DetailProps) {
   const act = entry.actions ?? {};
   switch (entry.type) {
@@ -127,6 +135,7 @@ function TypeDetail({ entry, setBinding, setActions, usedRelay, usedServo, usedG
             />
           </Field>
           {relayChannelField(entry, setBinding, usedRelay)}
+          {relayTypeField(entry, setActions)}
           {aliasesField(entry, setActions)}
           <Field label="positions (µs)">
             <CsvListCell
@@ -147,24 +156,21 @@ function TypeDetail({ entry, setBinding, setActions, usedRelay, usedServo, usedG
           <Field label="solenoid_type">
             <SelectCell value={(act.solenoid_type as string) ?? ""} options={SOLENOID_TYPES} onChange={(v) => setActions({ solenoid_type: v || null })} />
           </Field>
+          {relayTypeField(entry, setActions)}
           {relayChannelField(entry, setBinding, usedRelay)}
         </Flex>
       );
     case "powered_device":
       return (
         <Flex gap={3} flexWrap="wrap">
-          <Field label="relay_type">
-            <SelectCell value={(act.relay_type as string) ?? ""} options={RELAY_TYPES} onChange={(v) => setActions({ relay_type: v || null })} />
-          </Field>
+          {relayTypeField(entry, setActions)}
           {relayChannelField(entry, setBinding, usedRelay)}
         </Flex>
       );
     case "powered_gpio_device":
       return (
         <Flex gap={3} flexWrap="wrap">
-          <Field label="relay_type">
-            <SelectCell value={(act.relay_type as string) ?? ""} options={RELAY_TYPES} onChange={(v) => setActions({ relay_type: v || null })} />
-          </Field>
+          {relayTypeField(entry, setActions)}
           {relayChannelField(entry, setBinding, usedRelay)}
           {gpioChannelField(entry, setBinding, usedGpio)}
           {gpioField(entry, setActions, "arm, disarm")}

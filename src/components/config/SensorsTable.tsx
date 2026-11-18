@@ -17,7 +17,7 @@ import { CalibrationModal } from "./CalibrationModal";
 
 const SENSOR_TYPES: SensorType[] = ["PT", "LC", "TC"];
 const SOURCES = ["GCS", "TCS", "FAS"] as const;
-const CONVERT_METHODS: ConvertMethod[] = ["none", "linear", "polynomial"];
+const CONVERT_METHODS: ConvertMethod[] = ["none", "zero_offset", "linear", "polynomial"];
 
 export interface SensorsTableProps {
   sensors: SensorEntry[];
@@ -41,6 +41,10 @@ export function SensorsTable({ sensors, onChange }: SensorsTableProps) {
         : { source: source as "GCS" | "TCS", hat_id: 0, channel_id: 0 };
     update(i, { binding });
   }
+  function setRange(i: number, index: 0 | 1, v: number | undefined) {
+    const [lo, hi] = sensors[i].range ?? [0, 0];
+    update(i, { range: index === 0 ? [v ?? 0, hi] : [lo, v ?? 0] });
+  }
   function remove(i: number) {
     onChange(sensors.filter((_, idx) => idx !== i));
   }
@@ -63,6 +67,7 @@ export function SensorsTable({ sensors, onChange }: SensorsTableProps) {
               <Table.ColumnHeader>Source</Table.ColumnHeader>
               <Table.ColumnHeader>Hat / Node</Table.ColumnHeader>
               <Table.ColumnHeader>Channel</Table.ColumnHeader>
+              <Table.ColumnHeader>Range</Table.ColumnHeader>
               <Table.ColumnHeader>Convert</Table.ColumnHeader>
               <Table.ColumnHeader>Calibration</Table.ColumnHeader>
               <Table.ColumnHeader />
@@ -71,7 +76,7 @@ export function SensorsTable({ sensors, onChange }: SensorsTableProps) {
           <Table.Body>
             {sensors.length === 0 ? (
               <Table.Row>
-                <Table.Cell colSpan={9}>
+                <Table.Cell colSpan={10}>
                   <Box color="text.muted" fontSize="sm" py={2}>No sensors. Add one below.</Box>
                 </Table.Cell>
               </Table.Row>
@@ -102,6 +107,15 @@ export function SensorsTable({ sensors, onChange }: SensorsTableProps) {
                         ) : (
                           <NumberCell value={b.channel_id} onChange={(v) => updateBinding(i, { channel_id: v ?? 0 })} />
                         )}
+                      </Cell>
+                    </Table.Cell>
+                    <Table.Cell>
+                      <Cell>
+                        <Flex gap={1} align="center">
+                          <NumberCell value={s.range?.[0]} onChange={(v) => setRange(i, 0, v)} placeholder="min" />
+                          <NumberCell value={s.range?.[1]} onChange={(v) => setRange(i, 1, v)} placeholder="max" />
+                          {s.range && <IconButton icon="close" label="Clear range" onClick={() => update(i, { range: undefined })} />}
+                        </Flex>
                       </Cell>
                     </Table.Cell>
                     <Table.Cell><Cell><SelectCell value={s.convert?.method ?? "none"} options={CONVERT_METHODS} onChange={(v) => update(i, { convert: { ...s.convert, method: v as ConvertMethod } })} /></Cell></Table.Cell>
