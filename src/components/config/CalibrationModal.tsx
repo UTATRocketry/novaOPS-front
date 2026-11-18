@@ -4,7 +4,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Box, Flex, Input, Table, Text } from "@chakra-ui/react";
 import { Card, Chip, Icon, Mono } from "@/components/primitives";
 import { useNovaStore, sel } from "@/lib/store";
-import type { SensorEntry } from "@/lib/types";
+import { isRobustMethod, repeatedMedianFit, theilSenFit } from "@/lib/analysis/calibrate";
+import type { ConvertMethod, SensorEntry } from "@/lib/types";
 import { TABLE_CSS, IconButton } from "./fields";
 
 const CAPTURE_MS = 10_000;
@@ -32,6 +33,14 @@ function linearFit(pairs: Pair[]): { m: number; b: number } | null {
   const m = (n * sxy - sx * sy) / denom;
   const b = (sy - m * sx) / n;
   return { m, b };
+}
+
+/** The line the backend will apply for this sensor's conversion method. */
+function fitFor(method: ConvertMethod | undefined, pairs: Pair[]): { m: number; b: number } | null {
+  if (!isRobustMethod(method)) return linearFit(pairs);
+  const fit = method === "theil_sen" ? theilSenFit : repeatedMedianFit;
+  const line = fit(pairs.map((p) => p[0]), pairs.map((p) => p[1]));
+  return line && { m: line.slope, b: line.intercept };
 }
 
 export interface CalibrationModalProps {
@@ -119,7 +128,7 @@ export function CalibrationModal({ sensor, onSave, onClose }: CalibrationModalPr
   // Δ = valueNow / m. Requires a trend (≥2 points), a non-flat slope, and a
   // live value.
   const liveValue = live?.value ?? null;
-  const fit = linearFit(pairs);
+  const fit = fitFor(sensor.convert?.method, pairs);
   const canZero = liveValue != null && fit != null && fit.m !== 0;
 
   function zeroAtCurrent() {

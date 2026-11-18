@@ -171,7 +171,11 @@ export function buildDataset({
     if (calibration) {
       values = applyCalibration(col.values, calibration);
       origin = "calibrated";
-      applied.push(`calibration (${calibration.xs.length} pts)`);
+      applied.push(
+        calibration.line !== undefined
+          ? `calibration (${sensor.convert?.method}, ${sensor.convert?.calibration?.length ?? 0} pts)`
+          : `calibration (${calibration.xs.length} pts)`,
+      );
     } else {
       values = Float64Array.from(col.values);
       origin = "raw";

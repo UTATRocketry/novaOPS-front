@@ -19,7 +19,13 @@ export type ActuatorType =
   | "powered_gpio_device"
   | "gpio_device"
   | "motor";
-export type ConvertMethod = "none" | "zero_offset" | "linear" | "polynomial";
+export type ConvertMethod =
+  | "none"
+  | "zero_offset"
+  | "linear"
+  | "polynomial"
+  | "theil_sen"
+  | "repeated_median";
 export type ClientRole = "viewer" | "pad" | "operator" | "admin";
 
 export type SensorBinding =

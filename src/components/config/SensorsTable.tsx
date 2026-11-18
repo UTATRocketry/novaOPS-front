@@ -17,7 +17,14 @@ import { CalibrationModal } from "./CalibrationModal";
 
 const SENSOR_TYPES: SensorType[] = ["PT", "LC", "TC"];
 const SOURCES = ["GCS", "TCS", "FAS"] as const;
-const CONVERT_METHODS: ConvertMethod[] = ["none", "zero_offset", "linear", "polynomial"];
+const CONVERT_METHODS: ConvertMethod[] = [
+  "none",
+  "zero_offset",
+  "linear",
+  "polynomial",
+  "theil_sen",
+  "repeated_median",
+];
 
 export interface SensorsTableProps {
   sensors: SensorEntry[];

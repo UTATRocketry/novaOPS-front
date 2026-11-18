@@ -19,9 +19,12 @@ export {
   bindingColumnKey,
   calibrationFor,
   hasCalibration,
+  isRobustMethod,
+  repeatedMedianFit,
+  theilSenFit,
   validateCalibrationTable,
 } from "./calibrate";
-export type { CalibrationTable } from "./calibrate";
+export type { CalibrationLine, CalibrationTable, RobustMethod } from "./calibrate";
 export {
   buildChannelOwners,
   deriveActuationEvents,
