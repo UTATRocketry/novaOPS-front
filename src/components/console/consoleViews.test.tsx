@@ -300,6 +300,8 @@ describe("WsViewer", () => {
     vi.useFakeTimers();
     FakeWebSocket.instances = [];
     vi.stubGlobal("WebSocket", FakeWebSocket);
+    // WsViewer lists the backend's ad-hoc MQTT subscriptions on mount.
+    mocked.getMqttTopics.mockResolvedValue({ topics: [] });
   });
   afterEach(() => {
     vi.unstubAllGlobals();

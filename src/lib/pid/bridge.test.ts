@@ -797,7 +797,7 @@ describe("PidBridge edit mode: history", () => {
     expect(steps).toBe(59);
     // the oldest reachable state is no longer the original layout
     expect(r.graph.getCell("v0")).toBeDefined();
-  });
+  }, 20_000); // 70 adds and 59 undos under coverage outrun the 5 s default on Windows runners
 
   it("re-indexes after undo so live bindings still work", () => {
     const r = edit();

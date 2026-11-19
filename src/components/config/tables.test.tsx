@@ -152,10 +152,17 @@ describe("SensorsTable", () => {
   });
 
   describe("conversion (zero_offset was missing)", () => {
-    it("offers none, zero_offset, linear and polynomial", () => {
+    it("offers none, zero_offset, linear, polynomial and the robust fits", () => {
       renderSensors([sensor()]);
       const select = screen.getByDisplayValue("none") as HTMLSelectElement;
-      expect(Array.from(select.options).map((o) => o.value)).toEqual(["none", "zero_offset", "linear", "polynomial"]);
+      expect(Array.from(select.options).map((o) => o.value)).toEqual([
+        "none",
+        "zero_offset",
+        "linear",
+        "polynomial",
+        "theil_sen",
+        "repeated_median",
+      ]);
     });
 
     it("selects zero_offset and keeps any calibration already entered", () => {
