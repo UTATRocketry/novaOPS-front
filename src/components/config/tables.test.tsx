@@ -411,3 +411,153 @@ describe("ActuatorsTable", () => {
     });
   });
 });
+
+describe("Pi I/O fields (#42)", () => {
+  function renderSensors(initial: SensorEntry[]) {
+    const spy = vi.fn();
+    renderWithProviders(<SensorsHarness initial={initial} spy={spy} />);
+    return spy;
+  }
+  function renderActuators(initial: ActuatorEntry[]) {
+    const spy = vi.fn();
+    renderWithProviders(<ActuatorsHarness initial={initial} spy={spy} />);
+    return spy;
+  }
+  function optionsFor(label: string) {
+    const field = screen.getByText(label).parentElement!;
+    const select = within(field).getByRole("combobox") as HTMLSelectElement;
+    return Array.from(select.options).map((o) => o.value);
+  }
+  const selectWith = (value: string) =>
+    screen.getAllByRole("combobox").find((s) => Array.from((s as HTMLSelectElement).options).some((o) => o.value === value))! as HTMLSelectElement;
+
+  describe("actuator GPIO channels", () => {
+    it.each(["GCS", "TCS"] as const)("offers %s BCM pins without the reserved ones", (target) => {
+      renderActuators([{ name: "H", type: "gpio_device", binding: { target }, actions: {} }]);
+      fireEvent.click(screen.getByText("gpio_device settings"));
+      expect(optionsFor("gpio_channel").filter(Boolean)).toEqual(["4", "5", "6", "14", "15", "17", "18", "19", "22", "23", "24", "25", "27"]);
+    });
+
+    it("keeps 0-15 for the FAS", () => {
+      renderActuators([{ name: "IMC", type: "gpio_device", binding: { target: "FAS", node: "IMC_0" }, actions: {} }]);
+      fireEvent.click(screen.getByText("gpio_device settings"));
+      const options = optionsFor("gpio_channel").filter(Boolean);
+      expect(options).toHaveLength(16);
+      expect(options.at(-1)).toBe("15");
+    });
+
+    it("still shows a reserved pin from an older config so it can be fixed", () => {
+      renderActuators([{ name: "H", type: "gpio_device", binding: { target: "TCS", gpio_channel: 8 }, actions: {} }]);
+      fireEvent.click(screen.getByText("gpio_device settings"));
+      expect(optionsFor("gpio_channel")).toContain("8");
+    });
+
+    it("no longer offers OPS as a target, but shows it on an actuator that has it", () => {
+      renderActuators([
+        { name: "A", type: "solenoid", binding: { target: "GCS" }, actions: {} },
+        { name: "B", type: "solenoid", binding: { target: "OPS" }, actions: {} },
+      ]);
+      const [a, b] = screen.getAllByRole("combobox").filter((s) => Array.from((s as HTMLSelectElement).options).some((o) => o.value === "TCS")) as HTMLSelectElement[];
+      expect(Array.from(a.options).map((o) => o.value)).toEqual(["GCS", "FAS", "TCS"]);
+      expect(Array.from(b.options).map((o) => o.value)).toEqual(["GCS", "FAS", "TCS", "OPS"]);
+    });
+  });
+
+  describe("output limits", () => {
+    it.each(["solenoid", "powered_device", "powered_gpio_device", "gpio_device", "motor"] as const)("shows them for a %s on a Pi", (type) => {
+      renderActuators([{ name: "X", type, binding: { target: "TCS" }, actions: {} }]);
+      fireEvent.click(screen.getByText(`${type} settings`));
+      expect(screen.getByText("max_on_s")).toBeInTheDocument();
+      expect(screen.getByText("on_comms_loss")).toBeInTheDocument();
+    });
+
+    it("hides them for a servo and for the FAS", () => {
+      renderActuators([
+        { name: "S", type: "servo", binding: { target: "GCS" }, actions: {} },
+        { name: "F", type: "solenoid", binding: { target: "FAS", node: "EPB_0" }, actions: {} },
+      ]);
+      fireEvent.click(screen.getByText("servo settings"));
+      expect(screen.queryByText("max_on_s")).not.toBeInTheDocument();
+      fireEvent.click(screen.getByText("solenoid settings"));
+      expect(screen.queryByText("max_on_s")).not.toBeInTheDocument();
+    });
+
+    it("edits max_on_s and on_comms_loss, defaulting to hold, and clears max_on_s to null", () => {
+      const spy = renderActuators([{ name: "H", type: "gpio_device", binding: { target: "TCS", gpio_channel: 17 }, actions: {} }]);
+      fireEvent.click(screen.getByText("gpio_device settings"));
+      const commsLoss = selectWith("safe");
+      expect(commsLoss.value).toBe("hold");
+      fireEvent.change(commsLoss, { target: { value: "safe" } });
+      fireEvent.change(screen.getByPlaceholderText("no limit"), { target: { value: "600" } });
+      expect(last<ActuatorEntry[]>(spy)[0].actions).toMatchObject({ max_on_s: 600, on_comms_loss: "safe" });
+      fireEvent.change(screen.getByPlaceholderText("no limit"), { target: { value: "" } });
+      expect(last<ActuatorEntry[]>(spy)[0].actions?.max_on_s).toBeNull();
+    });
+
+    it("resets the limits when the target moves off the Pis", () => {
+      const spy = renderActuators([{ name: "H", type: "solenoid", binding: { target: "GCS", relay_channel: 2 }, actions: { max_on_s: 30, on_comms_loss: "safe" } }]);
+      fireEvent.change(screen.getByDisplayValue("GCS"), { target: { value: "FAS" } });
+      expect(last<ActuatorEntry[]>(spy)[0].actions).toMatchObject({ max_on_s: null, on_comms_loss: "hold" });
+    });
+  });
+
+  describe("sensors", () => {
+    it("offers a thermocouple type for a Pi TC, defaulting to K", () => {
+      const spy = renderSensors([sensor({ name: "TC1", type: "TC", binding: { source: "TCS", hat_id: 1, channel_id: 0 } })]);
+      const tcType = selectWith("J");
+      expect(Array.from(tcType.options).map((o) => o.value)).toEqual(["J", "K", "T", "E", "R", "S", "B", "N"]);
+      expect(tcType.value).toBe("K");
+      fireEvent.change(tcType, { target: { value: "T" } });
+      expect(last<SensorEntry[]>(spy)[0].tc_type).toBe("T");
+    });
+
+    it("has no thermocouple type for a FAS TC or a non-TC sensor", () => {
+      renderSensors([
+        sensor({ name: "A", type: "TC", binding: { source: "FAS", node: "EPB_0", channel: 1 } }),
+        sensor({ name: "B", type: "PT" }),
+      ]);
+      expect(screen.queryByTitle("Thermocouple type (MCC 134)")).not.toBeInTheDocument();
+    });
+
+    it("clears the thermocouple type when the sensor moves to the FAS or stops being a TC", () => {
+      const spy = renderSensors([sensor({ name: "TC1", type: "TC", tc_type: "T" })]);
+      fireEvent.change(screen.getByDisplayValue("TC"), { target: { value: "PT" } });
+      expect(last<SensorEntry[]>(spy)[0].tc_type).toBeNull();
+    });
+
+    it("turns a sensor into a DI with a GPIO binding and no pin yet", () => {
+      const spy = renderSensors([sensor({ binding: { source: "TCS", hat_id: 1, channel_id: 2 } })]);
+      fireEvent.change(screen.getByDisplayValue("PT"), { target: { value: "DI" } });
+      expect(last<SensorEntry[]>(spy)[0]).toMatchObject({ type: "DI", binding: { source: "TCS" }, convert: { method: "none" } });
+      expect(last<SensorEntry[]>(spy)[0].binding).not.toHaveProperty("hat_id");
+    });
+
+    it("picks a DI pin from the usable BCM pins, hiding ones other DIs on that Pi use", () => {
+      const spy = renderSensors([
+        sensor({ name: "D1", type: "DI", binding: { source: "GCS", gpio_channel: 5 } }),
+        sensor({ name: "D2", type: "DI", binding: { source: "GCS", gpio_channel: 6 } }),
+      ]);
+      const pinSelects = screen.getAllByTitle("BCM GPIO input pin (reserved pins not offered)").map((b) => within(b).getByRole("combobox") as HTMLSelectElement);
+      const second = Array.from(pinSelects[1].options).map((o) => o.value).filter(Boolean);
+      expect(second).not.toContain("5");
+      expect(second).not.toContain("8");
+      expect(second).toContain("6");
+      fireEvent.change(pinSelects[1], { target: { value: "27" } });
+      expect(last<SensorEntry[]>(spy)[1].binding).toEqual({ source: "GCS", gpio_channel: 27 });
+    });
+
+    it("offers only GCS and TCS as a DI's source, and keeps the pin when switching", () => {
+      const spy = renderSensors([sensor({ name: "D1", type: "DI", binding: { source: "GCS", gpio_channel: 5 } })]);
+      const source = screen.getByDisplayValue("GCS") as HTMLSelectElement;
+      expect(Array.from(source.options).map((o) => o.value)).toEqual(["GCS", "TCS"]);
+      fireEvent.change(source, { target: { value: "TCS" } });
+      expect(last<SensorEntry[]>(spy)[0].binding).toEqual({ source: "TCS", gpio_channel: 5 });
+    });
+
+    it("turns a DI back into a DAQ channel binding", () => {
+      const spy = renderSensors([sensor({ name: "D1", type: "DI", binding: { source: "TCS", gpio_channel: 5 } })]);
+      fireEvent.change(screen.getByDisplayValue("DI"), { target: { value: "TC" } });
+      expect(last<SensorEntry[]>(spy)[0].binding).toEqual({ source: "TCS", hat_id: 0, channel_id: 0 });
+    });
+  });
+});

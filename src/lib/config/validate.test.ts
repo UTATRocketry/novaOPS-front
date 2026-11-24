@@ -54,7 +54,7 @@ describe("validateConfig", () => {
 
     it("rejects an unknown type", () => {
       const errors = validateConfig({ Sensors: [sensor({ type: "XX" as never })] });
-      expect(errors).toEqual(["Sensor #1 (PT1): type must be one of PT, LC, TC."]);
+      expect(errors).toEqual(["Sensor #1 (PT1): type must be one of PT, LC, TC, DI."]);
     });
 
     it("requires a binding", () => {

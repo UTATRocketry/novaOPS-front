@@ -1,0 +1,88 @@
+import { act, screen, within } from "@testing-library/react";
+import { beforeEach, describe, expect, it } from "vitest";
+
+import { useNovaStore } from "@/lib/store/store";
+import type { PiConfigStatus } from "@/lib/types";
+import { renderWithProviders } from "@/test/render";
+import { PiConfigStatusCard } from "./PiConfigStatusCard";
+
+const initial = useNovaStore.getInitialState();
+
+const status = (over: Partial<PiConfigStatus> = {}): PiConfigStatus => ({
+  node: "novaThermo",
+  target: "TCS",
+  expected_hash: "3f9a1c0be27d4a55",
+  received: true,
+  config_hash: "3f9a1c0be27d4a55",
+  applied_ms: 1795110000000,
+  rejected: [],
+  reserved_pins: [],
+  thermocouples: {},
+  tripped: [],
+  mismatch: false,
+  mismatch_reasons: [],
+  ...over,
+});
+
+const panel = (node: string) => within(screen.getByTestId(`pi-status-${node}`));
+
+beforeEach(() => {
+  useNovaStore.setState(initial, true);
+});
+
+describe("PiConfigStatusCard", () => {
+  it("lists both Pis as unknown before the backend reports", () => {
+    renderWithProviders(<PiConfigStatusCard />);
+    expect(panel("novaGround").getByText("No status from the backend.")).toBeInTheDocument();
+    expect(panel("novaThermo").getByText("—")).toBeInTheDocument();
+  });
+
+  it("says when a Pi hasn't answered yet", () => {
+    renderWithProviders(<PiConfigStatusCard />);
+    act(() => useNovaStore.getState().ingestPiConfigStatus(status({ received: false, config_hash: null })));
+    expect(panel("novaThermo").getByText(/hasn.t reported a config status yet/)).toBeInTheDocument();
+  });
+
+  it("shows an applied config", () => {
+    renderWithProviders(<PiConfigStatusCard />);
+    act(() => useNovaStore.getState().ingestPiConfigStatus(status()));
+    expect(panel("novaThermo").getByText("config applied")).toBeInTheDocument();
+    expect(panel("novaThermo").getByText("3f9a1c0be27d4a55")).toBeInTheDocument();
+  });
+
+  it("shows a mismatch with its rejected items", () => {
+    renderWithProviders(<PiConfigStatusCard />);
+    act(() =>
+      useNovaStore.getState().ingestPiConfigStatus(
+        status({ rejected: [{ item: "gpio.outputs.8", reason: "reserved (SPI0 CE0)" }], mismatch: true, mismatch_reasons: ["rejected"] }),
+      ),
+    );
+    const p = panel("novaThermo");
+    expect(p.getByText("config mismatch")).toBeInTheDocument();
+    expect(p.getByText("1 item rejected")).toBeInTheDocument();
+    expect(p.getByText("gpio.outputs.8")).toBeInTheDocument();
+    expect(p.getByText(/reserved \(SPI0 CE0\)/)).toBeInTheDocument();
+  });
+
+  it("shows a hash mismatch", () => {
+    renderWithProviders(<PiConfigStatusCard />);
+    act(() => useNovaStore.getState().ingestPiConfigStatus(status({ config_hash: "0000", mismatch: true, mismatch_reasons: ["config_hash"] })));
+    expect(panel("novaThermo").getByText("Pi has config 0000, backend sent 3f9a1c0be27d4a55")).toBeInTheDocument();
+  });
+
+  it("shows tripped outputs with their reason and actuators", () => {
+    renderWithProviders(<PiConfigStatusCard />);
+    act(() =>
+      useNovaStore.getState().ingestPiConfigStatus(
+        status({ tripped: [{ output: "gpio:17", reason: "comms_loss", time_ms: 1795110123456, actuators: ["TANK-HTR-PWR"] }] }),
+      ),
+    );
+    const p = panel("novaThermo");
+    expect(p.getByText("output tripped")).toBeInTheDocument();
+    expect(p.getByText("GPIO 17")).toBeInTheDocument();
+    expect(p.getByText("comms loss")).toBeInTheDocument();
+    expect(p.getByText("TANK-HTR-PWR")).toBeInTheDocument();
+    // The other Pi is unaffected.
+    expect(panel("novaGround").queryByText("output tripped")).not.toBeInTheDocument();
+  });
+});

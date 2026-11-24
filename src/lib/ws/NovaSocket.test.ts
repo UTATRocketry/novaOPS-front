@@ -500,3 +500,42 @@ describe("disconnect", () => {
     }).not.toThrow();
   });
 });
+
+describe("pi_config_status", () => {
+  const status = {
+    node: "novaThermo",
+    target: "TCS",
+    expected_hash: "aa",
+    received: true,
+    config_hash: "aa",
+    applied_ms: 1,
+    rejected: [],
+    reserved_pins: [],
+    thermocouples: {},
+    tripped: [{ output: "gpio:17", reason: "max_on_time", time_ms: 2, actuators: ["H"] }],
+    mismatch: false,
+    mismatch_reasons: [],
+  };
+
+  it("stores each Pi's status by node and does not log it", () => {
+    const ws = connected();
+    ws.serverSends({ type: "pi_config_status", node: "novaThermo", status });
+    ws.serverSends({ type: "pi_config_status", node: "novaGround", status: { ...status, node: "novaGround", target: "GCS", tripped: [] } });
+    expect(Object.keys(store().piConfigStatus).sort()).toEqual(["novaGround", "novaThermo"]);
+    expect(store().piConfigStatus.novaThermo.tripped[0].reason).toBe("max_on_time");
+    expect(store().consoleMessages).toHaveLength(0);
+  });
+
+  it("ignores a message without a status", () => {
+    const ws = connected();
+    ws.serverSends({ type: "pi_config_status", node: "novaThermo" });
+    expect(store().piConfigStatus).toEqual({});
+  });
+
+  it("forgets the statuses when the socket drops, since they're unknown until resent", () => {
+    const ws = connected();
+    ws.serverSends({ type: "pi_config_status", node: "novaThermo", status });
+    ws.serverCloses();
+    expect(store().piConfigStatus).toEqual({});
+  });
+});

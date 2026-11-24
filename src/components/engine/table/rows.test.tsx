@@ -375,3 +375,56 @@ describe("SensorRow", () => {
     expect(screen.queryByText("20")).not.toBeInTheDocument();
   });
 });
+
+describe("SensorRow: thermocouple faults", () => {
+  const tc: SensorEntry = { name: "TC1", type: "TC", unit: "C", binding: { source: "TCS", hat_id: 1, channel_id: 0 } };
+
+  function renderTc() {
+    return renderWithProviders(
+      inTable(<SensorRow sensor={tc} isStale={false} editing={false} hidden={false} onToggleHidden={() => {}} />),
+    );
+  }
+
+  it.each([
+    ["open", "TC OPEN"],
+    ["common_mode", "TC COMMON MODE"],
+    ["overrange", "TC OVERRANGE"],
+  ])("shows a %s fault by name, never as a number", (fault, shown) => {
+    renderTc();
+    act(() => useNovaStore.getState().ingestEngineData([{ name: "TC1", value: null, avg: null, unit: "C", timestamp: 1, fault }]));
+    expect(screen.getByText(shown)).toBeInTheDocument();
+    expect(screen.queryByText("-9999")).not.toBeInTheDocument();
+  });
+
+  it("goes back to the number once the fault clears", () => {
+    renderTc();
+    act(() => useNovaStore.getState().ingestEngineData([{ name: "TC1", value: null, avg: null, unit: "C", timestamp: 1, fault: "open" }]));
+    act(() => useNovaStore.getState().ingestEngineData([{ name: "TC1", value: 21.5, avg: 21.5, unit: "C", timestamp: 2, fault: null }]));
+    expect(screen.queryByText("TC OPEN")).not.toBeInTheDocument();
+    expect(screen.getByText("21.5")).toBeInTheDocument();
+  });
+});
+
+describe("ActuatorRow: Pi trips", () => {
+  const heater: ActuatorEntry = { name: "TANK-HTR-PWR", type: "gpio_device", binding: { target: "TCS", gpio_channel: 17 } };
+
+  it("shows the trip and its reason", () => {
+    renderActuator(heater);
+    act(() => {
+      useNovaStore.getState().ingestActuatorStates({
+        type: "actuator_states",
+        actuator_states: { "TANK-HTR-PWR": { arming: "disarmed", tripped: "comms_loss", tripped_output: "gpio:17", tripped_ms: 1 } },
+      });
+    });
+    expect(screen.getByText(/TRIPPED · comms loss/)).toBeInTheDocument();
+    expect(screen.getByLabelText("Tripped: comms loss (GPIO 17)")).toBeInTheDocument();
+  });
+
+  it("shows no trip when the state has none", () => {
+    renderActuator(heater);
+    act(() => {
+      useNovaStore.getState().ingestActuatorStates({ type: "actuator_states", actuator_states: { "TANK-HTR-PWR": { arming: "armed" } } });
+    });
+    expect(screen.queryByText(/TRIPPED/)).not.toBeInTheDocument();
+  });
+});
