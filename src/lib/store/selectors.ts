@@ -102,6 +102,8 @@ export const sel = {
 
   /** Config status per Pi node; a node that's absent is unknown. */
   piConfigStatus: (s: NovaStore) => s.piConfigStatus,
+  /** Stats info, stats and actuator read-back per Pi node; absent = never heard from. */
+  nodes: (s: NovaStore) => s.nodes,
 
   // ---- Alerts ----
 

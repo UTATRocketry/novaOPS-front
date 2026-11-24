@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { Box, Flex, Table } from "@chakra-ui/react";
+import { Box, Flex, Table, Text } from "@chakra-ui/react";
 import { Card, Chip, Icon } from "@/components/primitives";
-import type { ConvertMethod, PiGpioBinding, SensorEntry, SensorType, TcType } from "@/lib/types";
+import type { ConvertMethod, PiGpioBinding, SensorBinding, SensorEntry, SensorType, TcType } from "@/lib/types";
 import { isGpioBinding } from "@/lib/types";
-import { DEFAULT_TC_TYPE, PI_GPIO_PINS, TC_TYPES, isPiTarget } from "@/lib/config/piIo";
+import { DEFAULT_TC_TYPE, PI_GPIO_PINS, TC_TYPES, isPiTarget, piPinProblem } from "@/lib/config/piIo";
 import {
   AddRowButton,
   Cell,
@@ -31,6 +31,23 @@ const CONVERT_METHODS: ConvertMethod[] = [
   "repeated_median",
 ];
 
+/**
+ * A DI sensor's pin, or undefined while none is chosen. A new DI has no
+ * `gpio_channel` key yet (no pin is a safe default), so the row is laid out by
+ * sensor type, not by `isGpioBinding`, which needs the key.
+ */
+function diPin(b: SensorBinding): number | undefined {
+  const pin = (b as unknown as Record<string, unknown>).gpio_channel;
+  return typeof pin === "number" ? pin : undefined;
+}
+
+/** What's wrong with a DI's pin, mirroring the backend's check; null when fine. */
+export function diPinProblem(b: SensorBinding): string | null {
+  const pin = diPin(b);
+  if (pin === undefined) return "pick a GPIO pin";
+  return piPinProblem(pin);
+}
+
 export interface SensorsTableProps {
   sensors: SensorEntry[];
   onChange: (next: SensorEntry[]) => void;
@@ -47,9 +64,10 @@ export function SensorsTable({ sensors, onChange }: SensorsTableProps) {
   }
   function setSource(i: number, source: string) {
     const s = sensors[i];
-    if (s.type === "DI" && isGpioBinding(s.binding)) {
-      // A DI keeps its pin when moving between Pis.
-      update(i, { binding: { ...s.binding, source: source as "GCS" | "TCS" } });
+    if (s.type === "DI") {
+      // A DI keeps its pin (if it has one yet) when moving between Pis.
+      const pin = diPin(s.binding);
+      update(i, { binding: { source: source as "GCS" | "TCS", ...(pin !== undefined ? { gpio_channel: pin } : {}) } as PiGpioBinding });
       return;
     }
     // Swap to the binding shape for the chosen source (discriminated union).
@@ -71,10 +89,18 @@ export function SensorsTable({ sensors, onChange }: SensorsTableProps) {
       patch.binding = { source } as PiGpioBinding;
       // A DI reads 0 or 1; the backend ignores any conversion.
       patch.convert = { method: "none" };
-    } else if (type !== "DI" && isGpioBinding(s.binding)) {
-      patch.binding = { source: s.binding.source, hat_id: 0, channel_id: 0 };
+    } else if (type !== "DI" && (s.type === "DI" || isGpioBinding(s.binding))) {
+      // Back to a DAQ channel, including from a DI that had no pin yet.
+      const source = isPiTarget(s.binding.source) ? s.binding.source : "GCS";
+      patch.binding = { source, hat_id: 0, channel_id: 0 };
     }
     update(i, patch);
+  }
+  /** Set a DI's pin, writing a clean `{source, gpio_channel}` binding. */
+  function setDiPin(i: number, pin: number | undefined) {
+    const b = sensors[i].binding;
+    const source = isPiTarget(b.source) ? b.source : "GCS";
+    update(i, { binding: { source, ...(pin !== undefined ? { gpio_channel: pin } : {}) } as PiGpioBinding });
   }
   function setRange(i: number, index: 0 | 1, v: number | undefined) {
     const [lo, hi] = sensors[i].range ?? [0, 0];
@@ -118,18 +144,21 @@ export function SensorsTable({ sensors, onChange }: SensorsTableProps) {
             ) : (
               sensors.map((s, i) => {
                 const b = s.binding;
-                const isFas = b.source === "FAS";
+                const isDi = s.type === "DI";
+                const isFas = !isDi && b.source === "FAS";
                 const showTcType = s.type === "TC" && !isFas;
                 // DI pins used by OTHER DI sensors on the same Pi. Actuator
                 // pins are checked by validation, which sees both tables.
                 const usedPins = new Set<number>();
-                if (isGpioBinding(b)) {
+                if (isDi) {
                   sensors.forEach((o, j) => {
-                    if (j !== i && isGpioBinding(o.binding) && o.binding.source === b.source && typeof o.binding.gpio_channel === "number") {
-                      usedPins.add(o.binding.gpio_channel);
+                    if (j !== i && o.type === "DI" && o.binding.source === b.source) {
+                      const pin = diPin(o.binding);
+                      if (pin !== undefined) usedPins.add(pin);
                     }
                   });
                 }
+                const pinProblem = isDi ? diPinProblem(b) : null;
                 const pointCount = s.convert?.calibration?.length ?? 0;
                 return (
                   <Table.Row key={i}>
@@ -154,30 +183,35 @@ export function SensorsTable({ sensors, onChange }: SensorsTableProps) {
                     <Table.Cell><Cell><SelectCell value={b.source} options={s.type === "DI" ? DI_SOURCES : SOURCES} onChange={(v) => setSource(i, v)} /></Cell></Table.Cell>
                     <Table.Cell>
                       <Cell>
-                        {isFas ? (
+                        {isFas && b.source === "FAS" ? (
                           <TextCell value={b.node} onChange={(v) => updateBinding(i, { node: v })} placeholder="EPB_1" />
-                        ) : isGpioBinding(b) ? (
+                        ) : isDi ? (
                           <Box color="text.muted" fontSize="xs" fontFamily="mono" px={2}>GPIO</Box>
                         ) : (
-                          <NumberCell value={b.hat_id} onChange={(v) => updateBinding(i, { hat_id: v ?? 0 })} />
+                          <NumberCell value={"hat_id" in b ? b.hat_id : undefined} onChange={(v) => updateBinding(i, { hat_id: v ?? 0 })} />
                         )}
                       </Cell>
                     </Table.Cell>
                     <Table.Cell>
                       <Cell>
-                        {isFas ? (
+                        {isFas && b.source === "FAS" ? (
                           <NumberCell value={b.channel} onChange={(v) => updateBinding(i, { channel: v ?? 0 })} />
-                        ) : isGpioBinding(b) ? (
+                        ) : isDi ? (
                           <Box title="BCM GPIO input pin (reserved pins not offered)">
                             <ChannelSelectCell
-                              value={b.gpio_channel}
+                              value={diPin(b)}
                               channels={PI_GPIO_PINS}
                               used={usedPins}
-                              onChange={(v) => updateBinding(i, { gpio_channel: v })}
+                              onChange={(v) => setDiPin(i, v)}
                             />
+                            {pinProblem && (
+                              <Text role="alert" fontSize="2xs" color="fault" mt={0.5} whiteSpace="nowrap">
+                                {pinProblem}
+                              </Text>
+                            )}
                           </Box>
                         ) : (
-                          <NumberCell value={b.channel_id} onChange={(v) => updateBinding(i, { channel_id: v ?? 0 })} />
+                          <NumberCell value={"channel_id" in b ? b.channel_id : undefined} onChange={(v) => updateBinding(i, { channel_id: v ?? 0 })} />
                         )}
                       </Cell>
                     </Table.Cell>

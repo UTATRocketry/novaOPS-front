@@ -16,7 +16,6 @@ import {
   BuzzerMelodiesTable,
   HeartbeatCard,
 } from "@/components/config";
-import { PiConfigStatusCard } from "@/components/devices";
 import { useConfig, usePutConfig, useUploadConfig } from "@/hooks/useConfig";
 import { validateConfig } from "@/lib/config";
 import type { SystemConfig } from "@/lib/types";
@@ -143,11 +142,6 @@ export default function ConfigPage() {
         onCreateNameChange={setCreateName}
         onCancelNew={cancelNew}
       />
-
-      {/* What each Pi applied from the active config (mismatch, rejected items, trips). */}
-      <Box mb={4}>
-        <PiConfigStatusCard />
-      </Box>
 
       {/* Validation detail */}
       {validationErrors.length > 0 && (

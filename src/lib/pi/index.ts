@@ -13,6 +13,7 @@
 import type {
   ActuatorState,
   ParsedSensorValue,
+  PiApplyState,
   PiConfigStatus,
   PiRejectedItem,
   PiTrip,
@@ -157,7 +158,35 @@ export function parsePiConfigStatus(raw: unknown, nodeHint?: string): PiConfigSt
     mismatch_reasons: Array.isArray(raw.mismatch_reasons)
       ? raw.mismatch_reasons.filter((r): r is string => typeof r === "string")
       : [],
+    apply_state: APPLY_STATES.has(raw.apply_state as PiApplyState)
+      ? (raw.apply_state as PiApplyState)
+      : deriveApplyState(received, rejected.length, configHash, expectedHash),
+    received_ms: num(raw.received_ms),
+    published_ms: num(raw.published_ms),
   };
+}
+
+const APPLY_STATES = new Set<PiApplyState>(["waiting", "applied", "pending", "rejected"]);
+
+function deriveApplyState(
+  received: boolean,
+  rejectedCount: number,
+  configHash: string | null,
+  expectedHash: string | null,
+): PiApplyState {
+  if (!received) return "waiting";
+  if (rejectedCount > 0) return "rejected";
+  if (configHash !== expectedHash) return "pending";
+  return "applied";
+}
+
+/** The status's apply state, derived when it came without one. */
+export function piApplyState(status: PiConfigStatus | null | undefined): PiApplyState {
+  if (!status) return "waiting";
+  return (
+    status.apply_state ??
+    deriveApplyState(status.received, status.rejected.length, status.config_hash, status.expected_hash)
+  );
 }
 
 /** Parse a `pi_config_status` WS message (`{ type, node, status }`). */

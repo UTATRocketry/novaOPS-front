@@ -8,6 +8,8 @@ import {
   DEFAULT_ON_COMMS_LOSS,
   ON_COMMS_LOSS,
   gpioChannelOptions,
+  isPiTarget,
+  safeStateDescription,
   supportsOutputLimits,
 } from "@/lib/config/piIo";
 import {
@@ -132,14 +134,17 @@ function relayTypeField(entry: ActuatorEntry, setActions: DetailProps["setAction
 }
 
 /**
- * Pi output limits (GCS/TCS relay and GPIO outputs): the Pi returns the
- * output to its safe level after `max_on_s`, and on comms loss when
- * `on_comms_loss` is `safe`.
+ * Pi output limits (GCS/TCS relay and GPIO outputs, and a servo's power
+ * relay): the Pi returns the output to its safe level after `max_on_s`, and on
+ * comms loss when `on_comms_loss` is `safe`. The safe level itself is fixed
+ * (GPIO low, relay de-energized); the hint says what that means for this
+ * actuator.
  */
 function OutputLimits({ entry, setActions }: Pick<DetailProps, "entry" | "setActions">) {
   const act = entry.actions ?? {};
+  const safe = safeStateDescription(entry);
   return (
-    <Flex gap={3} flexWrap="wrap" mt={3} pt={3} borderTop="1px solid" borderColor="border.default">
+    <Flex gap={3} flexWrap="wrap" align="flex-end" mt={3} pt={3} borderTop="1px solid" borderColor="border.default">
       <Field label="max_on_s">
         <NumberCell
           value={act.max_on_s ?? undefined}
@@ -154,6 +159,11 @@ function OutputLimits({ entry, setActions }: Pick<DetailProps, "entry" | "setAct
           onChange={(v) => setActions({ on_comms_loss: v as OnCommsLoss })}
         />
       </Field>
+      {safe && (
+        <Text fontSize="2xs" color="text.muted" pb={1} data-testid="safe-state">
+          Safe state: <Text as="span" fontFamily="mono">{safe}</Text>
+        </Text>
+      )}
     </Flex>
   );
 }
@@ -415,9 +425,13 @@ export function ActuatorsTable({ actuators, onChange }: ActuatorsTableProps) {
                                   usedServo={usedServo}
                                   usedGpio={usedGpio}
                                 />
-                                {supportsOutputLimits(a) && (
+                                {supportsOutputLimits(a) ? (
                                   <OutputLimits entry={a} setActions={(patch) => setActions(i, patch)} />
-                                )}
+                                ) : a.type === "servo" && isPiTarget(a.binding.target) ? (
+                                  <Text fontSize="2xs" color="text.muted" mt={3}>
+                                    Set a relay_channel (the servo&apos;s power relay) to give it max_on_s and on_comms_loss.
+                                  </Text>
+                                ) : null}
                               </>
                             );
                           })()}

@@ -8,6 +8,7 @@ import type {
 } from "./types";
 import type { ConsoleLogEntry } from "../console/types";
 import { classifyConsoleMessage } from "../console/classify";
+import type { NodePart, NodeRecord } from "../pi/nodes";
 import type { Alert } from "../alerts/types";
 
 /** Hard cap on retained console lines — oldest are dropped past this. */
@@ -105,7 +106,21 @@ const INITIAL_STATE: NovaStoreState = {
   fasPorts: null,
   fasStreaming: false,
   piConfigStatus: {},
+  nodes: {},
 };
+
+function withNodePart<K extends NodePart>(
+  nodes: Record<string, NodeRecord>,
+  node: string,
+  part: K,
+  value: NodeRecord[K],
+): Record<string, NodeRecord> {
+  const record: NodeRecord = { ...(nodes[node] ?? { info: null, stats: null, state: null }), [part]: value };
+  const next = { ...nodes };
+  if (record.info === null && record.stats === null && record.state === null) delete next[node];
+  else next[node] = record;
+  return next;
+}
 
 // ---------------------------------------------------------------------------
 // Store
@@ -150,6 +165,7 @@ export const useNovaStore = create<NovaStore>()((set, get) => ({
       fasStreaming: false,
       // Same for the Pis' config status: the backend resends it on connect.
       piConfigStatus: {},
+      nodes: {},
     })),
 
   setSocketError: (error) =>
@@ -245,6 +261,10 @@ export const useNovaStore = create<NovaStore>()((set, get) => ({
   ingestPiConfigStatus: (status) => {
     set((s) => ({ piConfigStatus: { ...s.piConfigStatus, [status.node]: status } }));
   },
+
+  ingestNodeInfo: (node, info) => set((s) => ({ nodes: withNodePart(s.nodes, node, "info", info) })),
+  ingestNodeStats: (node, stats) => set((s) => ({ nodes: withNodePart(s.nodes, node, "stats", stats) })),
+  ingestNodeState: (node, state) => set((s) => ({ nodes: withNodePart(s.nodes, node, "state", state) })),
 
   // ---- Console / event log ----
 

@@ -21,6 +21,8 @@ import type { FreshnessWindows } from "../store";
 import { adaptFlightData, adaptFlightEvents, parseFasLink, resetFlightSession } from "../flight";
 import { parseConsolePorts } from "../console";
 import { parsePiConfigStatusMessage } from "../pi";
+import { parseNodeMessage } from "../pi/nodes";
+import type { NodeInfo, NodeState, NodeStats } from "../pi/nodes";
 import { startFlightRecorder, stopFlightRecorder } from "../flight/recorder";
 
 // ---------------------------------------------------------------------------
@@ -314,6 +316,18 @@ export class NovaSocket {
       case "pi_config_status": {
         const status = parsePiConfigStatusMessage(m);
         if (status) store.ingestPiConfigStatus(status);
+        break;
+      }
+
+      case "node_stats_info":
+      case "node_stats":
+      case "node_state": {
+        // Not logged: stats arrive every second per node.
+        const parsed = parseNodeMessage(m);
+        if (!parsed) break;
+        if (parsed.part === "info") store.ingestNodeInfo(parsed.node, parsed.value as NodeInfo | null);
+        else if (parsed.part === "stats") store.ingestNodeStats(parsed.node, parsed.value as NodeStats | null);
+        else store.ingestNodeState(parsed.node, parsed.value as NodeState | null);
         break;
       }
 

@@ -471,7 +471,36 @@ describe("Pi I/O fields (#42)", () => {
       expect(screen.getByText("on_comms_loss")).toBeInTheDocument();
     });
 
-    it("hides them for a servo and for the FAS", () => {
+    it("shows them for a Pi servo with a power relay, with what safe means for it", () => {
+      const spy = renderActuators([{ name: "S", type: "servo", binding: { target: "GCS", servo_channel: 0, relay_channel: 3 }, actions: {} }]);
+      fireEvent.click(screen.getByText("servo settings"));
+      expect(screen.getByText("max_on_s")).toBeInTheDocument();
+      expect(screen.getByTestId("safe-state")).toHaveTextContent("power relay de-energized (power off)");
+      fireEvent.change(selectWith("safe"), { target: { value: "safe" } });
+      expect(last<ActuatorEntry[]>(spy)[0].actions).toMatchObject({ on_comms_loss: "safe" });
+    });
+
+    it("resets a servo's limits when its power relay is cleared, and says why they're gone", () => {
+      const spy = renderActuators([
+        { name: "S", type: "servo", binding: { target: "GCS", servo_channel: 0, relay_channel: 3 }, actions: { max_on_s: 60, on_comms_loss: "safe" } },
+      ]);
+      fireEvent.click(screen.getByText("servo settings"));
+      const relay = within(screen.getByText("relay_channel").parentElement!).getByRole("combobox");
+      fireEvent.change(relay, { target: { value: "" } });
+      expect(last<ActuatorEntry[]>(spy)[0].actions).toMatchObject({ max_on_s: null, on_comms_loss: "hold" });
+      expect(screen.queryByText("max_on_s")).not.toBeInTheDocument();
+      expect(screen.getByText(/Set a relay_channel/)).toBeInTheDocument();
+    });
+
+    it("shows that the safe state follows relay_type and solenoid_type", () => {
+      renderActuators([
+        { name: "V", type: "solenoid", binding: { target: "TCS", relay_channel: 3 }, actions: { relay_type: "nominally_on", solenoid_type: "nominally_closed" } },
+      ]);
+      fireEvent.click(screen.getByText("solenoid settings"));
+      expect(screen.getByTestId("safe-state")).toHaveTextContent("relay de-energized (valve open)");
+    });
+
+    it("hides them for a servo without a power relay and for the FAS", () => {
       renderActuators([
         { name: "S", type: "servo", binding: { target: "GCS" }, actions: {} },
         { name: "F", type: "solenoid", binding: { target: "FAS", node: "EPB_0" }, actions: {} },
@@ -552,6 +581,38 @@ describe("Pi I/O fields (#42)", () => {
       expect(Array.from(source.options).map((o) => o.value)).toEqual(["GCS", "TCS"]);
       fireEvent.change(source, { target: { value: "TCS" } });
       expect(last<SensorEntry[]>(spy)[0].binding).toEqual({ source: "TCS", gpio_channel: 5 });
+    });
+
+    it("adds a DI end to end: new row, type DI, pick a pin", () => {
+      const spy = renderSensors([]);
+      fireEvent.click(screen.getByText("Add sensor"));
+      fireEvent.change(screen.getByDisplayValue("PT"), { target: { value: "DI" } });
+      // The pin picker shows (not the hat/channel numbers), flagged until a pin is set.
+      const pinBox = screen.getByTitle("BCM GPIO input pin (reserved pins not offered)");
+      expect(within(pinBox).getByRole("alert")).toHaveTextContent("pick a GPIO pin");
+      expect(screen.queryByDisplayValue("0")).not.toBeInTheDocument();
+      fireEvent.change(within(pinBox).getByRole("combobox"), { target: { value: "5" } });
+      expect(last<SensorEntry[]>(spy)[0]).toMatchObject({ type: "DI" });
+      expect(last<SensorEntry[]>(spy)[0].binding).toEqual({ source: "GCS", gpio_channel: 5 });
+      expect(within(pinBox).queryByRole("alert")).not.toBeInTheDocument();
+    });
+
+    it("switches the Pi of a DI that has no pin yet without falling back to a DAQ binding", () => {
+      const spy = renderSensors([sensor({ name: "D1", type: "DI", binding: { source: "GCS" } as never })]);
+      fireEvent.change(screen.getByDisplayValue("GCS"), { target: { value: "TCS" } });
+      expect(last<SensorEntry[]>(spy)[0].binding).toEqual({ source: "TCS" });
+      expect(screen.getByTitle("BCM GPIO input pin (reserved pins not offered)")).toBeInTheDocument();
+    });
+
+    it("flags a reserved pin from an older config next to the DI's pin", () => {
+      renderSensors([sensor({ name: "D1", type: "DI", binding: { source: "GCS", gpio_channel: 8 } })]);
+      expect(screen.getByRole("alert")).toHaveTextContent("BCM 8 is reserved");
+    });
+
+    it("turns a pinless DI back into a DAQ channel binding", () => {
+      const spy = renderSensors([sensor({ name: "D1", type: "DI", binding: { source: "TCS" } as never })]);
+      fireEvent.change(screen.getByDisplayValue("DI"), { target: { value: "PT" } });
+      expect(last<SensorEntry[]>(spy)[0].binding).toEqual({ source: "TCS", hat_id: 0, channel_id: 0 });
     });
 
     it("turns a DI back into a DAQ channel binding", () => {

@@ -268,6 +268,13 @@ describe("DevicesPage", () => {
     expect(screen.getByText("disconnected")).toBeInTheDocument();
   });
 
+  it("shows the Pi config, node state and node stats cards without FAS telemetry", () => {
+    renderWithProviders(<DevicesPage />);
+    expect(screen.getByText("Pi config")).toBeInTheDocument();
+    expect(screen.getByText("Node state")).toBeInTheDocument();
+    expect(screen.getByText("Node stats")).toBeInTheDocument();
+  });
+
   it("shows the fleet and a card per EPB and PMB, with a charger only for boards that have one", async () => {
     telemetry({
       boards: [{ key: "EPB:0", kind: "EPB", boardId: 0, online: true }],
@@ -570,6 +577,8 @@ describe("ConfigPage", () => {
 
   it("opens on the actuators with nothing to save", async () => {
     await page();
+    // The Pi config status lives on the Devices page now.
+    expect(screen.queryByText("Pi config")).not.toBeInTheDocument();
     expect(screen.getByDisplayValue("SVFTV")).toBeInTheDocument();
     expect(update()).toHaveAttribute("aria-disabled", "true");
     expect(screen.queryByText("unsaved changes")).not.toBeInTheDocument();

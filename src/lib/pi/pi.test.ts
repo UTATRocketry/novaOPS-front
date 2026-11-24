@@ -7,6 +7,7 @@ import {
   outputLabel,
   parsePiConfigStatus,
   parsePiConfigStatusMessage,
+  piApplyState,
   piHealth,
   sensorFault,
   sensorFaultLabel,
@@ -28,6 +29,9 @@ const STATUS = {
   tripped: [{ output: "gpio:17", reason: "comms_loss", time_ms: 1795110123456, actuators: ["TANK-HTR-PWR"] }],
   mismatch: true,
   mismatch_reasons: ["rejected"],
+  apply_state: "rejected",
+  received_ms: 1795110000500,
+  published_ms: 1795109999000,
 };
 
 describe("sensor faults", () => {
@@ -111,6 +115,34 @@ describe("parsePiConfigStatus", () => {
     const s = parsePiConfigStatus({ ...STATUS, tripped: [{ output: "relay:2" }, 7], rejected: ["x", { item: "daq.9" }] })!;
     expect(s.tripped).toEqual([{ output: "relay:2", reason: "unknown", time_ms: null, actuators: [] }]);
     expect(s.rejected).toEqual([{ item: "daq.9", reason: "" }]);
+  });
+});
+
+describe("apply state", () => {
+  const { apply_state: _a, received_ms: _r, published_ms: _p, ...old } = STATUS;
+
+  it("keeps the backend's apply state", () => {
+    expect(parsePiConfigStatus({ ...STATUS, apply_state: "pending" })!.apply_state).toBe("pending");
+  });
+
+  it("derives it from an older backend's status", () => {
+    expect(parsePiConfigStatus(old)!.apply_state).toBe("rejected");
+    expect(parsePiConfigStatus({ ...old, rejected: [], config_hash: "0000" })!.apply_state).toBe("pending");
+    expect(parsePiConfigStatus({ ...old, rejected: [] })!.apply_state).toBe("applied");
+    expect(parsePiConfigStatus({ ...old, received: false })!.apply_state).toBe("waiting");
+    expect(parsePiConfigStatus({ ...old, apply_state: "bogus", rejected: [] })!.apply_state).toBe("applied");
+  });
+
+  it("leaves missing times null", () => {
+    const s = parsePiConfigStatus(old)!;
+    expect(s.received_ms).toBeNull();
+    expect(s.published_ms).toBeNull();
+  });
+
+  it("piApplyState works on a status without the field", () => {
+    const { apply_state: _x, ...bare } = parsePiConfigStatus({ ...old, rejected: [], config_hash: "1" })!;
+    expect(piApplyState(bare)).toBe("pending");
+    expect(piApplyState(undefined)).toBe("waiting");
   });
 });
 

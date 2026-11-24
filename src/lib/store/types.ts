@@ -13,6 +13,7 @@ import type { NovaPidLayout } from "../pid/serializer";
 import type { ConsoleLogEntry, FasSerialPort } from "../console/types";
 import type { FasLink } from "../flight/types";
 import type { Alert, AlertInput, ConditionAlert } from "../alerts/types";
+import type { NodeInfo, NodeRecord, NodeState, NodeStats } from "../pi/nodes";
 
 // ---------------------------------------------------------------------------
 // Core primitives
@@ -137,6 +138,14 @@ export interface NovaStoreState {
    * (render `—`), never "ok".
    */
   piConfigStatus: Record<string, PiConfigStatus>;
+
+  /**
+   * Per Pi node (novaGround, novaThermo, novaSim): the latest stats info,
+   * stats and actuator read-back (`node_stats_info` / `node_stats` /
+   * `node_state`). Event-driven like piConfigStatus: the backend resends what
+   * it has on connect, and the map is cleared when the socket drops.
+   */
+  nodes: Record<string, NodeRecord>;
 }
 
 export interface NovaStoreActions {
@@ -189,6 +198,13 @@ export interface NovaStoreActions {
 
   /** Replace one Pi's config status (from a `pi_config_status` message). */
   ingestPiConfigStatus: (status: PiConfigStatus) => void;
+
+  // --- Pi node reports ---
+
+  /** Replace one part of a node's record; null clears it (a node with no parts left is dropped). */
+  ingestNodeInfo: (node: string, info: NodeInfo | null) => void;
+  ingestNodeStats: (node: string, stats: NodeStats | null) => void;
+  ingestNodeState: (node: string, state: NodeState | null) => void;
 
   // --- Alerts ---
 

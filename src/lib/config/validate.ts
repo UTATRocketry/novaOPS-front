@@ -76,7 +76,7 @@ function validateSensor(s: SensorEntry, i: number, errors: string[], seen: Set<s
     if (b.source !== "GCS" && b.source !== "TCS") {
       errors.push(`${tag} (${s.name}): DI binding.source must be GCS or TCS.`);
     } else if (typeof raw.gpio_channel !== "number") {
-      errors.push(`${tag} (${s.name}): DI binding requires numeric gpio_channel.`);
+      errors.push(`${tag} (${s.name}): DI sensor needs a GPIO pin (binding.gpio_channel).`);
     } else {
       const problem = piPinProblem(raw.gpio_channel);
       if (problem) errors.push(`${tag} (${s.name}): gpio_channel ${problem}.`);
@@ -146,7 +146,8 @@ function validateActuator(a: ActuatorEntry, i: number, errors: string[], seen: S
     }
   }
 
-  // Output limits: Pi relay/GPIO outputs only (not servos, not the FAS).
+  // Output limits: Pi relay/GPIO outputs only, including a servo's power
+  // relay (never its PWM output), and never the FAS.
   // `on_comms_loss: hold` is the default and the backend returns it on every
   // actuator, so only a limit that does something counts as set.
   const maxOn = act?.max_on_s;
@@ -154,7 +155,7 @@ function validateActuator(a: ActuatorEntry, i: number, errors: string[], seen: S
   const setsLimit = maxOn != null || (commsLoss != null && commsLoss !== DEFAULT_ON_COMMS_LOSS);
   if (setsLimit && b && typeof b === "object" && !supportsOutputLimits(a)) {
     errors.push(
-      `${tag} (${a.name}): max_on_s and on_comms_loss are only allowed on GCS/TCS solenoid, powered_device, powered_gpio_device, gpio_device and motor actuators.`,
+      `${tag} (${a.name}): max_on_s and on_comms_loss are only allowed on GCS/TCS solenoid, powered_device, powered_gpio_device, gpio_device and motor actuators, and servos with a power relay (relay_channel).`,
     );
   } else {
     if (maxOn != null && !(typeof maxOn === "number" && Number.isFinite(maxOn) && maxOn > 0)) {

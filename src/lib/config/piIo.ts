@@ -82,9 +82,50 @@ export function gpioChannelOptions(target: SourceTarget): readonly number[] {
   return Array.from({ length: FAS_GPIO_MAX + 1 }, (_, i) => i);
 }
 
-/** Whether `max_on_s` / `on_comms_loss` apply to this actuator. */
+/**
+ * Whether `max_on_s` / `on_comms_loss` apply to this actuator: a relay or GPIO
+ * output on a Pi. A servo qualifies only when it's wired through a power relay
+ * (`binding.relay_channel`); the limits switch that relay off, never the PWM.
+ */
 export function supportsOutputLimits(a: Pick<ActuatorEntry, "type" | "binding">): boolean {
-  return isPiTarget(a.binding?.target) && LIMITED_OUTPUT_TYPES.includes(a.type);
+  if (!isPiTarget(a.binding?.target)) return false;
+  if (a.type === "servo") return typeof a.binding.relay_channel === "number";
+  return LIMITED_OUTPUT_TYPES.includes(a.type);
+}
+
+/**
+ * What "safe" leaves this actuator at, in its own command states. The Pi's
+ * safe level is fixed (docs/design/pi-io-config.md, "Output limits"): GPIO 0
+ * and every relay de-energized. Which state that is follows the same
+ * relay_type / solenoid_type rules the backend uses for commands
+ * (`CommandParser._resolve_relay_state`): a de-energized `nominally_on` relay
+ * powers its load. Null for actuators without output limits.
+ */
+export function safeStateDescription(a: Pick<ActuatorEntry, "type" | "binding" | "actions">): string | null {
+  if (!supportsOutputLimits(a)) return null;
+  const act = a.actions ?? {};
+  const relayOn = (act.relay_type ?? "nominally_off").toLowerCase() === "nominally_on";
+  const power = relayOn ? "on" : "off";
+  switch (a.type) {
+    case "gpio_device":
+      return "GPIO low (disarm)";
+    case "powered_gpio_device":
+      return `GPIO low (disarm), relay de-energized (power ${power})`;
+    case "powered_device":
+      return `relay de-energized (${power})`;
+    case "servo":
+      return `power relay de-energized (power ${power}); the servo PWM is not changed`;
+    case "solenoid": {
+      const normallyClosed = (act.solenoid_type ?? "nominally_open").toLowerCase() === "nominally_closed";
+      // Valve de-energized: its normal state. A nominally_on relay energizes it.
+      const valve = relayOn ? (normallyClosed ? "open" : "closed") : normallyClosed ? "closed" : "open";
+      return `relay de-energized (valve ${valve})`;
+    }
+    case "motor":
+      return "every relay de-energized";
+    default:
+      return null;
+  }
 }
 
 /** Whether this actuator drives a Pi GPIO pin (and so needs `gpio_channel`). */

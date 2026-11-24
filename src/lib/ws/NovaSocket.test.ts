@@ -539,3 +539,35 @@ describe("pi_config_status", () => {
     expect(store().piConfigStatus).toEqual({});
   });
 });
+
+describe("node_stats_info / node_stats / node_state", () => {
+  it("stores each part by node and does not log it", () => {
+    const ws = connected();
+    ws.serverSends({ type: "node_stats_info", node: "novaGround", info: { build_id: "b1", hardware: { parts: {}, missing: [] } } });
+    ws.serverSends({ type: "node_stats", node: "novaGround", stats: { seq: 3, uptime_s: 1, daq_read_errors: 2 } });
+    ws.serverSends({ type: "node_state", node: "novaThermo", state: { time_ms: 5, gpios: { ok: true, outputs: [{ pin_id: 17, state: 1 }] } } });
+    const nodes = store().nodes;
+    expect(nodes.novaGround.info?.build_id).toBe("b1");
+    expect(nodes.novaGround.stats?.counters).toEqual({ daq_read_errors: 2 });
+    expect(nodes.novaThermo.state?.gpios?.outputs).toEqual([{ pin: 17, level: 1 }]);
+    expect(store().consoleMessages).toHaveLength(0);
+  });
+
+  it("clears a part on null and drops a node with nothing left", () => {
+    const ws = connected();
+    ws.serverSends({ type: "node_stats_info", node: "novaGround", info: { build_id: "b1" } });
+    ws.serverSends({ type: "node_stats", node: "novaGround", stats: { seq: 1 } });
+    ws.serverSends({ type: "node_stats", node: "novaGround", stats: null });
+    expect(store().nodes.novaGround.stats).toBeNull();
+    expect(store().nodes.novaGround.info?.build_id).toBe("b1");
+    ws.serverSends({ type: "node_stats_info", node: "novaGround", info: null });
+    expect(store().nodes).toEqual({});
+  });
+
+  it("forgets the nodes when the socket drops", () => {
+    const ws = connected();
+    ws.serverSends({ type: "node_state", node: "novaThermo", state: { time_ms: 1 } });
+    ws.serverCloses();
+    expect(store().nodes).toEqual({});
+  });
+});

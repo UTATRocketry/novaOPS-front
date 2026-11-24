@@ -7,6 +7,7 @@ import {
   gpioChannelOptions,
   isUsablePiPin,
   piPinProblem,
+  safeStateDescription,
   supportsOutputLimits,
 } from "./piIo";
 import { validateConfig } from "./validate";
@@ -56,6 +57,34 @@ describe("Pi GPIO pins", () => {
     expect(supportsOutputLimits(actuator({ type: "motor", binding: { target: "GCS", relay_channel: 1 } }))).toBe(true);
     expect(supportsOutputLimits(actuator({ type: "servo", binding: { target: "GCS", servo_channel: 1 } }))).toBe(false);
     expect(supportsOutputLimits(actuator({ binding: { target: "FAS", gpio_channel: 1 } }))).toBe(false);
+  });
+
+  it("limits apply to a Pi servo only through its power relay", () => {
+    expect(supportsOutputLimits(actuator({ type: "servo", binding: { target: "TCS", servo_channel: 1, relay_channel: 4 } }))).toBe(true);
+    expect(supportsOutputLimits(actuator({ type: "servo", binding: { target: "GCS", servo_channel: 1, relay_channel: null } }))).toBe(false);
+    expect(supportsOutputLimits(actuator({ type: "servo", binding: { target: "FAS", node: "EPB_0", servo_channel: 1, relay_channel: 4 } }))).toBe(false);
+  });
+});
+
+describe("safeStateDescription", () => {
+  const relay = { target: "GCS" as const, relay_channel: 2 };
+  it.each([
+    ["gpio_device", actuator(), "GPIO low (disarm)"],
+    ["powered_device, nominally_off", actuator({ type: "powered_device", binding: relay }), "relay de-energized (off)"],
+    ["powered_device, nominally_on", actuator({ type: "powered_device", binding: relay, actions: { relay_type: "nominally_on" } }), "relay de-energized (on)"],
+    // Same rules as the backend's trip handling (tests/test_pi_config_message.py).
+    ["NC solenoid, nominally_off relay", actuator({ type: "solenoid", binding: relay, actions: { solenoid_type: "nominally_closed" } }), "relay de-energized (valve closed)"],
+    ["NC solenoid, nominally_on relay", actuator({ type: "solenoid", binding: relay, actions: { relay_type: "nominally_on", solenoid_type: "nominally_closed" } }), "relay de-energized (valve open)"],
+    ["solenoid, default nominally_open", actuator({ type: "solenoid", binding: relay }), "relay de-energized (valve open)"],
+    ["servo with a power relay", actuator({ type: "servo", binding: { ...relay, servo_channel: 0 } }), "power relay de-energized (power off); the servo PWM is not changed"],
+    ["motor", actuator({ type: "motor", binding: relay }), "every relay de-energized"],
+  ])("%s", (_label, a, expected) => {
+    expect(safeStateDescription(a)).toBe(expected);
+  });
+
+  it("is null where limits don't apply", () => {
+    expect(safeStateDescription(actuator({ type: "servo", binding: { target: "GCS", servo_channel: 0 } }))).toBeNull();
+    expect(safeStateDescription(actuator({ type: "solenoid", binding: { target: "FAS", node: "EPB_0", relay_channel: 1 } }))).toBeNull();
   });
 });
 
@@ -123,8 +152,15 @@ describe("validateConfig: Pi I/O", () => {
       ]);
     });
 
+    it("accepts limits on a Pi servo with a power relay", () => {
+      expect(
+        errs({ Actuators: [actuator({ type: "servo", binding: { target: "GCS", servo_channel: 1, relay_channel: 4 }, actions: { max_on_s: 60, on_comms_loss: "safe" } })] }),
+      ).toEqual([]);
+    });
+
     it.each([
-      ["a servo", actuator({ type: "servo", binding: { target: "GCS", servo_channel: 1 }, actions: { max_on_s: 5 } })],
+      ["a servo without a power relay", actuator({ type: "servo", binding: { target: "GCS", servo_channel: 1 }, actions: { max_on_s: 5 } })],
+      ["a FAS servo with a relay", actuator({ type: "servo", binding: { target: "FAS", node: "EPB_0", servo_channel: 1, relay_channel: 4 }, actions: { on_comms_loss: "safe" } })],
       ["a FAS actuator", actuator({ type: "solenoid", binding: { target: "FAS", node: "EPB_0", relay_channel: 1 }, actions: { on_comms_loss: "safe" } })],
     ])("rejects limits on %s", (_label, a) => {
       expect(errs({ Actuators: [a] })[0]).toMatch(/max_on_s and on_comms_loss are only allowed on GCS\/TCS/);
@@ -155,7 +191,7 @@ describe("validateConfig: Pi I/O", () => {
         }),
       ).toEqual([
         "Sensor #1 (A): DI binding.source must be GCS or TCS.",
-        "Sensor #2 (B): DI binding requires numeric gpio_channel.",
+        "Sensor #2 (B): DI sensor needs a GPIO pin (binding.gpio_channel).",
         "Sensor #3 (C): gpio_channel BCM 21 is reserved.",
       ]);
     });

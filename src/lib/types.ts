@@ -412,12 +412,47 @@ export interface PiConfigStatus {
   tripped: PiTrip[];
   mismatch: boolean;
   mismatch_reasons: string[];
+  /**
+   * waiting: no status from the Pi yet; applied: it holds the active config and
+   * rejected nothing; pending: it still holds another config; rejected: it
+   * refused items. Derived from the fields above when the backend omits it.
+   */
+  apply_state?: PiApplyState;
+  /** When the backend last got this Pi's status (backend clock, ms). */
+  received_ms?: number | null;
+  /** When the backend first sent this Pi the active config (backend clock, ms). */
+  published_ms?: number | null;
 }
+
+export type PiApplyState = "waiting" | "applied" | "pending" | "rejected";
 
 export interface PiConfigStatusMessage {
   type: "pi_config_status";
   node: string;
   status: PiConfigStatus;
+}
+
+/**
+ * Pi node reports (`nova/stats/<node>/info`, `nova/stats/<node>`,
+ * `nova/state/<node>`), forwarded raw. Parsed in `lib/pi/nodes.ts`; null when
+ * the node cleared it or its stats went stale.
+ */
+export interface NodeStatsInfoMessage {
+  type: "node_stats_info";
+  node: string;
+  info: Record<string, unknown> | null;
+}
+
+export interface NodeStatsMessage {
+  type: "node_stats";
+  node: string;
+  stats: Record<string, unknown> | null;
+}
+
+export interface NodeStateMessage {
+  type: "node_state";
+  node: string;
+  state: Record<string, unknown> | null;
 }
 
 export interface ConfigUpdateMessage {
@@ -437,6 +472,9 @@ export type ServerMessage =
   | PidLayoutMessage
   | ConfigUpdateMessage
   | PiConfigStatusMessage
+  | NodeStatsInfoMessage
+  | NodeStatsMessage
+  | NodeStateMessage
   | ErrorMessage
   | UnknownMessage;
 
