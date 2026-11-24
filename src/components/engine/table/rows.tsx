@@ -6,8 +6,16 @@ import { useNovaStore } from "@/lib/store/store";
 import { sel } from "@/lib/store/selectors";
 import { sendCommand } from "@/lib/api/commands";
 import { useCommandGate } from "@/hooks/useCommandGate";
-import { Mono, StatusDot } from "@/components/primitives";
+import { Chip, Mono, StatusDot } from "@/components/primitives";
 import type { SensorEntry, ActuatorEntry, ActuatorState } from "@/lib/types";
+import {
+  actuatorTrip,
+  actuatorTripText,
+  sensorFault,
+  sensorFaultLabel,
+  sensorFaultReadout,
+  tripReasonLabel,
+} from "@/lib/pi";
 import {
   deriveControls,
   activeOption,
@@ -252,10 +260,21 @@ export function ActuatorRow({ entry, editing, hidden, onToggleHidden }: Actuator
     }
   }
 
+  // A Pi returned this output to its safe level; it stays there until the
+  // next command for it.
+  const trip = actuatorTrip(actuatorState);
+
   return (
     <EditableRow id={entry.name} editing={editing} hidden={hidden} onToggleHidden={onToggleHidden}>
       <Table.Cell textAlign="center">
-        <Mono fontSize="md">{entry.name}</Mono>
+        <Flex direction="column" align="center" gap={1}>
+          <Mono fontSize="md">{entry.name}</Mono>
+          {trip && (
+            <Chip status="fault" title={actuatorTripText(trip)} aria-label={actuatorTripText(trip)}>
+              TRIPPED · {tripReasonLabel(trip.reason)}
+            </Chip>
+          )}
+        </Flex>
       </Table.Cell>
       <Table.Cell textAlign="center">
         <ActuatorControlRow
@@ -304,10 +323,13 @@ export function SensorRow({ sensor, isStale, editing, hidden, onToggleHidden }: 
   if (!editing) frozenRef.current = live;
   const entry = editing ? frozenRef.current : live;
 
-  const hasValue = entry?.value != null;
-  const displayValue = hasValue ? String(entry!.value) : "—";
-  const hasAvg = entry?.avg != null && Number.isFinite(entry.avg);
-  const displayAvg = hasAvg ? fmtNum(entry!.avg) : "—";
+  // A thermocouple fault replaces the number: show why there's no reading.
+  const fault = sensorFault(entry);
+  const hasValue = fault === null && entry?.value != null;
+  const displayValue = fault ? sensorFaultReadout(fault) : hasValue ? String(entry!.value) : "—";
+  const avg = entry?.avg;
+  const hasAvg = fault === null && avg != null && Number.isFinite(avg);
+  const displayAvg = hasAvg ? fmtNum(avg) : "—";
   const unit = entry?.unit ?? sensor.unit ?? "";
   const fontSize = "md";
   const align = "center";
@@ -318,7 +340,11 @@ export function SensorRow({ sensor, isStale, editing, hidden, onToggleHidden }: 
         <Mono fontSize={fontSize}>{sensor.name}</Mono>
       </Table.Cell>
       <Table.Cell textAlign={align}>
-        <Mono fontSize={fontSize} color={hasValue ? "text.primary" : "text.muted"}>
+        <Mono
+          fontSize={fontSize}
+          color={fault ? "fault" : hasValue ? "text.primary" : "text.muted"}
+          title={fault ? `Thermocouple fault: ${sensorFaultLabel(fault)}` : undefined}
+        >
           {displayValue}
         </Mono>
       </Table.Cell>
@@ -334,9 +360,9 @@ export function SensorRow({ sensor, isStale, editing, hidden, onToggleHidden }: 
       </Table.Cell>
       <Table.Cell textAlign={align}>
         <StatusDot
-          status={!hasValue ? "neutral" : isStale ? "warn" : "nominal"}
+          status={fault ? "fault" : !hasValue ? "neutral" : isStale ? "warn" : "nominal"}
           size={8}
-          glow={hasValue && !isStale}
+          glow={(hasValue || fault !== null) && !isStale}
         />
       </Table.Cell>
     </EditableRow>

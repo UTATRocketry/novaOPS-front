@@ -98,6 +98,11 @@ export const sel = {
   /** True while the bridge is streaming decoded RX frames. */
   fasStreaming: (s: NovaStore) => s.fasStreaming,
 
+  // ---- Pi config status ----
+
+  /** Config status per Pi node; a node that's absent is unknown. */
+  piConfigStatus: (s: NovaStore) => s.piConfigStatus,
+
   // ---- Alerts ----
 
   /** All active alerts (condition + event). UI sorts by severity/time. */

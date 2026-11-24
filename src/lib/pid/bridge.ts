@@ -28,6 +28,7 @@ import type {
 } from "../types";
 import type { EngineDataMap, LiveSlice } from "../store/types";
 import type { ActuatorStateMap } from "../types";
+import { actuatorTrip, sensorFault, sensorFaultReadout } from "../pi";
 import { useNovaStore } from "../store/store";
 import { sel } from "../store/selectors";
 import { systemColour } from "./registry";
@@ -99,6 +100,12 @@ function formatValue(v: number): string {
 }
 
 function resolveActuatorBadge(state: ActuatorState | null): { badge: BadgeState; label: string } {
+  const base = resolveStateBadge(state);
+  // A Pi trip latches the output at its safe level; flag it on the badge.
+  return actuatorTrip(state) ? { ...base, label: `${base.label} · TRIP` } : base;
+}
+
+function resolveStateBadge(state: ActuatorState | null): { badge: BadgeState; label: string } {
   if (!state) return { badge: "unknown", label: "UNKNOWN" };
 
   const raw = state.position ?? state.state ?? null;
@@ -752,7 +759,12 @@ export class PidBridge {
       ids.forEach((id) => {
         const cell = this.graph.getCell(id) as NovaInstrument | null;
         if (!cell) return;
+        const fault = sensorFault(value);
         if (dead || !value) {
+          cell.clearReadout();
+        } else if (fault) {
+          cell.setReadout(sensorFaultReadout(fault), "");
+        } else if (value.value == null) {
           cell.clearReadout();
         } else {
           cell.setReadout(formatValue(value.value), value.unit);

@@ -8,6 +8,7 @@ import { useNovaStore, sel } from "@/lib/store";
 import { useActuators, useConfig, useSensors } from "@/hooks/useConfig";
 import type { ActuatorEntry, ActuatorState, PacketEntry, SensorEntry } from "@/lib/types";
 import type { FasBoard } from "@/lib/flight/types";
+import { sensorFault, sensorFaultReadout } from "@/lib/pi";
 
 // ---------------------------------------------------------------------------
 // Liveness → status colour. Present + live = nominal; present + stale = warn;
@@ -37,7 +38,8 @@ const STATUS_LABEL: Record<Status, string> = {
 function SensorRow({ sensor }: { sensor: SensorEntry }) {
   const value = useNovaStore(useCallback(sel.engineValue(sensor.name), [sensor.name]));
   const streamStatus = useNovaStore(sel.engineDataStatus);
-  const present = value?.value != null;
+  const fault = sensorFault(value);
+  const present = fault === null && value?.value != null;
   const status = liveness(present, streamStatus);
 
   return (
@@ -46,8 +48,8 @@ function SensorRow({ sensor }: { sensor: SensorEntry }) {
       <Table.Cell><Chip status="neutral">{sensor.type}</Chip></Table.Cell>
       <Table.Cell><Mono fontSize="xs" color="text.muted">RX</Mono></Table.Cell>
       <Table.Cell>
-        <Mono fontSize="xs" color={present ? "text.primary" : "text.muted"}>
-          {present ? `${value!.value} ${value!.unit ?? sensor.unit ?? ""}`.trim() : "—"}
+        <Mono fontSize="xs" color={fault ? "fault" : present ? "text.primary" : "text.muted"}>
+          {fault ? sensorFaultReadout(fault) : present ? `${value!.value} ${value!.unit ?? sensor.unit ?? ""}`.trim() : "—"}
         </Mono>
       </Table.Cell>
       <Table.Cell>

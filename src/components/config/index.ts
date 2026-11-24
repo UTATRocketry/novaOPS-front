@@ -7,3 +7,4 @@ export { PacketsTable } from "./PacketsTable";
 export { ProceduresTable } from "./ProceduresTable";
 export { CalibrationModal } from "./CalibrationModal";
 export { BuzzerMelodiesTable } from "./BuzzerMelodiesTable";
+export { HeartbeatCard } from "./HeartbeatCard";

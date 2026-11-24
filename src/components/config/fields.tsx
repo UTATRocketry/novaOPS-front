@@ -153,17 +153,24 @@ export function CsvListCell({ value, numeric = false, onChange, placeholder }: C
 // already used by OTHER entries (the current value is always selectable).
 // ---------------------------------------------------------------------------
 
-export interface ChannelSelectCellProps {
+export type ChannelSelectCellProps = {
   value: number | null | undefined;
-  max: number;
   used?: ReadonlySet<number>;
   onChange: (v: number | undefined) => void;
-}
+} & (
+  | { max: number; channels?: undefined }
+  /** Explicit channel list (e.g. Pi GPIO pins without the reserved ones). */
+  | { channels: readonly number[]; max?: undefined }
+);
 
-export function ChannelSelectCell({ value, max, used, onChange }: ChannelSelectCellProps) {
-  const options: number[] = [];
-  for (let i = 0; i <= max; i++) {
-    if (!used?.has(i) || i === value) options.push(i);
+export function ChannelSelectCell({ value, max, channels, used, onChange }: ChannelSelectCellProps) {
+  const all = channels ?? Array.from({ length: (max ?? -1) + 1 }, (_, i) => i);
+  const options = all.filter((n) => !used?.has(n) || n === value);
+  // A value outside the list (e.g. a reserved pin in an older config) stays
+  // visible so the operator sees it; validation reports it.
+  if (value != null && !options.includes(value)) {
+    options.push(value);
+    options.sort((a, b) => a - b);
   }
   return (
     <NativeSelect

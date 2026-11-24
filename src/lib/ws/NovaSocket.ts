@@ -20,6 +20,7 @@ import { createStalenessTimer, useNovaStore } from "../store";
 import type { FreshnessWindows } from "../store";
 import { adaptFlightData, adaptFlightEvents, parseFasLink, resetFlightSession } from "../flight";
 import { parseConsolePorts } from "../console";
+import { parsePiConfigStatusMessage } from "../pi";
 import { startFlightRecorder, stopFlightRecorder } from "../flight/recorder";
 
 // ---------------------------------------------------------------------------
@@ -307,6 +308,12 @@ export class NovaSocket {
         if (config && typeof config === "object" && !Array.isArray(config)) {
           this.onConfigUpdate?.(config);
         }
+        break;
+      }
+
+      case "pi_config_status": {
+        const status = parsePiConfigStatusMessage(m);
+        if (status) store.ingestPiConfigStatus(status);
         break;
       }
 

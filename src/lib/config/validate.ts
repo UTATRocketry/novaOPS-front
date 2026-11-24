@@ -6,6 +6,17 @@ import type {
   SourceTarget,
   SystemConfig,
 } from "../types";
+import {
+  DEFAULT_ON_COMMS_LOSS,
+  HEARTBEAT_TIMEOUT_MAX_MS,
+  HEARTBEAT_TIMEOUT_MIN_MS,
+  ON_COMMS_LOSS,
+  TC_TYPES,
+  isPiGpioActuator,
+  isPiTarget,
+  piPinProblem,
+  supportsOutputLimits,
+} from "./piIo";
 
 /**
  * Manual schema validation for SystemConfig, mirroring the shapes in
@@ -15,7 +26,7 @@ import type {
  * empty list means the config is safe to send.
  */
 
-const SENSOR_TYPES: SensorType[] = ["PT", "LC", "TC"];
+const SENSOR_TYPES: SensorType[] = ["PT", "LC", "TC", "DI"];
 const ACTUATOR_TYPES: ActuatorType[] = [
   "servo",
   "solenoid",
@@ -26,12 +37,23 @@ const ACTUATOR_TYPES: ActuatorType[] = [
 ];
 const SOURCES: SourceTarget[] = ["GCS", "FAS", "TCS", "OPS"];
 const SOURCE_LIST = SOURCES.join(", ");
+/** Actuator targets with a command path. `OPS` has none, so the backend rejects it. */
+const ACTUATOR_TARGETS: SourceTarget[] = ["GCS", "FAS", "TCS"];
+
+/** One GPIO pin claimed by a config entry, for the per-Pi duplicate check. */
+interface PinClaim {
+  target: "GCS" | "TCS";
+  pin: number;
+  what: string;
+  /** Outputs may share a pin (the backend merges their limits); inputs may not. */
+  kind: "input" | "output";
+}
 
 function isNonEmpty(v: unknown): v is string {
   return typeof v === "string" && v.trim().length > 0;
 }
 
-function validateSensor(s: SensorEntry, i: number, errors: string[], seen: Set<string>) {
+function validateSensor(s: SensorEntry, i: number, errors: string[], seen: Set<string>, pins?: PinClaim[]) {
   const tag = `Sensor #${i + 1}`;
   if (!isNonEmpty(s.name)) errors.push(`${tag}: name is required.`);
   else if (seen.has(s.name)) errors.push(`${tag}: duplicate name "${s.name}".`);
@@ -46,14 +68,39 @@ function validateSensor(s: SensorEntry, i: number, errors: string[], seen: Set<s
     errors.push(`${tag} (${s.name || "?"}): binding is required.`);
     return;
   }
-  if (b.source === "FAS") {
+  // Loosely typed view: the checks below must hold even for a config that
+  // doesn't match the TypeScript union (it came off the wire).
+  const raw = b as unknown as Record<string, unknown>;
+  if (s.type === "DI") {
+    // A digital input is a Pi GPIO pin, not a DAQ channel.
+    if (b.source !== "GCS" && b.source !== "TCS") {
+      errors.push(`${tag} (${s.name}): DI binding.source must be GCS or TCS.`);
+    } else if (typeof raw.gpio_channel !== "number") {
+      errors.push(`${tag} (${s.name}): DI binding requires numeric gpio_channel.`);
+    } else {
+      const problem = piPinProblem(raw.gpio_channel);
+      if (problem) errors.push(`${tag} (${s.name}): gpio_channel ${problem}.`);
+      else pins?.push({ target: b.source, pin: raw.gpio_channel, what: `sensor "${s.name}"`, kind: "input" });
+    }
+  } else if (raw.gpio_channel != null) {
+    errors.push(`${tag} (${s.name}): only DI sensors take binding.gpio_channel.`);
+  } else if (b.source === "FAS") {
     if (!isNonEmpty(b.node)) errors.push(`${tag} (${s.name}): FAS binding requires node.`);
     if (typeof b.channel !== "number") errors.push(`${tag} (${s.name}): FAS binding requires numeric channel.`);
   } else if (b.source === "GCS" || b.source === "TCS") {
-    if (typeof b.hat_id !== "number") errors.push(`${tag} (${s.name}): ${b.source} binding requires numeric hat_id.`);
-    if (typeof b.channel_id !== "number") errors.push(`${tag} (${s.name}): ${b.source} binding requires numeric channel_id.`);
+    if (typeof raw.hat_id !== "number") errors.push(`${tag} (${s.name}): ${b.source} binding requires numeric hat_id.`);
+    if (typeof raw.channel_id !== "number") errors.push(`${tag} (${s.name}): ${b.source} binding requires numeric channel_id.`);
   } else {
     errors.push(`${tag} (${s.name}): binding.source must be GCS, TCS, or FAS.`);
+  }
+
+  // Thermocouple type: only the Pi's MCC 134 takes one; the FAS firmware sets its own.
+  if (s.tc_type != null) {
+    if (!TC_TYPES.includes(s.tc_type)) {
+      errors.push(`${tag} (${s.name}): tc_type must be one of ${TC_TYPES.join(", ")}.`);
+    } else if (s.type !== "TC" || !isPiTarget(b.source)) {
+      errors.push(`${tag} (${s.name}): tc_type is only allowed on TC sensors bound to GCS or TCS.`);
+    }
   }
 
   if (s.convert?.calibration) {
@@ -64,7 +111,7 @@ function validateSensor(s: SensorEntry, i: number, errors: string[], seen: Set<s
   }
 }
 
-function validateActuator(a: ActuatorEntry, i: number, errors: string[], seen: Set<string>) {
+function validateActuator(a: ActuatorEntry, i: number, errors: string[], seen: Set<string>, pins?: PinClaim[]) {
   const tag = `Actuator #${i + 1}`;
   if (!isNonEmpty(a.name)) errors.push(`${tag}: name is required.`);
   else if (seen.has(a.name)) errors.push(`${tag}: duplicate name "${a.name}".`);
@@ -77,13 +124,48 @@ function validateActuator(a: ActuatorEntry, i: number, errors: string[], seen: S
   const b = a.binding;
   if (!b || typeof b !== "object" || !SOURCES.includes(b.target)) {
     errors.push(`${tag} (${a.name || "?"}): binding.target must be one of ${SOURCE_LIST}.`);
+  } else if (!ACTUATOR_TARGETS.includes(b.target)) {
+    errors.push(`${tag} (${a.name || "?"}): target ${b.target} has no command path; use ${ACTUATOR_TARGETS.join(", ")}.`);
   }
   // Note: binding.node is optional in types.ts (node?: string | null), so a
   // missing FAS node is not a schema error here — the backend rejects it on PUT
   // if it genuinely requires one, and that error is surfaced to the operator.
 
-  // Servo position aliases/positions must align when both are present.
   const act = a.actions;
+
+  // Pi GPIO outputs: the pin must be set explicitly (the relay_channel
+  // fallback is FAS-only) and must be one the Pi can claim.
+  if (b && typeof b === "object" && isPiGpioActuator(a)) {
+    const pin = b.gpio_channel;
+    if (typeof pin !== "number") {
+      errors.push(`${tag} (${a.name}): ${b.target} ${a.type} requires binding.gpio_channel.`);
+    } else {
+      const problem = piPinProblem(pin);
+      if (problem) errors.push(`${tag} (${a.name}): gpio_channel ${problem}.`);
+      else pins?.push({ target: b.target as "GCS" | "TCS", pin, what: `actuator "${a.name}"`, kind: "output" });
+    }
+  }
+
+  // Output limits: Pi relay/GPIO outputs only (not servos, not the FAS).
+  // `on_comms_loss: hold` is the default and the backend returns it on every
+  // actuator, so only a limit that does something counts as set.
+  const maxOn = act?.max_on_s;
+  const commsLoss = act?.on_comms_loss;
+  const setsLimit = maxOn != null || (commsLoss != null && commsLoss !== DEFAULT_ON_COMMS_LOSS);
+  if (setsLimit && b && typeof b === "object" && !supportsOutputLimits(a)) {
+    errors.push(
+      `${tag} (${a.name}): max_on_s and on_comms_loss are only allowed on GCS/TCS solenoid, powered_device, powered_gpio_device, gpio_device and motor actuators.`,
+    );
+  } else {
+    if (maxOn != null && !(typeof maxOn === "number" && Number.isFinite(maxOn) && maxOn > 0)) {
+      errors.push(`${tag} (${a.name}): max_on_s must be a positive number of seconds.`);
+    }
+    if (commsLoss != null && !ON_COMMS_LOSS.includes(commsLoss)) {
+      errors.push(`${tag} (${a.name}): on_comms_loss must be one of ${ON_COMMS_LOSS.join(", ")}.`);
+    }
+  }
+
+  // Servo position aliases/positions must align when both are present.
   if (act?.position_aliases && act.positions && act.position_aliases.length !== act.positions.length) {
     errors.push(`${tag} (${a.name}): position_aliases and positions must be the same length.`);
   }
@@ -120,13 +202,41 @@ function validateActuator(a: ActuatorEntry, i: number, errors: string[], seen: S
 export function validateConfig(config: SystemConfig): string[] {
   const errors: string[] = [];
 
+  const pins: PinClaim[] = [];
+
   const sensors = config.Sensors ?? [];
   const sensorNames = new Set<string>();
-  sensors.forEach((s, i) => validateSensor(s, i, errors, sensorNames));
+  sensors.forEach((s, i) => validateSensor(s, i, errors, sensorNames, pins));
 
   const actuators = config.Actuators ?? [];
   const actuatorNames = new Set<string>();
-  actuators.forEach((a, i) => validateActuator(a, i, errors, actuatorNames));
+  actuators.forEach((a, i) => validateActuator(a, i, errors, actuatorNames, pins));
+
+  // A Pi pin is an output or an input, not both, and one DI per pin. Two
+  // actuators may share an output (the backend merges their limits).
+  const claimed = new Map<string, PinClaim>();
+  for (const c of pins) {
+    const key = `${c.target}:${c.pin}`;
+    const first = claimed.get(key);
+    if (!first) claimed.set(key, c);
+    else if (first.kind === "input" || c.kind === "input") {
+      errors.push(`${c.target} GPIO ${c.pin} is used by both ${first.what} and ${c.what}.`);
+    }
+  }
+
+  // Heartbeat: the Pis' comms-loss timeout.
+  const hb = config.Heartbeat as unknown;
+  if (hb != null) {
+    const timeout = typeof hb === "object" && !Array.isArray(hb) ? (hb as Record<string, unknown>).timeout_ms : undefined;
+    if (typeof hb !== "object" || Array.isArray(hb)) {
+      errors.push("Heartbeat must be a mapping.");
+    } else if (
+      timeout != null &&
+      !(typeof timeout === "number" && Number.isInteger(timeout) && timeout >= HEARTBEAT_TIMEOUT_MIN_MS && timeout <= HEARTBEAT_TIMEOUT_MAX_MS)
+    ) {
+      errors.push(`Heartbeat.timeout_ms must be a whole number from ${HEARTBEAT_TIMEOUT_MIN_MS} to ${HEARTBEAT_TIMEOUT_MAX_MS}.`);
+    }
+  }
 
   // Commands: each entry needs a binding.target.
   for (const [name, cmd] of Object.entries(config.Commands ?? {})) {

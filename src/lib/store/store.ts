@@ -104,6 +104,7 @@ const INITIAL_STATE: NovaStoreState = {
   fasLink: null,
   fasPorts: null,
   fasStreaming: false,
+  piConfigStatus: {},
 };
 
 // ---------------------------------------------------------------------------
@@ -147,6 +148,8 @@ export const useNovaStore = create<NovaStore>()((set, get) => ({
       fasLink: null,
       fasPorts: null,
       fasStreaming: false,
+      // Same for the Pis' config status: the backend resends it on connect.
+      piConfigStatus: {},
     })),
 
   setSocketError: (error) =>
@@ -237,6 +240,10 @@ export const useNovaStore = create<NovaStore>()((set, get) => ({
   setFasStreaming: (active) => {
     if (get().fasStreaming === active) return;
     set({ fasStreaming: active });
+  },
+
+  ingestPiConfigStatus: (status) => {
+    set((s) => ({ piConfigStatus: { ...s.piConfigStatus, [status.node]: status } }));
   },
 
   // ---- Console / event log ----

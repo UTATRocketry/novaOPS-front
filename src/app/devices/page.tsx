@@ -13,6 +13,7 @@ import {
   PmbPowerCard,
   ChargerCard,
   DiagnosticsCard,
+  PiConfigStatusCard,
 } from "@/components/devices";
 
 // ---------------------------------------------------------------------------
@@ -56,9 +57,14 @@ export default function DevicesPage() {
     <Box>
       <PageHeader
         title="Devices"
-        subtitle="Avionics fleet · power"
+        subtitle="Avionics fleet · power · Pi config"
         action={<Chip status={chip.status}>{chip.label}</Chip>}
       />
+
+      {/* The Pis report over their own path, so this shows without FAS telemetry. */}
+      <Box mb={4}>
+        <PiConfigStatusCard />
+      </Box>
 
       {!hasAny ? (
         <Flex direction="column" align="center" justify="center" py={16} gap={2} color="text.muted">

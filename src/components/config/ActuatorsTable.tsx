@@ -3,13 +3,20 @@
 import { Fragment, useState } from "react";
 import { Box, Flex, Table, Text } from "@chakra-ui/react";
 import { Card, Icon } from "@/components/primitives";
-import type { ActuatorActions, ActuatorEntry, ActuatorType, SourceTarget } from "@/lib/types";
+import type { ActuatorActions, ActuatorEntry, ActuatorType, OnCommsLoss, SourceTarget } from "@/lib/types";
+import {
+  DEFAULT_ON_COMMS_LOSS,
+  ON_COMMS_LOSS,
+  gpioChannelOptions,
+  supportsOutputLimits,
+} from "@/lib/config/piIo";
 import {
   AddRowButton,
   Cell,
   ChannelSelectCell,
   CsvListCell,
   IconButton,
+  NumberCell,
   SelectCell,
   TABLE_CSS,
   TextCell,
@@ -24,13 +31,17 @@ const ACTUATOR_TYPES: ActuatorType[] = [
   "gpio_device",
   "motor",
 ];
-const TARGETS: SourceTarget[] = ["GCS", "FAS", "TCS", "OPS"];
+// OPS has no command path, so it isn't offered (validation rejects it). An
+// older config that uses it still shows it, so the operator can see and fix it.
+const TARGETS: SourceTarget[] = ["GCS", "FAS", "TCS"];
+const targetOptions = (current: SourceTarget): SourceTarget[] =>
+  TARGETS.includes(current) ? TARGETS : [...TARGETS, current];
 const SOLENOID_TYPES = ["", "nominally_closed", "nominally_open"] as const;
 const RELAY_TYPES = ["", "nominally_off", "nominally_on"] as const;
-// Hardware channel ranges (inclusive).
+// Hardware channel ranges (inclusive). GPIO channels depend on the target:
+// BCM pins without the reserved ones on a Pi, 0-15 on the FAS (see piIo).
 const RELAY_MAX = 15;
 const SERVO_MAX = 15;
-const GPIO_MAX = 15;
 
 // ---------------------------------------------------------------------------
 // Small labelled field used inside the per-type detail editor.
@@ -104,7 +115,7 @@ function gpioChannelField(entry: ActuatorEntry, setBinding: DetailProps["setBind
     <Field label="gpio_channel">
       <ChannelSelectCell
         value={entry.binding.gpio_channel ?? undefined}
-        max={GPIO_MAX}
+        channels={gpioChannelOptions(entry.binding.target)}
         used={used}
         onChange={(v) => setBinding({ gpio_channel: v ?? null })}
       />
@@ -117,6 +128,33 @@ function relayTypeField(entry: ActuatorEntry, setActions: DetailProps["setAction
     <Field label="relay_type">
       <SelectCell value={(entry.actions?.relay_type as string) ?? ""} options={RELAY_TYPES} onChange={(v) => setActions({ relay_type: v || null })} />
     </Field>
+  );
+}
+
+/**
+ * Pi output limits (GCS/TCS relay and GPIO outputs): the Pi returns the
+ * output to its safe level after `max_on_s`, and on comms loss when
+ * `on_comms_loss` is `safe`.
+ */
+function OutputLimits({ entry, setActions }: Pick<DetailProps, "entry" | "setActions">) {
+  const act = entry.actions ?? {};
+  return (
+    <Flex gap={3} flexWrap="wrap" mt={3} pt={3} borderTop="1px solid" borderColor="border.default">
+      <Field label="max_on_s">
+        <NumberCell
+          value={act.max_on_s ?? undefined}
+          onChange={(v) => setActions({ max_on_s: v ?? null })}
+          placeholder="no limit"
+        />
+      </Field>
+      <Field label="on_comms_loss">
+        <SelectCell
+          value={act.on_comms_loss ?? DEFAULT_ON_COMMS_LOSS}
+          options={ON_COMMS_LOSS}
+          onChange={(v) => setActions({ on_comms_loss: v as OnCommsLoss })}
+        />
+      </Field>
+    </Flex>
   );
 }
 
@@ -259,6 +297,25 @@ function usedChannels(
   return { relay, servo, gpio };
 }
 
+/**
+ * Output limits only exist on Pi relay/GPIO outputs. When a type or target
+ * change leaves an actuator without them, reset them to "no limit" / `hold`
+ * (the backend's defaults), since it would reject the config otherwise.
+ */
+function dropStaleLimits(a: ActuatorEntry): ActuatorEntry {
+  if (supportsOutputLimits(a) || !a.actions) return a;
+  const { max_on_s, on_comms_loss } = a.actions;
+  if (max_on_s == null && (on_comms_loss == null || on_comms_loss === DEFAULT_ON_COMMS_LOSS)) return a;
+  return {
+    ...a,
+    actions: {
+      ...a.actions,
+      ...(max_on_s != null ? { max_on_s: null } : {}),
+      ...(on_comms_loss != null ? { on_comms_loss: DEFAULT_ON_COMMS_LOSS } : {}),
+    },
+  };
+}
+
 // ---------------------------------------------------------------------------
 // ActuatorsTable
 // ---------------------------------------------------------------------------
@@ -272,7 +329,7 @@ export function ActuatorsTable({ actuators, onChange }: ActuatorsTableProps) {
   const [expanded, setExpanded] = useState<number | null>(null);
 
   function update(i: number, patch: Partial<ActuatorEntry>) {
-    onChange(actuators.map((a, idx) => (idx === i ? { ...a, ...patch } : a)));
+    onChange(actuators.map((a, idx) => (idx === i ? dropStaleLimits({ ...a, ...patch }) : a)));
   }
   function setBinding(i: number, patch: Partial<ActuatorEntry["binding"]>) {
     update(i, { binding: { ...actuators[i].binding, ...patch } });
@@ -316,7 +373,7 @@ export function ActuatorsTable({ actuators, onChange }: ActuatorsTableProps) {
                   <Table.Row>
                     <Table.Cell><Cell><TextCell value={a.name} onChange={(v) => update(i, { name: v })} placeholder="TAG" /></Cell></Table.Cell>
                     <Table.Cell><Cell><SelectCell value={a.type} options={ACTUATOR_TYPES} onChange={(v) => update(i, { type: v as ActuatorType })} /></Cell></Table.Cell>
-                    <Table.Cell><Cell><SelectCell value={a.binding.target} options={TARGETS} onChange={(v) => setBinding(i, { target: v as SourceTarget })} /></Cell></Table.Cell>
+                    <Table.Cell><Cell><SelectCell value={a.binding.target} options={targetOptions(a.binding.target)} onChange={(v) => setBinding(i, { target: v as SourceTarget })} /></Cell></Table.Cell>
                     <Table.Cell><Cell><TextCell value={a.binding.node ?? ""} onChange={(v) => setBinding(i, { node: v || null })} placeholder="—" /></Cell></Table.Cell>
                     <Table.Cell>
                       <Cell>
@@ -349,14 +406,19 @@ export function ActuatorsTable({ actuators, onChange }: ActuatorsTableProps) {
                           {(() => {
                             const { relay: usedRelay, servo: usedServo, gpio: usedGpio } = usedChannels(actuators, i, a.binding.target, a.binding.node);
                             return (
-                              <TypeDetail
-                                entry={a}
-                                setBinding={(patch) => setBinding(i, patch)}
-                                setActions={(patch) => setActions(i, patch)}
-                                usedRelay={usedRelay}
-                                usedServo={usedServo}
-                                usedGpio={usedGpio}
-                              />
+                              <>
+                                <TypeDetail
+                                  entry={a}
+                                  setBinding={(patch) => setBinding(i, patch)}
+                                  setActions={(patch) => setActions(i, patch)}
+                                  usedRelay={usedRelay}
+                                  usedServo={usedServo}
+                                  usedGpio={usedGpio}
+                                />
+                                {supportsOutputLimits(a) && (
+                                  <OutputLimits entry={a} setActions={(patch) => setActions(i, patch)} />
+                                )}
+                              </>
                             );
                           })()}
                         </Box>

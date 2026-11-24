@@ -6,6 +6,7 @@ import { useNovaStore } from "@/lib/store/store";
 import { sel } from "@/lib/store/selectors";
 import { Card, Icon, Mono, Plot } from "@/components/primitives";
 import type { SensorEntry } from "@/lib/types";
+import { sensorFault, sensorFaultReadout } from "@/lib/pi";
 
 const StyledSelect = chakra("select");
 
@@ -80,7 +81,8 @@ function PlotCard({
   const sensorType = sensorMeta?.type ?? "PT";
   const unit = entry?.unit ?? sensorMeta?.unit ?? "";
   const range = sensorMeta?.range; // [min, max] → fixed Y scale (item 5)
-  const liveValue = entry != null ? entry.value.toFixed(2) : "—";
+  const fault = sensorFault(entry);
+  const liveValue = fault ? sensorFaultReadout(fault) : entry?.value != null ? entry.value.toFixed(2) : "—";
 
   return (
     <Box

@@ -11,7 +11,12 @@
 // ---------------------------------------------------------------------------
 
 export type SourceTarget = "GCS" | "FAS" | "TCS" | "OPS";
-export type SensorType = "PT" | "LC" | "TC";
+/** `DI` = digital input on a Pi GPIO pin (reads 0 or 1). */
+export type SensorType = "PT" | "LC" | "TC" | "DI";
+/** MCC 134 thermocouple type. Only on `TC` sensors bound to GCS/TCS; default K. */
+export type TcType = "J" | "K" | "T" | "E" | "R" | "S" | "B" | "N";
+/** What a Pi output does when the backend heartbeat is lost. */
+export type OnCommsLoss = "hold" | "safe";
 export type ActuatorType =
   | "servo"
   | "solenoid"
@@ -28,9 +33,28 @@ export type ConvertMethod =
   | "repeated_median";
 export type ClientRole = "viewer" | "pad" | "operator" | "admin";
 
+/** A DAQ HAT channel on a Pi. */
+export interface PiHatBinding {
+  source: "GCS" | "TCS";
+  hat_id: number;
+  channel_id: number;
+}
+
+/** A `DI` sensor's binding: one BCM GPIO input pin on a Pi. */
+export interface PiGpioBinding {
+  source: "GCS" | "TCS";
+  gpio_channel: number;
+}
+
 export type SensorBinding =
-  | { source: "GCS" | "TCS"; hat_id: number; channel_id: number }
+  | PiHatBinding
+  | PiGpioBinding
   | { source: "FAS"; node: string; channel: number };
+
+/** True for a `DI` sensor's `{source, gpio_channel}` binding. */
+export function isGpioBinding(b: SensorBinding): b is PiGpioBinding {
+  return b.source !== "FAS" && "gpio_channel" in b;
+}
 
 export interface ConvertSpec {
   method?: ConvertMethod;
@@ -44,6 +68,8 @@ export interface SensorEntry {
   range?: [number, number];
   binding: SensorBinding;
   convert?: ConvertSpec;
+  /** Thermocouple type, `TC` sensors on GCS/TCS only. Absent reads as K. */
+  tc_type?: TcType | null;
 }
 
 export interface ActuatorBinding {
@@ -84,6 +110,13 @@ export interface ActuatorActions {
   state_labels?: string[];
   /** Active-low relay board: flips published relay states, not their ordering. */
   invert_relays?: boolean;
+
+  // --- Pi relay / GPIO output limits (GCS/TCS solenoid, powered_device,
+  // powered_gpio_device, gpio_device, motor) --------------------------------
+  /** Seconds after the output last left its safe level before the Pi returns it there. */
+  max_on_s?: number | null;
+  /** `hold` (default) keeps the output on comms loss; `safe` returns it to its safe level. */
+  on_comms_loss?: OnCommsLoss | null;
 }
 
 /** Motor command states used when `actions.state_labels` is not set. */
@@ -191,6 +224,12 @@ export interface SystemConfig {
   Procedures?: ProcedureEntry[];
   /** Predefined buzzer melodies. Each is an array of [freq_hz, dur_ms] or [freq_hz, dur_ms, vol] tuples. */
   BuzzerMelodies?: Record<string, Array<[number, number] | [number, number, number]>>;
+  /** Backend heartbeat to the Pis; a Pi trips `safe` outputs after `timeout_ms` (default 2000). */
+  Heartbeat?: HeartbeatConfig;
+}
+
+export interface HeartbeatConfig {
+  timeout_ms?: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -208,12 +247,22 @@ export interface SystemCommandPayload {
   state?: string | null;
 }
 
+/**
+ * Thermocouple fault from a Pi's MCC 134 (raw -9999 / -7777 / -8888). The
+ * backend sends it with `value` and `avg` null. Kept open to strings so a new
+ * fault name still shows instead of vanishing.
+ */
+export type SensorFault = "open" | "common_mode" | "overrange" | (string & {});
+
 export interface ParsedSensorValue {
   name: string;
-  value: number;
-  avg: number;
+  /** null while `fault` is set (or when the backend has no reading). */
+  value: number | null;
+  avg: number | null;
   unit: string;
   timestamp: number;
+  /** null / absent = a good reading. */
+  fault?: SensorFault | null;
 }
 
 export interface ClientInfo {
@@ -242,6 +291,14 @@ export interface ActuatorState {
    */
   motion?: string;
   state?: string; // fallback for unknown actuators
+
+  // --- Pi output trip (the Pi returned the output to its safe level) --------
+  /** Trip reason from the Pi: `max_on_time` or `comms_loss`. Cleared by the next command. */
+  tripped?: string;
+  /** The tripped output, `gpio:N` or `relay:N`. */
+  tripped_output?: string;
+  /** When the Pi tripped it, epoch ms. */
+  tripped_ms?: number;
 }
 
 export type ActuatorStateMap = Record<string, ActuatorState>;
@@ -320,6 +377,49 @@ export interface PidLayoutMessage {
  * Broadcast after any config mutation (load/upload/PUT/PATCH/reload). Carries
  * the full updated config — apply it directly instead of re-fetching.
  */
+/** One item a Pi refused from its config message. */
+export interface PiRejectedItem {
+  item: string;
+  reason: string;
+}
+
+/** One output a Pi returned to its safe level. Latched until the next command for it. */
+export interface PiTrip {
+  output: string;
+  reason: string;
+  time_ms: number | null;
+  /** Actuators in the active config bound to that output on that Pi. */
+  actuators?: string[];
+}
+
+/**
+ * Per-Pi config status view (backend `GET /api/config/pi` and the
+ * `pi_config_status` WS message). See the Pi I/O design doc.
+ */
+export interface PiConfigStatus {
+  node: string;
+  target: "GCS" | "TCS" | string;
+  /** Content hash of the backend's active config (what it sent). */
+  expected_hash: string | null;
+  /** false until the Pi has published a status. */
+  received: boolean;
+  config_hash: string | null;
+  applied_ms: number | null;
+  rejected: PiRejectedItem[];
+  reserved_pins: number[];
+  /** HAT address -> channel -> thermocouple type, as applied by the Pi. */
+  thermocouples: Record<string, Record<string, string>>;
+  tripped: PiTrip[];
+  mismatch: boolean;
+  mismatch_reasons: string[];
+}
+
+export interface PiConfigStatusMessage {
+  type: "pi_config_status";
+  node: string;
+  status: PiConfigStatus;
+}
+
 export interface ConfigUpdateMessage {
   type: "config_update";
   config: SystemConfig;
@@ -336,6 +436,7 @@ export type ServerMessage =
   | LockoutMessage
   | PidLayoutMessage
   | ConfigUpdateMessage
+  | PiConfigStatusMessage
   | ErrorMessage
   | UnknownMessage;
 

@@ -4,6 +4,7 @@ import type {
   ClientRole,
   LockoutState,
   ParsedSensorValue,
+  PiConfigStatus,
   SessionMessage,
   SnapshotMessage,
 } from "../types";
@@ -127,6 +128,15 @@ export interface NovaStoreState {
   fasPorts: FasSerialPort[] | null;
   /** Whether the bridge is streaming decoded RX frames (`console_status`). */
   fasStreaming: boolean;
+
+  /**
+   * Per-Pi config status (`pi_config_status`), keyed by node (`novaGround`,
+   * `novaThermo`): config mismatch, rejected items and tripped outputs.
+   * Event-driven, not a LiveSlice. The backend sends one per node on connect,
+   * and the map is cleared when the socket drops: a missing node is unknown
+   * (render `—`), never "ok".
+   */
+  piConfigStatus: Record<string, PiConfigStatus>;
 }
 
 export interface NovaStoreActions {
@@ -174,6 +184,11 @@ export interface NovaStoreActions {
   ingestFasPorts: (ports: FasSerialPort[]) => void;
   /** Record whether frame streaming is active (`console_status`). */
   setFasStreaming: (active: boolean) => void;
+
+  // --- Pi config status ---
+
+  /** Replace one Pi's config status (from a `pi_config_status` message). */
+  ingestPiConfigStatus: (status: PiConfigStatus) => void;
 
   // --- Alerts ---
 

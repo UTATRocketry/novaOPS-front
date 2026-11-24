@@ -6,6 +6,7 @@ import { useNovaStore } from "@/lib/store/store";
 import { sel } from "@/lib/store/selectors";
 import { Card, Icon, Mono, Gauge, type GaugeZone } from "@/components/primitives";
 import type { SensorEntry } from "@/lib/types";
+import { sensorFault, sensorFaultReadout } from "@/lib/pi";
 
 const StyledSelect = chakra("select");
 
@@ -143,6 +144,14 @@ function GaugeCard({ sensorName, sensors, onChangeSensor, onRemove }: GaugeCardP
           size={170}
         />
       </Flex>
+      {(() => {
+        const fault = sensorFault(entry);
+        return fault ? (
+          <Flex justify="center" pb={2}>
+            <Mono fontSize="xs" color="fault">{sensorFaultReadout(fault)}</Mono>
+          </Flex>
+        ) : null;
+      })()}
 
       {/* Sensor selector */}
       <Box px={2} pb={2.5}>

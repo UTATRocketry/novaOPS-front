@@ -15,6 +15,7 @@
  */
 
 import type { ConvertMethod, ConvertSpec, SensorBinding, SensorEntry } from "@/lib/types";
+import { isGpioBinding } from "@/lib/types";
 import type { ChannelBinding } from "./types";
 
 /** `value = slope * raw + intercept`. */
@@ -189,6 +190,12 @@ export function applyCalibration(
 export function bindingColumnKey(binding: SensorBinding): ChannelBinding {
   if (binding.source === "FAS") {
     return { source: "FAS", colKey: `${binding.node}_ch${binding.channel}` };
+  }
+  if (isGpioBinding(binding)) {
+    // DI sensor. The Pi's CSV header for a GPIO input isn't pinned down yet
+    // (docs/design/pi-io-config.md); `gpio{pin}` is a placeholder, and a
+    // column that doesn't exist is reported as missing rather than guessed.
+    return { source: binding.source, colKey: `gpio${binding.gpio_channel}` };
   }
   return {
     source: binding.source,
