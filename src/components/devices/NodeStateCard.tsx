@@ -43,9 +43,6 @@ function Relays({ relays }: { relays: NonNullable<NodeState["relays"]> }) {
           );
         })}
       </Grid>
-      <Text fontSize="2xs" color="text.muted" mt={1}>
-        Read back from the board. &quot;on&quot; = energized (level 0, the board is active-low).
-      </Text>
     </>
   );
 }

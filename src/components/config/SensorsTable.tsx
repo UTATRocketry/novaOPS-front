@@ -271,9 +271,9 @@ export function SensorsTable({ sensors, onChange }: SensorsTableProps) {
         />
       )}
 
-      <Box px={3} pb={3}>
+{/*       <Box px={3} pb={3}>
         <Chip status="neutral">Calibration is applied by the backend; this only authors the pairs.</Chip>
-      </Box>
+      </Box> */}
     </Card>
   );
 }

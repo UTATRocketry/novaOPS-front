@@ -114,7 +114,7 @@ export function safeStateDescription(a: Pick<ActuatorEntry, "type" | "binding" |
     case "powered_device":
       return `relay de-energized (${power})`;
     case "servo":
-      return `power relay de-energized (power ${power}); the servo PWM is not changed`;
+      return `power relay de-energized (power ${power})`;
     case "solenoid": {
       const normallyClosed = (act.solenoid_type ?? "nominally_open").toLowerCase() === "nominally_closed";
       // Valve de-energized: its normal state. A nominally_on relay energizes it.

@@ -153,11 +153,11 @@ export function CalibrationModal({ sensor, onSave, onClose }: CalibrationModalPr
     >
       <Card title={`Calibrate · ${sensor.name}`} w="560px" maxW="92vw">
         <Flex direction="column" gap={4}>
-          <Text fontSize="xs" color="text.muted">
+          {/* <Text fontSize="xs" color="text.muted">
             Capture a 10&nbsp;s average of the live raw reading, or type a measured value by
             hand, then assign its real value. Run with the backend calibration flag OFF so
             raw values are captured.
-          </Text>
+          </Text> */}
 
           {/* Capture */}
           <Flex align="center" gap={3} flexWrap="wrap">
@@ -272,7 +272,7 @@ export function CalibrationModal({ sensor, onSave, onClose }: CalibrationModalPr
           )}
 
           {/* Re-zero (tare) */}
-          <Flex
+{/*           <Flex
             align="center"
             justify="space-between"
             gap={3}
@@ -310,9 +310,9 @@ export function CalibrationModal({ sensor, onSave, onClose }: CalibrationModalPr
               _hover={canZero ? { borderColor: "accent.solid" } : undefined}
               flexShrink={0}
             >
-              <Icon name="exposure_zero" size={16} /> Zero here
+              Zero here
             </Flex>
-          </Flex>
+          </Flex> */}
 
           {/* Actions */}
           <Flex justify="flex-end" gap={2}>
@@ -350,9 +350,9 @@ export function CalibrationModal({ sensor, onSave, onClose }: CalibrationModalPr
               <Icon name="check" size={14} /> Apply to draft
             </Flex>
           </Flex>
-          <Text fontSize="2xs" color="text.muted">
+{/*           <Text fontSize="2xs" color="text.muted">
             Applies to the editable draft only — press Update in the action bar to persist to the backend.
-          </Text>
+          </Text> */}
         </Flex>
       </Card>
     </Box>

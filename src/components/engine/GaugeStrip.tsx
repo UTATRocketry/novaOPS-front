@@ -77,7 +77,7 @@ function headerColor(type: string): string {
 
 const TYPE_LABELS: Record<string, string> = {
   PT: "Pressure",
-  TC: "Thermocouple",
+  TC: "Temperature",
   LC: "Load",
 };
 
@@ -176,7 +176,7 @@ function GaugeCard({ sensorName, sensors, onChangeSensor, onRemove }: GaugeCardP
         >
           {sensors.map((s) => (
             <option key={s.name} value={s.name}>
-              {s.name} — {TYPE_LABELS[s.type] ?? s.type}
+              {s.name} — {s.type}
             </option>
           ))}
         </StyledSelect>

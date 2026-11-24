@@ -124,7 +124,7 @@ export default function ConfigPage() {
     <Box>
       <PageHeader
         title="Config"
-        subtitle="System configuration · the only writer to backend config"
+        subtitle="System configuration editor"
         action={
           <PillTabs items={VIEW_TABS} value={view} onChange={(v) => setView(v as ConfigView)} />
         }
